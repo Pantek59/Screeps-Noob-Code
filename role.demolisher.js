@@ -1,8 +1,6 @@
 const RESOURCE_SPACE = "space";
 
 module.exports = {
-    //TODO Leave room if hostiles show up
-
     run: function(creep) {
         // if creep is bringing energy to a structure but has no energy left
         if (creep.room.memory.hostiles > 0) {

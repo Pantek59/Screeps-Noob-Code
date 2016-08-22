@@ -1,52 +1,36 @@
 module.exports = {
-    // state working = Returning minerals to structure
-    run: function (spawn, allies) {
-        var spawningStatus = true;
+    // manages spawning in indicated room
+    
+    run: function (spawnRoom, allies) {
+        var globalSpawningStatus = true;
 
-        for (var s in spawn.room.memory.roomArraySpawns) {
-            var testSpawn = Game.getObjectById(spawn.room.memory.roomArraySpawns[s]);
+        for (var s in spawnRoom.memory.roomArraySpawns) {
+            var testSpawn = Game.getObjectById(spawnRoom.memory.roomArraySpawns[s]);
             if (testSpawn != null && testSpawn.spawning == null && testSpawn.memory.spawnRole != "x") {
-                spawningStatus = false;
+                globalSpawningStatus = false;
             }
         }
 
-        if (spawningStatus == true || spawn.memory.spawnRole == "x" || spawn.room.controller.owner == undefined || (spawn.room.controller.owner != undefined && spawn.owner.username != spawn.room.controller.owner.username)) {
-            //All spawns busy or room not under player control
+        if (globalSpawningStatus == true || spawnRoom.controller.owner == undefined) {
+            //All spawns busy, inactive or player lost control of the room
             return -1;
         }
 
-        //Code for spawn scaling
-        var numberOfSources;
-        var numberOfMineralSources;
+        //Check for sources & minerals
+        var numberOfSources = spawnRoom.memory.roomArraySources.length;
+        var numberOfExploitableMineralSources = spawnRoom.memory.roomArrayExtractors.length;
         var roomMineralType;
 
-        //Check sources of the room
-        if (spawn.memory.numberOfSources == undefined) {
-            var sources = spawn.room.find(FIND_SOURCES);
-            numberOfSources = sources.length;
-            spawn.memory.numberOfSources = numberOfSources;
-        }
-        else {
-            numberOfSources = spawn.memory.numberOfSources;
-        }
-
-        //Check extractors of the room
-        var minsources = spawn.room.find(FIND_MY_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_EXTRACTOR)});
-        numberOfMineralSources = minsources.length;
-        if (numberOfMineralSources > 0) {
-            var mineral = spawn.room.find(FIND_MINERALS, {filter: (s) => (s.mineralAmount > 0)});
-            numberOfMineralSources = mineral.length;
-            if (mineral[0] != undefined) {
-                roomMineralType = mineral[0].mineralType;
+        //Check mineral type of the room
+        if (numberOfExploitableMineralSources > 0) {
+            // Assumption: There is only one minerl source per room
+            var mineral = Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]);
+            if (mineral != undefined) {
+                roomMineralType = mineral.mineralType;
             }
         }
 
-        if (spawn.memory.spawnRole != 1 && spawn.room.find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN}).length > 1) {
-            console.log("slave spawner");
-            realspawn = spawn;
-            spawn = spawn.room.find(FIND_MY_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN) && s.memory.spawnRole == 1})[0];
-        }
-
+        // Define spawn minima
         var minimumSpawnOf = new Array();
         //Volume defined by flags
         minimumSpawnOf["remoteHarvester"] = 0;
@@ -56,37 +40,37 @@ module.exports = {
         minimumSpawnOf["demolisher"] = 0;
 
         // Check for demolisher flags
-        var demolisherFlags = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: spawn.id}});
+        var demolisherFlags = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: spawnRoom.memory.masterSpawn}});
         for (var p in demolisherFlags) {
             //Iterate through demolisher flags of this spawn
             minimumSpawnOf.demolisher += demolisherFlags[p].memory.volume;
         }
 
         // Check for protector flags
-        var protectorFlags = _.filter(Game.flags,{ memory: { function: 'protector', spawn: spawn.id}});
+        var protectorFlags = _.filter(Game.flags,{ memory: { function: 'protector', spawn: spawnRoom.memory.masterSpawn}});
         for (var p in protectorFlags) {
             //Iterate through remote source flags of this spawn
             minimumSpawnOf.protector += protectorFlags[p].memory.volume;
         }
 
         // Check for remote source flags
-        var remoteSources = _.filter(Game.flags,{ memory: { function: 'remoteSource', spawn: spawn.id}});
+        var remoteSources = _.filter(Game.flags,{ memory: { function: 'remoteSource', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in remoteSources) {
             //Iterate through remote source flags of this spawn
             minimumSpawnOf.remoteHarvester += remoteSources[t].memory.volume;
         }
 
         // Check for narrow source flags
-        var narrowSources = _.filter(Game.flags,{ memory: { function: 'narrowSource', spawn: spawn.id}});
+        var narrowSources = _.filter(Game.flags,{ memory: { function: 'narrowSource', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in narrowSources) {
             //Iterate through remote source flags of this spawn
             minimumSpawnOf.stationaryHarvester ++;
         }
 
         // Check for active flag "remoteController"
-        var remoteController = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: spawn.id}});
+        var remoteController = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in remoteController) {
-            if (remoteController[t].room != undefined && remoteController[t].room != undefined && remoteController[t].room.controller.owner != undefined && remoteController[t].room.controller.owner.username == spawn.room.controller.owner.username) {
+            if (remoteController[t].room != undefined && remoteController[t].room != undefined && remoteController[t].room.controller.owner != undefined && remoteController[t].room.controller.owner.username == spawnRoom.controller.owner.username) {
                 //Target room already claimed
             }
             else {
@@ -97,7 +81,7 @@ module.exports = {
         }
 
         //Spawning volumes scaling with # of sources in room
-        var constructionSites = spawn.room.find(FIND_CONSTRUCTION_SITES);
+        var constructionSites = spawnRoom.find(FIND_CONSTRUCTION_SITES);
         if (constructionSites.length == 0) {
             minimumSpawnOf.builder = 0;
         }
@@ -126,18 +110,21 @@ module.exports = {
         minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
         minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
-        minimumSpawnOf["miner"] = numberOfMineralSources;
-        if (spawn.room.memory.terminalTransfer != undefined) {
+        minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
+
+        if (spawnRoom.memory.terminalTransfer != undefined) {
             minimumSpawnOf["distributor"] = 1;
         }
         else {
             minimumSpawnOf["distributor"] = 0;
         }
 
-        if (spawn.room.storage != undefined && spawn.room.storage.store[roomMineralType] > spawn.memory.roomMineralLimit) {
+        if (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.roomMineralLimit) {
             minimumSpawnOf.miner = 0;
         }
-        var enemyCreeps = spawn.room.find(FIND_HOSTILE_CREEPS);
+
+        // Adjustments in case of hostile presence
+        var enemyCreeps = spawnRoom.find(FIND_HOSTILE_CREEPS);
         for (var g in enemyCreeps) {
             var username = enemyCreeps[g].owner.username;
             if (allies.indexOf(username) == -1) {
@@ -150,37 +137,45 @@ module.exports = {
             }
         }
 
-        //console.log(spawn.room.name + ": " + minimumSpawnOf.claimer);
-
+        // Measuring number of active creeps
         var numberOf = new Array();
         // Creeps not leaving room
-        numberOf["harvester"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "harvester")}).length;
-        numberOf["stationaryHarvester"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "stationaryHarvester")}).length;
-        numberOf["builder"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "builder")}).length;
-        numberOf["repairer"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "repairer")}).length;
-        numberOf["wallRepairer"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "wallRepairer")}).length;
-        numberOf["miner"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "miner")}).length;
-        numberOf["upgrader"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "upgrader")}).length;
-        numberOf["distributor"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "distributor")}).length;
-        numberOf["energyTransporter"] = spawn.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
+        numberOf["harvester"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "harvester")}).length;
+        numberOf["stationaryHarvester"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "stationaryHarvester")}).length;
+        numberOf["builder"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "builder")}).length;
+        numberOf["repairer"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "repairer")}).length;
+        numberOf["wallRepairer"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "wallRepairer")}).length;
+        numberOf["miner"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "miner")}).length;
+        numberOf["upgrader"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "upgrader")}).length;
+        numberOf["distributor"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "distributor")}).length;
+        numberOf["energyTransporter"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
 
         //Creeps leaving room
-        numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawn.id}}).length;
-        numberOf["claimer"] = _.filter(Game.creeps,{ memory: { role: 'claimer', spawn: spawn.id}}).length;
-        numberOf["protector"] = _.filter(Game.creeps,{ memory: { role: 'protector', spawn: spawn.id}}).length;
-        numberOf["demolisher"] = _.filter(Game.creeps,{ memory: { role: 'demolisher', spawn: spawn.id}}).length;
+        numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["claimer"] = _.filter(Game.creeps,{ memory: { role: 'claimer', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["protector"] = _.filter(Game.creeps,{ memory: { role: 'protector', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["demolisher"] = _.filter(Game.creeps,{ memory: { role: 'demolisher', spawn: spawnRoom.memory.masterSpawn}}).length;
+
+        // Addition of creeps being spawned
+        for (s in spawnRoom.memory.roomArraySpawns) {
+            testSpawn = Game.getObjectById(spawnRoom.memory.roomArraySpawns[s]);
+            if (testSpawn != null && testSpawn.spawning != null) {
+                // Active spawn found
+                numberOf[testSpawn.memory.lastSpawn]++;
+            }
+        }
 
         // Role selection
-        var energy = spawn.room.energyCapacityAvailable;
+        var energy = spawnRoom.energyCapacityAvailable;
         var name = undefined;
-        var hostiles = spawn.room.memory.hostiles;
+        var hostiles = spawnRoom.memory.hostiles;
 
         // if not enough harvesters
         if (numberOf.harvester + numberOf.energyTransporter < minimumSpawnOf.harvester) {
             // try to spawn one
             var rolename = 'harvester';
             // if spawning failed and we have no harvesters left
-            if (numberOf.harvester == 0 || spawn.room.energyCapacityAvailable < 350) {
+            if (numberOf.harvester == 0 || spawnRoom.energyCapacityAvailable < 350) {
                 // spawn one with what is available
                 var rolename = 'miniharvester';
             }
@@ -226,13 +221,13 @@ module.exports = {
         }
         else {
             // Surplus spawning
-            var container = spawn.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
+            var container = spawnRoom.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
             var containerEnergie = 0;
 
             for (var e in container) {
                 containerEnergie += container[e].store[RESOURCE_ENERGY];
             }
-            if (hostiles == 0 && containerEnergie > spawn.room.energyAvailable * 1.75) {
+            if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 1.75) {
                 if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2.5)) {
                     var rolename = 'upgrader';
                 }
@@ -253,17 +248,29 @@ module.exports = {
                 var rolename = "---";
             }
         }
-        spawn.memory.lastSpawnAttempt = rolename;
 
         if (rolename != "---") {
-            name = spawn.createCustomCreep(energy, rolename, spawn.id);
-
-            if (!(name < 0)) {
-                console.log("Spawning creep: " + name + " (" + rolename + ") in room " + spawn.room.name + ".");
-                spawn.memory.lastSpawn = rolename;
+            // Look for unoccupied, active spawn
+            var actingSpawn;
+            for (var s in spawnRoom.memory.roomArraySpawns) {
+                testSpawn = Game.getObjectById(spawnRoom.memory.roomArraySpawns[s]);
+                if (testSpawn != null && testSpawn.spawning == null && testSpawn.memory.spawnRole != "x") {
+                    actingSpawn = testSpawn;
+                    break;
+                }
             }
-            else if (name != -4 && name != -6) {
-                //console.log("Spawn error (" + rolename + " in room " + spawn.room.name + "): " + name);
+
+            if (actingSpawn != undefined) {
+                // Spawn!
+                name = actingSpawn.createCustomCreep(energy, rolename, spawnRoom.memory.masterSpawn);
+
+                if (!(name < 0)) {
+                    console.log(actingSpawn.name + " is spawning creep: " + name + " (" + rolename + ") in room " + spawnRoom.name + ".");
+                    actingSpawn.memory.lastSpawn = rolename;
+                }
+                else if (name != -4 && name != -6) {
+                    console.log("Spawn error (" + rolename + " in room " + spawnRoom.name + "): " + name);
+                }
             }
         }
     }

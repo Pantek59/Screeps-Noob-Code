@@ -22,7 +22,7 @@ var roleStationaryHarvester = require('role.stationaryHarvester');
 var roleMiner = require('role.miner');
 var roleDistributor = require("role.distributor");
 var roleDemolisher = require('role.demolisher');
-var moduleSpawner = require('module.spawner');
+var moduleSpawnCreeps = require('module.spawnCreeps');
 var roleEnergyTransporter = require("role.energyTransporter");
 
 var playerUsername = "Pantek59";
@@ -53,6 +53,7 @@ module.exports.loop = function() {
     for (var ind in senex) {
         console.log("Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".");
     }
+
     if (CPUdebug == true) {console.log("Start cycling through rooms: " + Game.cpu.getUsed())}
     // Cycle through rooms    
     for (var r in Game.rooms) {
@@ -161,6 +162,20 @@ module.exports.loop = function() {
             }
         }
 
+        if (Game.rooms[r].memory.masterSpawn == undefined) {
+            if (Game.rooms[r].memory.roomArraySpawns.length == 1) {
+                Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[0];
+            }
+            else if (Game.rooms[r].memory.roomArraySpawns.length > 1) {
+                for (var id in Game.rooms[r].memory.roomArraySpawns) {
+                    var testSpawn = Game.getObjectById(Game.rooms[r].memory.roomArraySpawns[id]);
+                    if (testSpawn.memory.spawnRole == 1) {
+                        Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[id];
+                    }
+                }
+            }
+        }
+
         //Flag code
         if (CPUdebug == true) {console.log("Starting flag code: " + Game.cpu.getUsed())}
         var remoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'remoteSource'}});
@@ -169,7 +184,7 @@ module.exports.loop = function() {
             var flag = remoteHarvestingFlags[f];
             if (flag.room != undefined) {
                 // We have visibility in room
-                //console.log("flag");
+                //console.log(flag.name);
                 if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
                     //Hostiles present in room with remote harvesters
                     console.log("Panic flag is set in room " + flag.room.name);
@@ -264,12 +279,7 @@ module.exports.loop = function() {
             }
         }
         else {
-            // loop through all spawns of the room
-            for (var spawn in spawns) {
-                if (spawns[spawn].memory.spawnRole != "x") {
-                    moduleSpawner.run(spawns[spawn], allies);
-                }
-            }
+            moduleSpawnCreeps.run(Game.rooms[r], allies);
         }
         if (CPUdebug == true) {console.log("Starting tower code: " + Game.cpu.getUsed())}
         // Tower code      
@@ -411,6 +421,7 @@ module.exports.loop = function() {
                     }
                     else {
                         console.log("Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment));
+                        Game.notify("Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment));
                     }
                 }
             }

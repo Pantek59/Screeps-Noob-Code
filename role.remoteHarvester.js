@@ -58,11 +58,11 @@ module.exports = {
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     var constructionSite = creep.pos.lookFor((LOOK_CONSTRUCTION_SITES));
 
-                    if (road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
+                    if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == creep.owner.username && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
                         //Road on swamp needed
                         creep.pos.createConstructionSite(STRUCTURE_ROAD);
                     }
-                    if (road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
+                    if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == creep.owner.username && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
                         creep.repair(road[0]);
                     }
