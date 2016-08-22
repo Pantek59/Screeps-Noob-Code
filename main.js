@@ -69,7 +69,7 @@ module.exports.loop = function () {
         }
 
         //  Refresher (will be executed every few ticks)
-        var searchresult;
+        var searchResult;
 
         if (Game.time % delayRoomScanning == 0) {
             Game.rooms[r].memory.resourceTicker = Game.time;
@@ -275,7 +275,7 @@ module.exports.loop = function () {
         var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
         var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
 
-        for (tower in towers) {
+        for (var tower in towers) {
             // Tower attack code
             var maxHealBodyParts = 0;
             var HealBodyParts = 0;
@@ -326,7 +326,7 @@ module.exports.loop = function () {
         if (CPUdebug == true) {console.log("Start dropped energy search: " + Game.cpu.getUsed())}
         // Search for dropped energy
         var energies=Game.rooms[r].find(FIND_DROPPED_ENERGY);
-        for (energy in energies) {
+        for (var energy in energies) {
             var energyID = energies[energy].id;
             var energyAmount = energies[energy].amount;
 
