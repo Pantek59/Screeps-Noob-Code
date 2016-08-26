@@ -76,7 +76,7 @@ module.exports = {
                             creep.moveTo(creep.room.controller, {reusePath: 5});
                         break;
 
-                    case OK:
+                    case OK:  //TODO Spawn is not automatically constructed
                         remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
                         break;
 

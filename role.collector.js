@@ -36,21 +36,18 @@ module.exports = {
                         container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK);
                     }
                 }
-                //console.log(creep.name + ": " + container.ticksToRegeneration);
                 if (container == undefined) {
                     //console.log(creep.name + "(" + creep.room.name + "): no resource found");
                 }
                 else if (container.ticksToRegeneration == undefined && (container.energy == undefined || container.energy < 3000)) {
                     //container
-                    //console.log(creep.name + "(" + creep.room.name + "): container found: " + container);
-                    if (creep.withdraw(container, RESOURCE_ENERGY) != OK) {
+                    if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(container, {reusePath: delayPathfinding});
                     }
                 }
                 else {
                     //Source
-                    //console.log(creep.name + "(" + creep.room.name + "): source found: " + container);
-                    if (creep.harvest(container) != OK) {
+                    if (creep.harvest(container) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(container, {reusePath: delayPathfinding});
                     }
                 }
@@ -60,18 +57,15 @@ module.exports = {
                 // find closest source
                 container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                 if (container == undefined) {
-                    //console.log(creep.name + "(" + creep.room.name + "): no resource found");
                 }
                 else if (container.ticksToRegeneration == undefined && (container.energy == undefined || container.energy < 3000)) {
                     //container
-                    //console.log(creep.name + "(" + creep.room.name + "): container found: " + container);
                     if (creep.withdraw(container, RESOURCE_ENERGY) != OK) {
                         creep.moveTo(container, {reusePath: delayPathfinding});
                     }
                 }
                 else {
                     //Source
-                    //console.log(creep.name + "(" + creep.room.name + "): source found: " + container);
                     if (creep.harvest(container) != OK) {
                         creep.moveTo(container, {reusePath: delayPathfinding});
                     }

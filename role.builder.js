@@ -11,6 +11,11 @@ module.exports = {
             creep.moveTo(hometarget, {reusePath: 10});
         }
         else {
+            if (creep.memory.statusBuilding != undefined) {
+                if (creep.build(Game.getObjectById(creep.memory.statusBuilding)) != OK) {
+                    delete creep.memory.statusBuilding;
+                }
+            }
             // if creep is trying to complete a constructionSite but has no energy left
             if (creep.carry.energy == 0) {
                 // switch state
@@ -48,9 +53,13 @@ module.exports = {
                     // if one is found
                     if (constructionSite != undefined) {
                         // try to build, if the constructionSite is not in range
-                        if (creep.build(constructionSite) == ERR_NOT_IN_RANGE) {
+                        var result = creep.build(constructionSite);
+                        if (result == ERR_NOT_IN_RANGE) {
                             // move towards the constructionSite
                             creep.moveTo(constructionSite, {reusePath: 5});
+                        }
+                        else if (result == OK) {
+                            creep.memory.statusBuilding = constructionSite.id;
                         }
                     }
                     // if no constructionSite is found

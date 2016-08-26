@@ -58,11 +58,11 @@ module.exports = {
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     var constructionSite = creep.pos.lookFor((LOOK_CONSTRUCTION_SITES));
 
-                    if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == creep.owner.username && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
+                    if (creep.room.controller != undefined && ((creep.room.constructor.owner != undefined && creep.room.controller.owner.username == creep.owner.username) || (creep.room.controller.reservation != undefined && creep.room.controller.reservation.username == creep.owner.username)) && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
                         //Road on swamp needed
                         creep.pos.createConstructionSite(STRUCTURE_ROAD);
                     }
-                    if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == creep.owner.username && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
+                    if (creep.room.controller != undefined && ((creep.room.constructor.owner != undefined && creep.room.controller.owner.username == creep.owner.username) || (creep.room.controller.reservation != undefined && creep.room.controller.reservation.username == creep.owner.username)) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
                         creep.repair(road[0]);
                     }
@@ -124,16 +124,7 @@ module.exports = {
                         if (creep.room.memory.hostiles == 0) {
                             //No enemy creeps
                             if (roleCollector.run(creep) != OK && creep.pos.getRangeTo(remoteSource) > 3) {
-
-                                if (!creep.memory.path) {
-                                    creep.memory.path = creep.pos.findPathTo(remoteSource, {ignoreCreeps: false});
-                                }
-
-                                if (creep.moveByPath(creep.memory.path) != OK) {
-                                    creep.memory.path = creep.pos.findPathTo(remoteSource, {ignoreCreeps: false});
-                                    delete creep.memory._move;
-                                    creep.moveByPath(creep.memory.path);
-                                }
+                                creep.moveTo(remoteSource, {reusePath: 10});
                             }
                         }
                         else {

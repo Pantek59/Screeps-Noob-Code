@@ -6,7 +6,7 @@ module.exports = {
         if (creep.room.name != creep.memory.homeroom) {
             //return to home room
             var hometarget = Game.getObjectById(creep.memory.spawn);
-            creep.moveTo(hometarget, {reusePath: 10});
+            creep.moveTo(hometarget, {reusePath: 3});
         }
         else {
             // if creep is bringing energy to the controller but has no energy left

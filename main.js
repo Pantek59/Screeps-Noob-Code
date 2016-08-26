@@ -1,7 +1,7 @@
 const CPUdebug = false;
 
 const delayPathfinding = 2;
-const delayRoomScanning = 20;
+const delayRoomScanning = 50;
 const RESOURCE_SPACE = "space";
 
 require('prototype.spawn')();
@@ -51,7 +51,7 @@ module.exports.loop = function() {
     }
     var senex = _.filter(Game.creeps,{ ticksToLive: 1});
     for (var ind in senex) {
-        console.log("Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".");
+        console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
     }
 
     if (CPUdebug == true) {console.log("Start cycling through rooms: " + Game.cpu.getUsed())}
@@ -72,11 +72,18 @@ module.exports.loop = function() {
 
         //  Refresher (will be executed every few ticks)
         var searchResult;
-
         if (Game.time % delayRoomScanning == 0) {
             Game.rooms[r].memory.resourceTicker = Game.time;
 
             // Preloading room structure
+
+            if (Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.hits < 5000000 && (s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART)}) == null) {
+                Game.rooms[r].memory.roomSecure = true;
+            }
+            else if (Game.rooms[r].memory.roomSecure != undefined) {
+                delete Game.rooms[r].memory.roomSecure;
+            }
+
             if (Game.rooms[r].memory.roomArraySources == undefined) {
                 var sourceIDs = new Array();
                 searchResult = Game.rooms[r].find(FIND_SOURCES);
@@ -162,7 +169,7 @@ module.exports.loop = function() {
             }
         }
 
-        if (Game.rooms[r].memory.masterSpawn == undefined) {
+        if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArraySpawns != undefined) {
             if (Game.rooms[r].memory.roomArraySpawns.length == 1) {
                 Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[0];
             }
@@ -184,17 +191,16 @@ module.exports.loop = function() {
             var flag = remoteHarvestingFlags[f];
             if (flag.room != undefined) {
                 // We have visibility in room
-                //console.log(flag.name);
                 if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
                     //Hostiles present in room with remote harvesters
-                    console.log("Panic flag is set in room " + flag.room.name);
-
                     var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
                     flag.room.memory.panicFlag = panicFlag;
                     panicFlag = _.filter(Game.flags,{ name: panicFlag})[0];
                     panicFlag.memory.function = "protector";
                     panicFlag.memory.volume = flag.room.memory.hostiles;
                     panicFlag.memory.spawn = flag.memory.spawn;
+
+                    console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
                 }
                 else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
                     // No hostiles present in room with remote harvesters
@@ -217,7 +223,6 @@ module.exports.loop = function() {
                 var upgraderRecruits = _.filter(Game.creeps,{ memory: { role: 'upgrader', homeroom: Game.rooms[r].name}});
                 if (upgraderRecruits.length < 1) {
                     var roomName;
-
                     if (claimFlags.length > 0) {
                         //Claimer present, read homeroom
                         var newUpgraders = _.filter(Game.creeps,{ memory: { role: 'upgrader', homeroom: claimFlags[0].memory.supply}});
@@ -242,7 +247,7 @@ module.exports.loop = function() {
                     if (targetCreep != undefined) {
                         targetCreep.memory.homeroom = Game.rooms[r].name;
                         targetCreep.memory.spawn =  Game.rooms[r].controller.id;
-                        console.log(targetCreep.name + " has been captured in room " + targetCreep.pos.roomName + " as an upgrader by room " + Game.rooms[r].name + ".");
+                        console.log("<font color=#ffff00 type='highlight'>" + targetCreep.name + " has been captured in room " + targetCreep.pos.roomName + " as an upgrader by room " + Game.rooms[r].name + ".</font>");
                         targetCreep = undefined;
                     }
                 }
@@ -272,7 +277,7 @@ module.exports.loop = function() {
                     if (targetCreepBuilder != undefined) {
                         targetCreepBuilder.memory.homeroom = Game.rooms[r].name;
                         targetCreepBuilder.memory.spawn =  Game.rooms[r].controller.id;
-                        console.log(targetCreepBuilder.name + " has been captured in room " + targetCreepBuilder.pos.roomName + " as a repairer by room " + Game.rooms[r].name + ".");
+                        console.log("<font color=#ffff000 type='highlight'>" + targetCreepBuilder.name + " has been captured in room " + targetCreepBuilder.pos.roomName + " as a repairer by room " + Game.rooms[r].name + ".</font>");
                     }
                 }
 
@@ -334,8 +339,9 @@ module.exports.loop = function() {
                 }
             }
         }
-        if (CPUdebug == true) {console.log("Start dropped energy search: " + Game.cpu.getUsed())}
+
         // Search for dropped energy
+        if (CPUdebug == true) {console.log("Start dropped energy search: " + Game.cpu.getUsed())}
         var energies=Game.rooms[r].find(FIND_DROPPED_ENERGY);
         for (var energy in energies) {
             var energyID = energies[energy].id;
@@ -360,8 +366,9 @@ module.exports.loop = function() {
                 //console.log(collector.name + " is picking up dropped energy (" + energyAmount + ") in room " + energies[energy].room);
             }
         }
-        if (CPUdebug == true) {console.log("Starting link code: " + Game.cpu.getUsed())}
+
         // Link code
+        if (CPUdebug == true) {console.log("Starting link code: " + Game.cpu.getUsed())}
         var RoomLinks = Game.rooms[r].find(FIND_MY_STRUCTURES,{filter: (s) => (s.structureType == STRUCTURE_LINK)});
         var targetLevel = 0;
         var minLevel = 99;
@@ -416,26 +423,75 @@ module.exports.loop = function() {
                     if (terminal.send(resource,amount,targetRoom,comment) == OK) {
                         delete Game.rooms[r].memory.terminalTransfer;
                         delete Game.rooms[r].memory.terminalEnergyCost;
-                        console.log(amount + " " + resource + " has been transferred to room " + targetRoom + ": " + comment);
+                        console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + ": " + comment + "</font>");
                         Game.notify(amount + " " + resource + " has been transferred to room " + targetRoom + ": " + comment);
                     }
                     else {
-                        console.log("Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment));
+                        console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment) + "</font>");
                         Game.notify("Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment));
                     }
                 }
             }
         }
-    }
-    if (CPUdebug == true) {console.log("Starting creeps: " + Game.cpu.getUsed())}
-	//Cycle through creeps
-    // for every creep name in Game.creeps
-    for (let name in Game.creeps) {
-        // get the creep object
-        var creep = Game.creeps[name];
 
-        //Check for job queues
-        if (creep.memory.jobQueueTask != undefined) {
+        // Lab production code
+        if (Game.rooms[r].memory.labOrder != undefined) {
+
+            if (Game.rooms[r].memory.labOrderArray == undefined) {
+                // Process not started yet
+                var labsArray = new Array();
+                for (var l in Game.rooms[r].memory.roomArrayLabs) {
+                    var lab = Game.getObjectById(Game.rooms[r].memory.roomArrayLabs[l]);
+                    var neighboringLabs = lab.pos.findInRange(FIND_MY_STRUCTURES, 1, {filter: (s) => (s.structureType == STRUCTURE_LAB)});
+                    if (neighboringLabs.length > 1) {
+                        var outputLab = new Array();
+                        var inputLab1 = new Array();
+                        var inputLab2 = new Array();
+                        outputLab["id"] = lab.id;
+                        outputLab["mineralType"] = order[3];
+                        inputLab1["id"] = neighboringLabs[0].id;
+                        inputLab1["mineralType"] = order[1];
+                        inputLab2["id"] = neighboringLabs[1].id;
+                        inputLab2["mineralType"] = order[2];
+                        labsArray["outputLab"] = outputLab;
+                        labsArray["inputLab1"] = inputLab1;
+                        labsArray["inputLab2"] = inputLab2;
+                        Game.rooms[r].memory.labOrderArray = labsArray;
+                        break;
+                    }
+                }
+            }
+
+            //Lab order pending
+            if (Game.rooms[r].memory.labOrderArray != undefined) {
+                // Material acquisition on progress
+                var inputLab1 = Game.getObjectById(Game.rooms[r].memory.labOrderArray.inputLab1.id);
+                var inputLab2 = Game.getObjectById(Game.rooms[r].memory.labOrderArray.inputLab2.id);
+                var outputLab = Game.getObjectById(Game.rooms[r].memory.labOrderArray.outputLab.id);
+
+                if ((inputLab2.mineralType == Game.rooms[r].memory.labOrderArray.inputLab2.mineralType && inputLab2.mineralAmount >= amount) && (inputLab1.mineralType == Game.rooms[r].memory.labOrderArray.inputLab1.mineralType && inputLab1.mineralAmount >= amount)) {
+                    // all material ready -> begin production
+                    var tempArray = new Array();
+                    tempArray["outputLab"] = Game.getObjectById(Game.rooms[r].memory.labOrderArray.outputLab.id);
+                    tempArray["inputLab1"] = Game.getObjectById(Game.rooms[r].memory.labOrderArray.inputLab1.id);
+                    tempArray["inputLab2"] = Game.getObjectById(Game.rooms[r].memory.labOrderArray.inputLab2.id);
+                    Game.rooms[r].memory.productionArray = tempArray;
+                    delete Game.rooms[r].memory.labOrderArray;
+                    delete Game.rooms[r].memory.labOrder;
+                }
+            }
+        }
+    }
+      //Cycle through creeps
+      if (CPUdebug == true) {
+          console.log("Starting creeps: " + Game.cpu.getUsed())
+      }
+      // for every creep name in Game.creeps
+      for (let name in Game.creeps) {
+          // get the creep object
+          var creep = Game.creeps[name];
+          //Check for job queues
+        if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
             //Job queue pending
             switch (creep.memory.jobQueueTask) {
                 case "pickUpEnergy": //Dropped energy to be picked up
@@ -448,9 +504,9 @@ module.exports.loop = function() {
             }
             creep.memory.jobQueueTask = undefined;
         }
-        else {
+        else if (creep.spawning == false) {
             if (CPUdebug == true) {console.log("Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
-            if (creep.memory.role != "miner" && creep.memory.role != "distributer" && creep.memory.role != "scientist" &&_.sum(creep.carry) != creep.carry.energy) {
+            if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "scientist" &&_.sum(creep.carry) != creep.carry.energy) {
                 // Minerals found in creep
                 for (var resourceType in creep.carry) {
                     switch (resourceType) {
@@ -463,7 +519,6 @@ module.exports.loop = function() {
                             else {
                                 // find closest container with space to get rid of minerals
                                 var freeContainer = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
-                                //console.log(freeContainer);
                                 if (creep.room.name != creep.memory.homeroom) {
                                     creep.moveTo(creep.memory.spawn);
                                 }

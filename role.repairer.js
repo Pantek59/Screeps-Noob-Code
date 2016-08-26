@@ -43,9 +43,7 @@ module.exports = {
 
                         // if we find one
                         if (structure != undefined) {
-                            // try to repair it, if it is out of range
                             if (creep.repair(structure) == ERR_NOT_IN_RANGE) {
-                                // move towards it
                                 creep.moveTo(structure, {reusePath: 5});
                             }
                         }
@@ -56,14 +54,25 @@ module.exports = {
                         }
                     }
                     else {
-                        //build spawn first
-                        var constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
-                        if (creep.build(constructionSite) == ERR_NOT_IN_RANGE) {
-                            // move towards it
-                            creep.moveTo(constructionSite, {reusePath: 5});
+                        //room without spawn
+                        var damagedRoad = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.hits < s.hitsMax && s.structureType == STRUCTURE_ROAD)});
+                        if (damagedRoad == null) {
+                            var constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_ROAD});
+                            if (constructionSite == null) {
+                                constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
+                            }
+
+                            if (creep.build(constructionSite) == ERR_NOT_IN_RANGE) {
+                                // move towards it
+                                creep.moveTo(constructionSite, {reusePath: 5});
+                            }
+                        }
+                        else {
+                            if (creep.repair(damagedRoad) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(damagedRoad, {reusePath: 5});
+                            }
                         }
                     }
-
                 }
             }
             // if creep is supposed to harvest energy from source

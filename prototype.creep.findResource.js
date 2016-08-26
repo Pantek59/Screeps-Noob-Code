@@ -7,6 +7,27 @@ module.exports = function() {
 
 	Creep.prototype.findResource =
 	function(resource, sourceTypes) {
+	    if (this.memory.targetBuffer != undefined) {
+            var tempTarget = Game.getObjectById(this.memory.targetBuffer);
+            if (tempTarget == undefined || this.memory.roomBuffer != this.room.name) {
+                delete this.memory.targetBuffer;
+            }
+            else if (resource == RESOURCE_SPACE) {
+                if (tempTarget.energy != undefined && tempTarget.energyCapacity - tempTarget.energy == 0) {
+                    delete this.memory.targetBuffer;
+                }
+                else if (tempTarget.storeCapacity != undefined && tempTarget.storeCapacity - _.sum(tempTarget.store) == 0) {
+                    delete this.memory.targetBuffer;
+                }
+            }
+            else if (resource == RESOURCE_ENERGY && tempTarget.energy != undefined && tempTarget.energy == 0) {
+                delete this.memory.targetBuffer;
+            }
+            else if (resource != RESOURCE_ENERGY && tempTarget.store[resource] == 0) {
+                delete this.memory.targetBuffer;
+            }
+        }
+
 	    if (this.memory.targetBuffer != undefined && this.memory.resourceBuffer != undefined && this.memory.resourceBuffer == resource &&  Game.time % delayPathfinding == 0)
         {
             //return buffered resource
@@ -173,6 +194,7 @@ module.exports = function() {
             this.memory.resourceBuffer = resource;
             if (target != null) {
                 this.memory.targetBuffer = target.id;
+                this.memory.roomBuffer = this.room.name;
             }
             else {
                 return null;

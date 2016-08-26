@@ -16,7 +16,7 @@ module.exports = {
                  creep.memory.working = false;
              }
              // if creep is harvesting minerals but is full
-             else if (_.sum(creep.carry) == creep.carryCapacity) {
+             else if (_.sum(creep.carry) == creep.carryCapacity || creep.carry[RESOURCE_ENERGY] > 0) {
                  // switch state
                  creep.memory.working = true;
              }
@@ -39,24 +39,26 @@ module.exports = {
                          creep.moveTo(container, {reusePath: 3});
                      }
                  }
-                 for (var t in creep.carry) {
-                     if (t != "energy") {
-                         resource = t;
-                         break;
-                     }
-                 }
-                 if (storage == null) {
-                     //No storage found in room
-                     var containerArray = creep.findClosestContainer(0);
-                     var container = containerArray.container;
-                     if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
-                         creep.moveTo(container, {reusePath: 3});
-                     }
-                 }
                  else {
-                     //storage found
-                     if (creep.transfer(storage, resource) == ERR_NOT_IN_RANGE) {
-                         creep.moveTo(storage, {reusePath: 3});
+                     for (var t in creep.carry) {
+                         if (t != "energy") {
+                             resource = t;
+                             break;
+                         }
+                     }
+                     if (storage == null) {
+                         //No storage found in room
+                         var containerArray = creep.findClosestContainer(0);
+                         var container = containerArray.container;
+                         if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
+                             creep.moveTo(container, {reusePath: 3});
+                         }
+                     }
+                     else {
+                         //storage found
+                         if (creep.transfer(storage, resource) == ERR_NOT_IN_RANGE) {
+                             creep.moveTo(storage, {reusePath: 3});
+                         }
                      }
                  }
              }
@@ -79,7 +81,7 @@ module.exports = {
                          creep.moveTo(containerArray.container);
                      }
                  }
-                 else {
+                 else if (Game.getObjectById(creep.room.memory.roomArrayMinerals[0]).mineralAmount > 0) {
                      //minerals waiting at source
                      var mineral = creep.pos.findClosestByPath(FIND_MINERALS, {filter: (s) => s.mineralAmount > 0});
                      var result = creep.harvest(mineral);

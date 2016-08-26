@@ -109,17 +109,23 @@ module.exports = {
         minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
         minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
-        minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
         minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
 
-        if (spawnRoom.memory.terminalTransfer != undefined) {
+        if (spawnRoom.memory.roomSecure == true) {
+            minimumSpawnOf["wallRepairer"] = 0;
+        }
+        else {
+            minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
+        }
+
+        if (spawnRoom.memory.terminalTransfer != undefined || (spawnRoom.terminal != undefined && spawnRoom.memory.terminalTransfer == undefined && _.sum(spawnRoom.terminal.store) > 0)) {
             minimumSpawnOf["distributor"] = 1;
         }
         else {
             minimumSpawnOf["distributor"] = 0;
         }
 
-        if (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.roomMineralLimit) {
+        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]).mineralAmount == 0 || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.roomMineralLimit)) {
             minimumSpawnOf.miner = 0;
         }
 
@@ -161,7 +167,12 @@ module.exports = {
             testSpawn = Game.getObjectById(spawnRoom.memory.roomArraySpawns[s]);
             if (testSpawn != null && testSpawn.spawning != null) {
                 // Active spawn found
-                numberOf[testSpawn.memory.lastSpawn]++;
+                if (testSpawn.memory.lastSpawn == "miniharvester") {
+                    numberOf.harvester++;
+                }
+                else {
+                    numberOf[testSpawn.memory.lastSpawn]++;
+                }
             }
         }
 
@@ -227,18 +238,12 @@ module.exports = {
             for (var e in container) {
                 containerEnergie += container[e].store[RESOURCE_ENERGY];
             }
-            if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 1.75) {
+            if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 2.5) {
                 if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2.5)) {
                     var rolename = 'upgrader';
                 }
-                else if (numberOf.wallRepairer < minimumSpawnOf.wallRepairer * 2) {
-                    var rolename = 'wallRepairer';
-                }
                 else if (numberOf.miner < minimumSpawnOf.miner * 2) {
                     var rolename = 'miner';
-                }
-                else if (numberOf.harvester < Math.ceil(minimumSpawnOf.harvester * 1.5)) {
-                    var rolename = 'harvester';
                 }
                 else {
                     var rolename = "---";
@@ -263,13 +268,11 @@ module.exports = {
             if (actingSpawn != undefined) {
                 // Spawn!
                 name = actingSpawn.createCustomCreep(energy, rolename, spawnRoom.memory.masterSpawn);
-
+                actingSpawn.memory.lastSpawnAttempt = rolename;
+                
                 if (!(name < 0)) {
-                    console.log(actingSpawn.name + " is spawning creep: " + name + " (" + rolename + ") in room " + spawnRoom.name + ".");
+                    console.log("<font color=#00ff22 type='highlight'>" + actingSpawn.name + " is spawning creep: " + name + " (" + rolename + ") in room " + spawnRoom.name + ".</font>");
                     actingSpawn.memory.lastSpawn = rolename;
-                }
-                else if (name != -4 && name != -6) {
-                    console.log("Spawn error (" + rolename + " in room " + spawnRoom.name + "): " + name);
                 }
             }
         }
