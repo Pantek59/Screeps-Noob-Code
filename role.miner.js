@@ -62,7 +62,7 @@ module.exports = {
              }
              else {
                  //creep is supposed to harvest minerals from source or containers
-                 var container = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
+                 var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
                  var containerResource;
 
                  if (container != undefined && storage != undefined) {

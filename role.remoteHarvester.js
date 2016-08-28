@@ -106,7 +106,7 @@ module.exports = {
             else if (creep.memory.statusHarvesting == false || creep.memory.statusHarvesting == undefined) {
                 //Find remote source
                 var remoteSource = Game.flags[creep.findMyFlag("remoteSource")];
-                if (remoteSource != -1) {
+                if (remoteSource != -1 && remoteSource != undefined) {
 
                     // Find exit to target room
                     if (remoteSource.room == undefined || creep.room.name != remoteSource.room.name) {

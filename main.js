@@ -71,11 +71,11 @@ module.exports.loop = function() {
 
         //  Refresher (will be executed every few ticks)
         var searchResult;
+
         if (Game.time % delayRoomScanning == 0) {
             Game.rooms[r].memory.resourceTicker = Game.time;
 
             // Preloading room structure
-
             if (Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.hits < 5000000 && (s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART)}) == null) {
                 Game.rooms[r].memory.roomSecure = true;
             }
@@ -548,6 +548,7 @@ module.exports.loop = function() {
                 // if creep is wallRepairer, call wallRepairer script
                 else if (creep.memory.role == 'wallRepairer') {
                     roleWallRepairer.run(creep);
+
                 }
                 // if creep is remoteHarvester, call remoteHarvester script
                 else if (creep.memory.role == 'remoteHarvester') {
@@ -580,7 +581,6 @@ module.exports.loop = function() {
     }
     if (CPUdebug == true) {
         CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());
-        console.log(CPUdebugString);
     }
   });
 }
