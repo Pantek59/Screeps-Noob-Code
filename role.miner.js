@@ -1,4 +1,4 @@
-var roleBuilder = require('role.builder');
+const RESOURCE_SPACE = "space";
 
 module.exports = {
     // state working = Returning minerals to structure
@@ -28,8 +28,7 @@ module.exports = {
                  if (creep.carry[RESOURCE_ENERGY] > 0) {
                      //somehow picked up energy
                      if (creep.room.storage == undefined) {
-                         var containerArray = creep.findClosestContainer(0);
-                         var container = containerArray.container;
+                         var container = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK)
                      }
                      else {
                          var container = creep.room.storage;
@@ -48,8 +47,7 @@ module.exports = {
                      }
                      if (storage == null) {
                          //No storage found in room
-                         var containerArray = creep.findClosestContainer(0);
-                         var container = containerArray.container;
+                         var container = creep.memory.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
                          if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
                              creep.moveTo(container, {reusePath: 3});
                          }
@@ -64,21 +62,21 @@ module.exports = {
              }
              else {
                  //creep is supposed to harvest minerals from source or containers
-                 var containerArray = creep.findClosestContainer(-1);
+                 var container = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
                  var containerResource;
 
-                 if (containerArray.container != undefined && storage != undefined) {
+                 if (container != undefined && storage != undefined) {
                      //minerals waiting in containers
                      //analyzing storage of container
-                     var store = containerArray.container.store;
+                     var store = container.store;
                      for (var s in store) {
                          if (s != RESOURCE_ENERGY) {
                              // mineral found in container
                              containerResource = s;
                          }
                      }
-                     if (creep.withdraw (containerArray.container, containerResource) != OK) {
-                         creep.moveTo(containerArray.container);
+                     if (creep.withdraw (container, containerResource) != OK) {
+                         creep.moveTo(container);
                      }
                  }
                  else if (Game.getObjectById(creep.room.memory.roomArrayMinerals[0]).mineralAmount > 0) {

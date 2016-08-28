@@ -58,11 +58,11 @@ module.exports = {
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     var constructionSite = creep.pos.lookFor((LOOK_CONSTRUCTION_SITES));
 
-                    if (creep.room.controller != undefined && ((creep.room.constructor.owner != undefined && creep.room.controller.owner.username == creep.owner.username) || (creep.room.controller.reservation != undefined && creep.room.controller.reservation.username == creep.owner.username)) && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
-                        //Road on swamp needed
+                    if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
+                        //Road needed
                         creep.pos.createConstructionSite(STRUCTURE_ROAD);
                     }
-                    if (creep.room.controller != undefined && ((creep.room.constructor.owner != undefined && creep.room.controller.owner.username == creep.owner.username) || (creep.room.controller.reservation != undefined && creep.room.controller.reservation.username == creep.owner.username)) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
+                    if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
                         creep.repair(road[0]);
                     }
@@ -103,7 +103,7 @@ module.exports = {
                 }
             }
             // if creep is supposed to harvest energy from source
-            else if (creep.memory.statusHarvesting == false || creep.memory.statusHarvesting == false) {
+            else if (creep.memory.statusHarvesting == false || creep.memory.statusHarvesting == undefined) {
                 //Find remote source
                 var remoteSource = Game.flags[creep.findMyFlag("remoteSource")];
                 if (remoteSource != -1) {
@@ -143,7 +143,7 @@ module.exports = {
             else {
                 // Creep is harvesting, try to keep harvesting
                 if (creep.harvest(Game.getObjectById(creep.memory.statusHarvesting)) != OK) {
-                    creep.memory.statusHarvesting = false;
+                    delete creep.memory.statusHarvesting;
                 }
             }
         }

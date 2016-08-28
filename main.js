@@ -1,11 +1,9 @@
-const CPUdebug = false;
-
+const CPUdebug = true;
 const delayPathfinding = 2;
 const delayRoomScanning = 50;
 const RESOURCE_SPACE = "space";
 
 require('prototype.spawn')();
-require('prototype.creep.findClosestContainer')();
 require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
 
@@ -25,6 +23,7 @@ var roleDemolisher = require('role.demolisher');
 var moduleSpawnCreeps = require('module.spawnCreeps');
 var roleEnergyTransporter = require("role.energyTransporter");
 
+var CPUdebugString = "CPU Debug<br><br>";
 var playerUsername = "Pantek59";
 var allies = new Array();
 allies.push("king_lispi");
@@ -39,7 +38,7 @@ const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/packa
 profiler.enable();
 module.exports.loop = function() {
   profiler.wrap(function() {
-     if (CPUdebug == true) {console.log("Start: " + Game.cpu.getUsed())}
+     if (CPUdebug == true) {CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
 
 	// check for memory entries of died creeps by iterating over Memory.creeps
     for (var name in Memory.creeps) {
@@ -54,7 +53,7 @@ module.exports.loop = function() {
         console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
     }
 
-    if (CPUdebug == true) {console.log("Start cycling through rooms: " + Game.cpu.getUsed())}
+    if (CPUdebug == true) {CPUdebugString.concat("<br>Start cycling through rooms: " + Game.cpu.getUsed())}
     // Cycle through rooms    
     for (var r in Game.rooms) {
         //Save # of hostile creeps in room
@@ -168,7 +167,6 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.roomArrayConstructionSites = constructionIDs;
             }
         }
-
         if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArraySpawns != undefined) {
             if (Game.rooms[r].memory.roomArraySpawns.length == 1) {
                 Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[0];
@@ -184,7 +182,7 @@ module.exports.loop = function() {
         }
 
         //Flag code
-        if (CPUdebug == true) {console.log("Starting flag code: " + Game.cpu.getUsed())}
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
         var remoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'remoteSource'}});
 
         for (var f in remoteHarvestingFlags) {
@@ -210,10 +208,10 @@ module.exports.loop = function() {
                 }
             }
         }
-        if (CPUdebug == true) {console.log("Starting spawn code: " + Game.cpu.getUsed())}
+
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
         // Spawn code
-        var spawns = Game.rooms[r].find(FIND_MY_SPAWNS);
-        if (spawns.length == 0) {
+        if (Game.rooms[r].memory.roomArraySpawns.length == 0) {
             //room has no spawner yet
             if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                 //room is owned and should be updated
@@ -283,10 +281,11 @@ module.exports.loop = function() {
 
             }
         }
-        else {
+        else if (Game.time % 5 == 0) {
             moduleSpawnCreeps.run(Game.rooms[r], allies);
         }
-        if (CPUdebug == true) {console.log("Starting tower code: " + Game.cpu.getUsed())}
+
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Starting tower code: " + Game.cpu.getUsed())}
         // Tower code      
         var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
         var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
@@ -341,7 +340,7 @@ module.exports.loop = function() {
         }
 
         // Search for dropped energy
-        if (CPUdebug == true) {console.log("Start dropped energy search: " + Game.cpu.getUsed())}
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
         var energies=Game.rooms[r].find(FIND_DROPPED_ENERGY);
         for (var energy in energies) {
             var energyID = energies[energy].id;
@@ -368,8 +367,8 @@ module.exports.loop = function() {
         }
 
         // Link code
-        if (CPUdebug == true) {console.log("Starting link code: " + Game.cpu.getUsed())}
-        var RoomLinks = Game.rooms[r].find(FIND_MY_STRUCTURES,{filter: (s) => (s.structureType == STRUCTURE_LINK)});
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Starting link code: " + Game.cpu.getUsed())}
+        var RoomLinks = Game.rooms[r].memory.roomArrayLinks;
         var targetLevel = 0;
         var minLevel = 99;
         var minLink;
@@ -377,7 +376,8 @@ module.exports.loop = function() {
         var maxLink;
 
         for (var link in RoomLinks) {
-            targetLevel += RoomLinks[link].energy;
+            var tempLink = Game.getObjectById(RoomLinks[link])
+            targetLevel += tempLink.energy;
         }
         targetLevel = Math.ceil(targetLevel / RoomLinks.length / 100); //Targetlevel is now 0 - 8
 
@@ -398,7 +398,7 @@ module.exports.loop = function() {
         }
 
         // Terminal code
-        if (CPUdebug == true) {console.log("Starting terminal code: " + Game.cpu.getUsed())}
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
         if (Game.rooms[r].memory.terminalTransfer != undefined) {
             var terminal = Game.rooms[r].terminal;
             if (terminal != undefined) {
@@ -483,9 +483,7 @@ module.exports.loop = function() {
         }
     }
       //Cycle through creeps
-      if (CPUdebug == true) {
-          console.log("Starting creeps: " + Game.cpu.getUsed())
-      }
+      if (CPUdebug == true) { CPUdebugString.concat("<br>Starting creeps: " + Game.cpu.getUsed()) }
       // for every creep name in Game.creeps
       for (let name in Game.creeps) {
           // get the creep object
@@ -505,7 +503,7 @@ module.exports.loop = function() {
             creep.memory.jobQueueTask = undefined;
         }
         else if (creep.spawning == false) {
-            if (CPUdebug == true) {console.log("Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
+            if (CPUdebug == true) {CPUdebugString.concat("<br>Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
             if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "scientist" &&_.sum(creep.carry) != creep.carry.energy) {
                 // Minerals found in creep
                 for (var resourceType in creep.carry) {
@@ -578,8 +576,11 @@ module.exports.loop = function() {
                 }
             }
         }
-        if (CPUdebug == true) {console.log("Creep " + creep.name +"( "+ creep.memory.role + ") finished: " + Game.cpu.getUsed())}
+        if (CPUdebug == true) {CPUdebugString.concat("<br>Creep " + creep.name +"( "+ creep.memory.role + ") finished: " + Game.cpu.getUsed())}
     }
-    if (CPUdebug == true) {console.log("Finish: " + Game.cpu.getUsed())}
+    if (CPUdebug == true) {
+        CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());
+        console.log(CPUdebugString);
+    }
   });
 }

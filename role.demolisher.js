@@ -131,7 +131,8 @@ module.exports = {
                                     }
                                 }
                             }
-                        } else {
+                        }
+                        else {
                             if (creep.dismantle(Game.getObjectById(creep.memory.statusDemolishing)) != OK) {
                                 delete creep.memory.statusDemolishing;
                                 delete creep.memory.path;

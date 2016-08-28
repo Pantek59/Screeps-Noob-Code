@@ -23,7 +23,7 @@ module.exports = {
 
         //Check mineral type of the room
         if (numberOfExploitableMineralSources > 0) {
-            // Assumption: There is only one minerl source per room
+            // Assumption: There is only one mineral source per room
             var mineral = Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]);
             if (mineral != undefined) {
                 roomMineralType = mineral.mineralType;
@@ -118,7 +118,7 @@ module.exports = {
             minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
         }
 
-        if (spawnRoom.memory.terminalTransfer != undefined || (spawnRoom.terminal != undefined && spawnRoom.memory.terminalTransfer == undefined && _.sum(spawnRoom.terminal.store) > 0)) {
+        if (spawnRoom.memory.terminalTransfer != undefined || (spawnRoom.terminal != undefined && spawnRoom.memory.terminalTransfer == undefined && _.sum(spawnRoom.terminal.store) > spawnRoom.terminal.store[RESOURCE_ENERGY])) {
             minimumSpawnOf["distributor"] = 1;
         }
         else {

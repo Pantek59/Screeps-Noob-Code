@@ -181,7 +181,8 @@ module.exports = {
                             }
                         }
                     }
-                    else {
+
+                    if (_.sum(creep.carry) == 0) {
                         //Creep is empty
                         delete creep.memory.subRole;
                         delete creep.memory.path;
@@ -205,7 +206,8 @@ module.exports = {
                             console.log("Not enough minerals to process transfer!");
                         }
                     }
-                    else {
+
+                    if (_.sum(creep.carry) == creep.carryCapacity || mineralTerminal + mineralCreep >= transferAmount) {
                         // No more minerals needed
                         delete creep.memory.subRole;
                         delete creep.memory.path;
@@ -222,7 +224,8 @@ module.exports = {
                             energyContainer = creep.room.storage;
                         }
                         else {
-                            energyContainer = creep.findClosestContainer(RESOURCE_ENERGY).container;
+                            //energyContainer = creep.findClosestContainer(RESOURCE_ENERGY).container;
+                            energyContainer = creep.findResource(RESOURCE_ENERGY, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_LINK);
                         }
 
                         if (energyContainer != null) {
@@ -235,7 +238,7 @@ module.exports = {
                             //console.log("Not enough energy to process transfer!");
                         }
                     }
-                    else {
+                    if (_.sum(creep.carry) == creep.carryCapacity || terminal.store[RESOURCE_ENERGY] + creep.carry.energy >= energyCost) {
                         // No more minerals needed
                         delete creep.memory.subRole;
                         delete creep.memory.path;

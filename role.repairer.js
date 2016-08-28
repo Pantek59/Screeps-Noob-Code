@@ -13,7 +13,7 @@ module.exports = {
         else {
             // if creep is trying to repair something but has no energy left
             if (creep.carry.energy == 0) {
-                // switch state
+                // 4witch state
                 creep.memory.working = false;
             }
             // if creep is harvesting energy but is full
@@ -36,22 +36,36 @@ module.exports = {
                     }
                 }
                 else {
-                    var spawn = creep.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_SPAWN});
-                    if (spawn.length > 0) {
-                        // find closest structure with less than max hits, exclude walls
-                        var structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART) || (s.structureType == STRUCTURE_RAMPART && s.hits / s.hitsMax < 0.03)});
+                    if (creep.room.memory.roomArraySpawns.length > 0) {
+                        if (creep.memory.statusRepairing == undefined) {
+                            // find closest structure with less than max hits, exclude walls
+                            var structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART) || (s.structureType == STRUCTURE_RAMPART && s.hits / s.hitsMax < 0.03)});
 
-                        // if we find one
-                        if (structure != undefined) {
-                            if (creep.repair(structure) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(structure, {reusePath: 5});
+                            // if we find one
+                            if (structure != undefined) {
+                                var result = creep.repair(structure);
+                                if (result == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(structure, {reusePath: 5});
+                                    creep.memory.statusRepairing = structure.id;
+                                }
+                                else if (result == OK) {
+                                    creep.memory.statusRepairing = structure.id;
+                                }
+                            }
+                            // if we can't fine one
+                            else {
+                                // look for construction sites
+                                roleBuilder.run(creep);
                             }
                         }
-                        // if we can't fine one
                         else {
-                            // look for construction sites
-                            roleBuilder.run(creep);
+                            if (creep.repair(Game.getObjectById(creep.memory.statusRepairing)) != OK) {
+                                if (creep.moveTo(Game.getObjectById(creep.memory.statusRepairing), {reusePath: 5}) != OK) {
+                                    delete creep.memory.statusRepairing;
+                                }
+                            }
                         }
+
                     }
                     else {
                         //room without spawn

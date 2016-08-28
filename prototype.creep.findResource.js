@@ -1,4 +1,4 @@
-const delayPathfinding = 2;
+const delayPathfinding = 5;
 const RESOURCE_SPACE = "space";
 
 module.exports = function() {
