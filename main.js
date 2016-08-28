@@ -580,7 +580,6 @@ module.exports.loop = function() {
     }
     if (CPUdebug == true) {
         CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());
-        console.log(CPUdebugString);
     }
   });
 }
