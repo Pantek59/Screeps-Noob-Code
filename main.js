@@ -136,12 +136,12 @@ module.exports.loop = function() {
             }
             Game.rooms[r].memory.roomArrayLabs = LabIDs;
 
-            var ExtensionIDs = new Array();
+            var ExtractorIDs = new Array();
             searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_EXTRACTOR});
             for (let s in searchResult) {
-                ExtensionIDs.push(searchResult[s].id);
+                ExtractorIDs.push(searchResult[s].id);
             }
-            Game.rooms[r].memory.roomArrayExtractors = ExtensionIDs;
+            Game.rooms[r].memory.roomArrayExtractors = ExtractorIDs;
 
             var rampartIDs = new Array();
             searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART});
@@ -211,7 +211,7 @@ module.exports.loop = function() {
 
         if (CPUdebug == true) {CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
         // Spawn code
-        if (Game.rooms[r].memory.roomArraySpawns.length == 0) {
+        if (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0) {
             //room has no spawner yet
             if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                 //room is owned and should be updated
