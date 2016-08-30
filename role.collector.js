@@ -78,6 +78,7 @@ module.exports = {
                 if (container == undefined) {
                     //console.log(creep.name + "(" + creep.room.name + "): no resource found");
                     creep.memory.sleep = 5;
+                    return -1;
                 }
                 else if (container.ticksToRegeneration == undefined && (container.energy == undefined || container.energy < 3000)) {
                     //container
@@ -115,5 +116,6 @@ module.exports = {
                 creep.memory.statusHarvesting = false;
             }
         }
+        return OK;
     }
 };

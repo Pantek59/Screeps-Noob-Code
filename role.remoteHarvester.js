@@ -56,7 +56,7 @@ module.exports = {
                 }
                 else {
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
-                    var constructionSite = creep.pos.lookFor((LOOK_CONSTRUCTION_SITES));
+                    var constructionSite = creep.pos.lookFor(LOOK_CONSTRUCTION_SITES);
 
                     if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
                         //Road needed
@@ -123,7 +123,7 @@ module.exports = {
                         //new room reached, start harvesting
                         if (creep.room.memory.hostiles == 0) {
                             //No enemy creeps
-                            if (roleCollector.run(creep) != OK && creep.pos.getRangeTo(remoteSource) > 3) {
+                            if (roleCollector.run(creep) != OK) {
                                 creep.moveTo(remoteSource, {reusePath: 10});
                             }
                         }

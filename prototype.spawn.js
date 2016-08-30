@@ -88,9 +88,8 @@ module.exports = function() {
 					body.push(CARRY); //50
 					body.push(CARRY);  //50
 					body.push(MOVE);  //50
-					body.push(MOVE);  //50
-					size=300;
-					sizelimit = 5;
+					size=250;
+					sizelimit = 6;
 					break;
 
 				case "claimer":

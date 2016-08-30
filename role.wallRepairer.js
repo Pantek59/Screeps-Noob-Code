@@ -43,11 +43,11 @@ module.exports = {
                     else {
                         var target = undefined;
                         // loop with increasing percentages
-                        var ramparts = creep.room.find(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_RAMPART && s.hits < 5000000)});
-                        ramparts = _.sortBy(ramparts, function (a, b) { return a.hits - b.hits; });
+                        var ramparts = creep.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART});
+                        ramparts = _.sortBy(ramparts,"hits");
 
-                        var walls = creep.room.find(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_WALL && s.hits < 5000000)});
-                        walls = _.sortBy(walls, function (a, b) { return a.hits - b.hits; });
+                        var walls = creep.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL});
+                        walls = _.sortBy(walls,"hits");
 
                         if (walls.length > 0 && walls[0].hits < ramparts[0].hits) {
                             target = walls[0];
@@ -55,7 +55,6 @@ module.exports = {
                         else if (ramparts.length > 0) {
                             target = ramparts[0];
                         }
-                        //console.log("WallRepairer " + creep.name + " found new target in room " + creep.room.name + ": " + target + " (" + target.hits + ")");
 
                         // if we find a wall that has to be repaired
                         if (target != undefined) {

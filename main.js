@@ -76,7 +76,10 @@ module.exports.loop = function() {
             Game.rooms[r].memory.resourceTicker = Game.time;
 
             // Preloading room structure
-            if (Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.hits < 5000000 && (s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART)}) == null) {
+            var defenseObjects = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
+            defenseObjects = _.sortBy(defenseObjects,"hits");
+
+            if (defenseObjects != undefined && defenseObjects[0] != undefined && defenseObjects[0].hits > 5000000) {
                 Game.rooms[r].memory.roomSecure = true;
             }
             else if (Game.rooms[r].memory.roomSecure != undefined) {
@@ -367,8 +370,7 @@ module.exports.loop = function() {
         }
 
         // Link code
-        if (CPUdebug == true) {CPUdebugString.concat("<br>Starting link code: " + Game.cpu.getUsed())}
-        var RoomLinks = Game.rooms[r].memory.roomArrayLinks;
+        var RoomLinks = Game.rooms[r].find(FIND_MY_STRUCTURES,{filter: (s) => (s.structureType == STRUCTURE_LINK)});
         var targetLevel = 0;
         var minLevel = 99;
         var minLink;
@@ -376,8 +378,7 @@ module.exports.loop = function() {
         var maxLink;
 
         for (var link in RoomLinks) {
-            var tempLink = Game.getObjectById(RoomLinks[link])
-            targetLevel += tempLink.energy;
+            targetLevel += RoomLinks[link].energy;
         }
         targetLevel = Math.ceil(targetLevel / RoomLinks.length / 100); //Targetlevel is now 0 - 8
 
@@ -548,7 +549,6 @@ module.exports.loop = function() {
                 // if creep is wallRepairer, call wallRepairer script
                 else if (creep.memory.role == 'wallRepairer') {
                     roleWallRepairer.run(creep);
-
                 }
                 // if creep is remoteHarvester, call remoteHarvester script
                 else if (creep.memory.role == 'remoteHarvester') {
