@@ -324,22 +324,21 @@ module.exports.loop = function() {
                     towers.forEach(tower => tower.attack(hostiles[0]));
                 }
             }
-
-            // Tower healing code
-            var wounded = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => s.hits < s.hitsMax});
-
-            if (wounded.length > 0) {
-                towers[tower].heal(wounded[0]);
+            else {
+                // Tower healing code
+                var wounded = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => s.hits < s.hitsMax});
+                if (wounded.length > 0) {
+                    towers[tower].heal(wounded[0]);
+                }
             }
-
-            // Tower repairing code
+            /* Tower repairing code
             if (towers[tower].energy / towers[tower].energyCapacity > 0.8) {
                 var damage = Game.rooms[r].find(FIND_MY_STRUCTURES, { filter: (s) => s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART});
 
                 if (damage.length > 0) {
                     towers[tower].repair(damage[0]);
                 }
-            }
+            }*/
         }
 
         // Search for dropped energy

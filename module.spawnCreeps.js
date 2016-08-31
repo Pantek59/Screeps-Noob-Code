@@ -111,7 +111,7 @@ module.exports = {
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
         minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
 
-        if (spawnRoom.memory.roomSecure == true) { //TODO If there are construction sites for walls or ramparts, wallRepairers are needed
+        if (spawnRoom.memory.roomSecure == true && constructionSites == 0) {
             minimumSpawnOf["wallRepairer"] = 0;
         }
         else {
