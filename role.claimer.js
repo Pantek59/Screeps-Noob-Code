@@ -10,6 +10,7 @@ module.exports = {
         var remoteController;
         var busyCreeps;
 
+        //TODO Switch code to creep.findMyFlag()
         if (creep.memory.remoteControllerFlag != undefined) {
             //Check whether claiming this flag is this OK
             busyCreeps = _.filter(Game.creeps,{ memory: { remoteControllerFlag: creep.memory.remoteControllerFlag, spawn: creep.memory.spawn}});
@@ -76,8 +77,9 @@ module.exports = {
                             creep.moveTo(creep.room.controller, {reusePath: 5});
                         break;
 
-                    case OK:  //TODO Spawn is not automatically constructed
-                        remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
+                    case OK:
+                        //TODO Spawn is not automatically constructed
+                        //remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
                         break;
 
                     default:

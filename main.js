@@ -369,31 +369,69 @@ module.exports.loop = function() {
         }
 
         // Link code
-        var RoomLinks = Game.rooms[r].find(FIND_MY_STRUCTURES,{filter: (s) => (s.structureType == STRUCTURE_LINK)});
-        var targetLevel = 0;
-        var minLevel = 99;
-        var minLink;
-        var maxLevel = -1;
-        var maxLink;
+        if (Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
+            var fillLinks = new Array();
+            var emptyLinks = new Array();
+            var targetLevel = 0;
 
-        for (var link in RoomLinks) {
-            targetLevel += RoomLinks[link].energy;
-        }
-        targetLevel = Math.ceil(targetLevel / RoomLinks.length / 100); //Targetlevel is now 0 - 8
+            if (Game.rooms[r].memory.linksEmpty == undefined) {
+                // Prepare link roles
+                var emptyArray = new Array();
+                emptyArray.push("[LINK_ID]");
+                Game.rooms[r].memory.linksEmpty = emptyArray;
+            }
 
-        if (targetLevel != null) {
-            for (var link in RoomLinks) {
-                if (Math.ceil(RoomLinks[link].energy / 100) <= targetLevel && Math.ceil(RoomLinks[link].energy / 100) <= minLevel) {
-                    minLevel = Math.ceil(RoomLinks[link].energy / 100);
-                    minLink = RoomLinks[link];
+            for (var link in Game.rooms[r].memory.roomArrayLinks) {
+                if (Game.rooms[r].memory.linksEmpty == undefined || Game.rooms[r].memory.linksEmpty.indexOf(Game.rooms[r].memory.roomArrayLinks[link]) == -1) {
+                    fillLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
+                    targetLevel += Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]).energy;
                 }
-                else if (Math.ceil(RoomLinks[link].energy / 100) >= targetLevel && Math.ceil(RoomLinks[link].energy / 100) >= maxLevel) {
-                    maxLevel = Math.ceil(RoomLinks[link].energy / 100);
-                    maxLink = RoomLinks[link];
+                else {
+                    emptyLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
                 }
             }
-            if (maxLink != undefined && maxLink.cooldown == 0 && maxLevel != minLevel && RoomLinks.length > 0) {
-                maxLink.transferEnergy(minLink, (maxLevel - targetLevel) * 100);
+            targetLevel = Math.ceil(targetLevel / fillLinks.length / 100); //Targetlevel is now 0 - 8
+            fillLinks = _.sortBy(fillLinks, "energy");
+
+            //Empty emptyLinks
+            for (var link in emptyLinks) {
+                if (emptyLinks[link].cooldown == 0 && emptyLinks[link].energy > 0) {
+                    for (var i = 0; i < fillLinks.length; i++) {
+                        if (fillLinks[i].energy < 800) {
+                            if (fillLinks[i].energy + emptyLinks[link].energy <= 800) {
+                                emptyLinks[link].transferEnergy(fillLinks[i], emptyLinks[link].energy);
+                            }
+                            else {
+                                emptyLinks[link].transferEnergy(fillLinks[i], (800 - fillLinks[i].energy));
+                            }
+                        }
+                    }
+                }
+            }
+            fillLinks = _.sortBy(fillLinks, "energy");
+
+            if (targetLevel > 0 && fillLinks.length > 1) {
+                var minLevel = 99;
+                var maxLevel = 0;
+                var maxLink;
+                var minLink;
+
+                for (var link in fillLinks) {
+                    if (Math.ceil(fillLinks[link].energy / 100) <= targetLevel && Math.ceil(fillLinks[link].energy / 100) <= minLevel) {
+                        //Receiver link
+                        minLevel = Math.ceil(fillLinks[link].energy / 100);
+                        minLink = fillLinks[link];
+                    }
+                    else if (fillLinks[link].cooldown == 0 && Math.ceil(fillLinks[link].energy / 100) >= targetLevel && Math.ceil(fillLinks[link].energy / 100) >= maxLevel) {
+                        //Sender link
+                        maxLevel = Math.ceil(fillLinks[link].energy / 100);
+                        maxLink = fillLinks[link];
+                    }
+                }
+
+                if (maxLink != undefined && maxLink.id != minLink.id && fillLinks.length > 1) {
+                    maxLink.transferEnergy(minLink, (maxLevel - targetLevel) * 100);
+                }
             }
         }
 

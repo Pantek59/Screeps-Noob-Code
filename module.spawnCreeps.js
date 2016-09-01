@@ -219,6 +219,9 @@ module.exports = {
         else if (numberOf.miner < minimumSpawnOf.miner) {
             var rolename = 'miner';
         }
+        else if (numberOf.builder < Math.floor(minimumSpawnOf.builder / 2)) {
+            var rolename = 'builder';
+        }
         else if (numberOf.remoteHarvester < minimumSpawnOf.remoteHarvester) {
             var rolename = 'remoteHarvester';
         }

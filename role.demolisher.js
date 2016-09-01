@@ -1,5 +1,7 @@
 const RESOURCE_SPACE = "space";
 
+var roleHarvester = require('role.harvester');
+
 module.exports = {
     run: function(creep) {
         // if creep is bringing energy to a structure but has no energy left
@@ -54,7 +56,7 @@ module.exports = {
         }
         // if creep is supposed to demolish
         else {
-            //TODO Several demolishers per spawn
+            //TODO Several demolishers per spawn; use creep.findMyFlag()
             //Find something to demolish
             var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}})[0];
 
@@ -152,6 +154,9 @@ module.exports = {
                         }
                     }
                 }
+            }
+            else {
+                roleHarvester.run(creep);
             }
         }
     }

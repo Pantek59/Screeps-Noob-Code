@@ -1,6 +1,6 @@
 const RESOURCE_SPACE = "space";
 var roleEnergyTransporter = require('role.energyTransporter');
-//TODO Check distributor
+//TODO Distributor one tick pauses between role changes
 
 module.exports = {
     // state working = Transporting stuff somewhere
