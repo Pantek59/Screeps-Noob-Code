@@ -5,12 +5,10 @@ module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
         // Find exit to target room
-        var spawn = Game.getObjectById(creep.memory.spawn);
         var remoteControllers = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: creep.memory.spawn}});
         var remoteController;
         var busyCreeps;
-
-        //TODO Switch code to creep.findMyFlag()
+        //TODO Switch claimer to creep.findMyFlag() and somehow include 3000 ticksToEnd rule
         if (creep.memory.remoteControllerFlag != undefined) {
             //Check whether claiming this flag is this OK
             busyCreeps = _.filter(Game.creeps,{ memory: { remoteControllerFlag: creep.memory.remoteControllerFlag, spawn: creep.memory.spawn}});
@@ -77,9 +75,8 @@ module.exports = {
                             creep.moveTo(creep.room.controller, {reusePath: 5});
                         break;
 
-                    case OK:
-                        //TODO Spawn is not automatically constructed
-                        //remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
+                    case OK:  //TODO Spawn is not automatically constructed
+                        remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
                         break;
 
                     default:

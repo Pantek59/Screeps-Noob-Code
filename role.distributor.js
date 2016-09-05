@@ -16,7 +16,7 @@ module.exports = {
             if (info != undefined) {
                 info = info.split(":");
                 targetRoom = info[0];
-                transferAmount = info[1];
+                transferAmount = parseInt(info[1]);
                 transferResource = info[2];
                 energyCost = Game.market.calcTransactionCost(transferAmount, terminal.room.name, targetRoom);
             }
@@ -33,19 +33,19 @@ module.exports = {
                     // Creep full, has to be emptied
                     creep.memory.subRole = "empty_creep";
                 }
-                else if (_.sum(terminal.store) > (transferAmount + energyCost)) {
+                else if ((info == undefined && _.sum(terminal.store) > 0) || (info != undefined && terminal.store[transferResource] >= transferAmount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
                     // Terminal full, has to be emptied
                     creep.memory.subRole = "empty_terminal";
                 }
-                else if (info != undefined && mineralTerminal + mineralCreep < transferAmount) {
+                else if (info != undefined && transferResource != RESOURCE_ENERGY && (mineralTerminal + mineralCreep) < transferAmount) {
                     // Terminals lacks minerals to execute transfer
                     creep.memory.subRole = "get_minerals";
                 }
-                else if (info != undefined && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost) {
+                else if (info != undefined && ((transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < (energyCost + transferAmount)) || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost))) {
                     // Terminals lacks energy to execute transfer
                     creep.memory.subRole = "get_energy";
                 }
-                else if (_.sum(creep.carry) > 0) {
+                else if (info != undefined && _.sum(creep.carry) > 0) {
                     // Creep should be emptied before transporting material out of the terminal
                     creep.memory.subRole = "empty_creep";
                 }
@@ -54,7 +54,7 @@ module.exports = {
                     creep.memory.subRole = "empty_terminal";
                 }
                 else {
-                    creep.memory.subRole = "play_miner";
+                    creep.memory.subRole = "play_transporter";
                 }
             }
 
@@ -81,7 +81,7 @@ module.exports = {
                 case "empty_creep":
                     if (_.sum(creep.carry) > 0) {
                         //Creep should be emptied
-                        if (transferResource == undefined || (terminal.store[RESOURCE_ENERGY] >= energyCost && mineralTerminal >= transferAmount)) {
+                        if (transferResource == undefined || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyCost && mineralTerminal >= transferAmount) || (transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyCost + transferAmount)) {
                             // Terminal does not need anything
                             var targetContainer = creep.room.storage;
 
@@ -118,10 +118,12 @@ module.exports = {
                             if (deltaMineral == undefined) {
                                 deltaMineral = 0;
                             }
-                            if (deltaMineral < 0 && mineralCreep > 0) {
+                            if (transferResource == RESOURCE_ENERGY) {
+                                deltaEnergy -= transferAmount;
+                            }
+                            if (transferResource != RESOURCE_ENERGY && deltaMineral < 0 && mineralCreep > 0) {
                                 // Minerals for the terminal
                                 var result;
-
                                 if (deltaMineral + mineralCreep > 0) {
                                     //more minerals than needed
                                     result = creep.transfer(terminal, transferResource, Math.abs(deltaMineral));
@@ -137,7 +139,6 @@ module.exports = {
                             else if (deltaEnergy < 0 && creep.carry.energy > 0) {
                                 // Energy for the terminal
                                 var result;
-
                                 if (deltaEnergy + creep.carry.energy > 0) {
                                     //more energy than needed
                                     result = creep.transfer(terminal, RESOURCE_ENERGY, Math.abs(deltaEnergy));
@@ -153,7 +154,6 @@ module.exports = {
                             else {
                                 // Just empty creep
                                 var targetContainer = creep.room.storage;
-
                                 if (creep.pos.getRangeTo(targetContainer) > 1) {
                                     creep.moveTo(targetContainer, {reusePath: 3});
                                 }
@@ -217,20 +217,20 @@ module.exports = {
                     break;
 
                 case "get_energy":
-                    if (_.sum(creep.carry) < creep.carryCapacity && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost) {
+                    if (_.sum(creep.carry) < creep.carryCapacity && ((transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost + transferAmount) || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost))) {
                         //Terminal lacking stuff and creep does not have enough
                         var energyContainer;
+
                         if (creep.room.storage != undefined && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
                             energyContainer = creep.room.storage;
                         }
                         else {
-                            //energyContainer = creep.findClosestContainer(RESOURCE_ENERGY).container;
                             energyContainer = creep.findResource(RESOURCE_ENERGY, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_LINK);
                         }
 
                         if (energyContainer != null) {
                             // Mineral containers found
-                            if (creep.withdraw(energyContainer, RESOURCE_ENERGY) != OK) {
+                            if (creep.withdraw(energyContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(energyContainer);
                             }
                         }
@@ -238,8 +238,9 @@ module.exports = {
                             //console.log("Not enough energy to process transfer!");
                         }
                     }
-                    if (_.sum(creep.carry) == creep.carryCapacity || terminal.store[RESOURCE_ENERGY] + creep.carry.energy >= energyCost) {
-                        // No more minerals needed
+
+                    if (_.sum(creep.carry) == creep.carryCapacity || (transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy >= (energyCost + transferAmount)) || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy >= energyCost)) {
+                        // No more energy needed
                         delete creep.memory.subRole;
                         delete creep.memory.path;
                         delete creep.memory.resourceBuffer;
@@ -247,9 +248,30 @@ module.exports = {
                     }
                     break;
 
-                case "play_miner":
-                    delete creep.memory.subRole;
-                    roleEnergyTransporter.run(creep);
+                case "play_transporter":
+                    var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
+                    var containerResource;
+                    var storage = creep.room.storage;
+
+                    if (info != undefined || _.sum(terminal.store) > 0) {
+                        delete creep.memory.subRole;
+                    }
+                    else if (container != undefined && storage != undefined) {
+                        //minerals waiting in containers
+                        //analyzing storage of container
+                        for (var s in container.store) {
+                            if (s != RESOURCE_ENERGY) {
+                                // mineral found in container
+                                containerResource = s;
+                            }
+                        }
+                        if (creep.withdraw (container, containerResource) != OK) {
+                            creep.moveTo(container);
+                        }
+                    }
+                    else {
+                        roleEnergyTransporter.run(creep);
+                    }
                     break;
             }
         }

@@ -6,6 +6,7 @@ const RESOURCE_SPACE = "space";
 require('prototype.spawn')();
 require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
+require('functions.creeps')();
 
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
@@ -30,6 +31,10 @@ allies.push("king_lispi");
 allies.push("Tanjera");
 allies.push("Atavus");
 allies.push("BlackLotus");
+allies.push("Atlan");
+allies.push("Moria");
+allies.push("Ashburnie");
+allies.push("seancl");
 
 // Any modules that you use that modify the game's prototypes should be require'd before you require the profiler.
 const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
@@ -331,14 +336,6 @@ module.exports.loop = function() {
                     towers[tower].heal(wounded[0]);
                 }
             }
-            /* Tower repairing code
-            if (towers[tower].energy / towers[tower].energyCapacity > 0.8) {
-                var damage = Game.rooms[r].find(FIND_MY_STRUCTURES, { filter: (s) => s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART});
-
-                if (damage.length > 0) {
-                    towers[tower].repair(damage[0]);
-                }
-            }*/
         }
 
         // Search for dropped energy
@@ -398,10 +395,10 @@ module.exports.loop = function() {
                 if (emptyLinks[link].cooldown == 0 && emptyLinks[link].energy > 0) {
                     for (var i = 0; i < fillLinks.length; i++) {
                         if (fillLinks[i].energy < 800) {
-                            if (fillLinks[i].energy + emptyLinks[link].energy <= 800) {
+                            if (fillLinks[i].energy + emptyLinks[link].energy < 799) {
                                 emptyLinks[link].transferEnergy(fillLinks[i], emptyLinks[link].energy);
                             }
-                            else {
+                            else if (fillLinks[i].energy < 790) {
                                 emptyLinks[link].transferEnergy(fillLinks[i], (800 - fillLinks[i].energy));
                             }
                         }
@@ -429,7 +426,7 @@ module.exports.loop = function() {
                     }
                 }
 
-                if (maxLink != undefined && maxLink.id != minLink.id && fillLinks.length > 1) {
+                if (maxLink != undefined && maxLink.id != minLink.id && fillLinks.length > 1 && maxLevel > targetLevel) {
                     maxLink.transferEnergy(minLink, (maxLevel - targetLevel) * 100);
                 }
             }
@@ -449,20 +446,21 @@ module.exports.loop = function() {
                 var info = Game.rooms[r].memory.terminalTransfer;
                 info = info.split(":");
                 targetRoom = info[0];
-                amount = info[1];
+                amount = parseInt(info[1]);
                 resource = info[2];
                 comment = info[3];
 
                 energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, targetRoom);
                 Game.rooms[r].memory.terminalEnergyCost = energyCost;
+                var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
 
-                if (terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost) {
+                if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount) || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
                     // Amount to be transferred reached and enough energy available -> GO!
                     if (terminal.send(resource,amount,targetRoom,comment) == OK) {
                         delete Game.rooms[r].memory.terminalTransfer;
                         delete Game.rooms[r].memory.terminalEnergyCost;
-                        console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + ": " + comment + "</font>");
-                        Game.notify(amount + " " + resource + " has been transferred to room " + targetRoom + ": " + comment);
+                        console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment + "</font>");
+                        Game.notify(amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment);
                     }
                     else {
                         console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment) + "</font>");
@@ -472,8 +470,8 @@ module.exports.loop = function() {
             }
         }
 
-        // Lab production code
-        if (Game.rooms[r].memory.labOrder != undefined) {
+        // Lab production code (dead code)
+        if (Game.rooms[r].memory.labOrder != undefined) { //FORMAT: ZH20:500
 
             if (Game.rooms[r].memory.labOrderArray == undefined) {
                 // Process not started yet
@@ -500,7 +498,7 @@ module.exports.loop = function() {
                 }
             }
 
-            //Lab order pending
+            //Lab order pending (dead code)
             if (Game.rooms[r].memory.labOrderArray != undefined) {
                 // Material acquisition on progress
                 var inputLab1 = Game.getObjectById(Game.rooms[r].memory.labOrderArray.inputLab1.id);

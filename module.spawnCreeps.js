@@ -82,6 +82,8 @@ module.exports = {
 
         //Spawning volumes scaling with # of sources in room
         var constructionSites = spawnRoom.find(FIND_CONSTRUCTION_SITES);
+        var constructionOfRampartsAndWalls = 0;
+
         if (constructionSites.length == 0) {
             minimumSpawnOf.builder = 0;
         }
@@ -93,25 +95,28 @@ module.exports = {
             for (var w in constructionSites) {
                 progress += constructionSites[w].progress;
                 totalProgress += constructionSites[w].progressTotal;
+                if (constructionSites[w].structureType == STRUCTURE_RAMPART || constructionSites[w].structureType == STRUCTURE_WALL) {
+                    constructionOfRampartsAndWalls++;
+                }
             }
-            if (totalProgress - progress < 301) {
-                minimumSpawnOf.builder = 0;
-            }
-            else {
-                minimumSpawnOf.builder = Math.ceil((totalProgress - progress) / 5000);
-            }
+            minimumSpawnOf.builder = Math.ceil((totalProgress - progress) / 5000);
         }
 
-        if (minimumSpawnOf.builder > numberOfSources * 2){
-            minimumSpawnOf.builder = numberOfSources * 2;
+        if (minimumSpawnOf.builder > Math.ceil(numberOfSources * 1.5)){
+            minimumSpawnOf.builder = Math.ceil(numberOfSources * 1.5);
         }
 
-        minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
+        if (spawnRoom.controller.level == 8 && spawnRoom.controller.ticksToDowngrade > 5000) {
+            minimumSpawnOf["upgrader"] = 0;
+        }
+        else {
+            minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
+        }
         minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
         minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
 
-        if (spawnRoom.memory.roomSecure == true && constructionSites == 0) {
+        if (spawnRoom.memory.roomSecure == true && constructionOfRampartsAndWalls == 0) {
             minimumSpawnOf["wallRepairer"] = 0;
         }
         else {
@@ -141,6 +146,7 @@ module.exports = {
                 minimumSpawnOf.miner = 0;
                 minimumSpawnOf.distributor = 0;
                 minimumSpawnOf.wallRepairer *= 2;
+                break;
             }
         }
 
@@ -246,7 +252,7 @@ module.exports = {
                 if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2.5)) {
                     var rolename = 'upgrader';
                 }
-                else if (numberOf.miner < minimumSpawnOf.miner * 2) {
+                else if (numberOf.miner < minimumSpawnOf.miner * 3) {
                     var rolename = 'miner';
                 }
                 else {

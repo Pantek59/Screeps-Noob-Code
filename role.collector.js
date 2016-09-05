@@ -14,7 +14,7 @@ module.exports = {
         }
         else if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false) {
             var container;
-            if (creep.memory.role == "harvester" || creep.memory.role == "energyTransporter") {
+            if (creep.memory.role == "harvester" || creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                 // find closest container with energy
                 if (creep.room.energyCapacityAvailable > creep.room.energyAvailable) {
                     if (creep.room.memory.terminalTransfer != undefined) {
@@ -22,7 +22,7 @@ module.exports = {
                         if (creep.memory.role == "harvester") {
                             container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                         }
-                        if (creep.memory.role == "energyTransporter") {
+                        if (creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                             container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                         }
                     }
@@ -31,7 +31,7 @@ module.exports = {
                         if (creep.memory.role == "harvester") {
                             container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_TERMINAL);
                         }
-                        if (creep.memory.role == "energyTransporter") {
+                        if (creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                             container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_TERMINAL);
                         }
                     }
@@ -43,7 +43,7 @@ module.exports = {
                         if (creep.memory.role == "harvester") {
                             container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER);
                         }
-                        if (creep.memory.role == "energyTransporter") {
+                        if (creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                             container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK, STRUCTURE_CONTAINER);
                         }
                     }
@@ -52,7 +52,7 @@ module.exports = {
                         if (creep.memory.role == "harvester") {
                             container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_TERMINAL);
                         }
-                        if (creep.memory.role == "energyTransporter") {
+                        if (creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                             container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_TERMINAL);
                         }
                     }
@@ -62,7 +62,7 @@ module.exports = {
                         if (creep.memory.role == "harvester") {
                             container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK);
                         }
-                        if (creep.memory.role == "energyTransporter") {
+                        if (creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                             container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK);
                         }
                     }
@@ -70,7 +70,7 @@ module.exports = {
                         if (creep.memory.role == "harvester") {
                             container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_TERMINAL);
                         }
-                        if (creep.memory.role == "energyTransporter") {
+                        if (creep.memory.role == "energyTransporter" || creep.memory.role == "distributor") {
                             container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_LINK, STRUCTURE_TERMINAL);
                         }
                     }
@@ -94,7 +94,7 @@ module.exports = {
                 }
             }
             else {
-                //no harvester role
+                //no room harvester role
                 // find closest source
                 container = creep.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                 if (container != undefined) {
@@ -107,6 +107,9 @@ module.exports = {
                     if (res == ERR_NOT_IN_RANGE) {
                         creep.moveTo(container, {reusePath: delayPathfinding});
                     }
+                }
+                else {
+                    return -1;
                 }
             }
         }

@@ -6,8 +6,9 @@ module.exports = function() {
         var flag;
         var flagCreeps;
         var volume;
+        //TODO Claimers only get flag if the reservation ticker is below 3000
 
-		if (flagFunction == "narrowSource") {
+		if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
 		    // static volumes
             volume = 1;
         }
@@ -27,7 +28,7 @@ module.exports = function() {
 
 
             if (flagCreeps.length <= volume) {
-                //only one stationaryHarvester on this flag -> OK
+                //creep still needed at this flag -> OK
                 return this.memory.currentFlag;
             }
             else {
@@ -43,7 +44,7 @@ module.exports = function() {
                 this.memory.currentFlag = flagList[flag].name;
 
                 flagCreeps = _.filter(Game.creeps, {memory: {currentFlag: this.memory.currentFlag}});
-                if (flagFunction == "narrowSource") {
+                if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
                     // static volumes
                     volume = 1;
                 }
@@ -53,7 +54,6 @@ module.exports = function() {
                 //console.log(this.name + " @ " + flagList[flag].name + ": " + flagCreeps.length);
 
                 if (flagCreeps.length <= volume) {
-                    //only one stationaryHarvester on this flag -> OK
                     return this.memory.currentFlag;
                 }
             }

@@ -15,11 +15,12 @@ module.exports = {
 
                 default:
                     // find closest container with space to get rid of minerals
+                    var freeContainer = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+
                     if (creep.room.name != creep.memory.homeroom) {
                         creep.moveTo(creep.memory.spawn);
                     }
                     else if (creep.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                        var freeContainer = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                         creep.moveTo(freeContainer, {reusePath: delayPathfinding});
                     }
                     specialResources = true;
@@ -72,10 +73,10 @@ module.exports = {
                         if (creep.room.name != creep.memory.homeroom) {
                             //still in new room, go out
                             if (!creep.memory.path) {
-                                creep.memory.path = creep.pos.findPathTo(spawn, {heuristicWeight: 1000});
+                                creep.memory.path = creep.pos.findPathTo(spawn, {heuristicWeight: 1000, ignoreCreeps: false});
                             }
                             if (creep.moveByPath(creep.memory.path) == ERR_NOT_FOUND) {
-                                creep.memory.path = creep.pos.findPathTo(spawn, {heuristicWeight: 1000});
+                                creep.memory.path = creep.pos.findPathTo(spawn, {heuristicWeight: 1000, ignoreCreeps: false});
                                 creep.moveByPath(creep.memory.path);
                             }
                         }
@@ -84,7 +85,7 @@ module.exports = {
 
                             delete creep.memory.path;
                             // find closest spawn, extension, tower or container which is not full
-                            structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+                            var structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_EXTENSION);
 
                             // if we found one
                             if (structure != null) {
@@ -124,7 +125,7 @@ module.exports = {
                         if (creep.room.memory.hostiles == 0) {
                             //No enemy creeps
                             if (roleCollector.run(creep) != OK) {
-                                creep.moveTo(remoteSource, {reusePath: 10});
+                                creep.moveTo(remoteSource, {reusePath: 5});
                             }
                         }
                         else {

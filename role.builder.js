@@ -30,15 +30,7 @@ module.exports = {
             // if creep is supposed to complete a constructionSite
             if (creep.memory.working == true) {
                 if (creep.room.memory.hostiles > 0) {
-                    // Hostiles present in room
-                    var tower = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, { filter: (s) => s.structureType == STRUCTURE_TOWER && s.energy < s.energyCapacity});
-                    if (tower != null) {
-                        // Tower needing energy found
-                        if (creep.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            // move towards it
-                            creep.moveTo(tower, {reusePath: 5});
-                        }
-                    }
+                    creep.towerEmergencyFill();
                 }
                 else {
                     // find closest constructionSite
