@@ -193,11 +193,11 @@ module.exports = {
             // try to spawn one
             var rolename = 'harvester';
             // if spawning failed and we have no harvesters left
-            if (numberOf.harvester == 0 || spawnRoom.energyCapacityAvailable < 350) {
+            if (numberOf.harvester + numberOf.energyTransporter == 0 || spawnRoom.energyCapacityAvailable < 350) {
                 // spawn one with what is available
                 var rolename = 'miniharvester';
             }
-            else if (minimumSpawnOf.stationaryHarvester > 0 && minimumSpawnOf.stationaryHarvester == numberOf.stationaryHarvester && minimumSpawnOf.harvester - numberOf.harvester < 2) {
+            else if (minimumSpawnOf.stationaryHarvester > 0 && minimumSpawnOf.stationaryHarvester == numberOf.stationaryHarvester && minimumSpawnOf.harvester - numberOf.harvester <= minimumSpawnOf.stationaryHarvester) {
                 var rolename = "energyTransporter";
             }
         }
@@ -251,9 +251,6 @@ module.exports = {
             if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 2.5) {
                 if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2.5)) {
                     var rolename = 'upgrader';
-                }
-                else if (numberOf.miner < minimumSpawnOf.miner * 3) {
-                    var rolename = 'miner';
                 }
                 else {
                     var rolename = "---";

@@ -1,6 +1,7 @@
 var roleCollector = require('role.collector');
 var roleBuilder = require('role.builder');
 const RESOURCE_SPACE = "space";
+//TODO Change remote harvesters to stationary harvesters and combine them with remoteEnergyTransporters
 
 module.exports = {
     // state working = Returning energy to structure
@@ -59,10 +60,6 @@ module.exports = {
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     var constructionSite = creep.pos.lookFor(LOOK_CONSTRUCTION_SITES);
 
-                    if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] == undefined && constructionSite[0] == undefined && creep.room.name != creep.memory.homeroom) {
-                        //Road needed
-                        creep.pos.createConstructionSite(STRUCTURE_ROAD);
-                    }
                     if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
                         creep.repair(road[0]);

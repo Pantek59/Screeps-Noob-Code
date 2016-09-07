@@ -27,7 +27,7 @@ module.exports = {
             if (creep.memory.working == true) {
                 if (creep.memory.statusRepairing == undefined) {
                     var constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, { filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
-                    if (constructionSite != null) {
+                    if (constructionSite != null && constructionSite.progressTotal == 1) {
                         // Construction sites found
                         var position = constructionSite.pos;
                         var buildResult = creep.build(constructionSite)
@@ -49,7 +49,7 @@ module.exports = {
                         var walls = creep.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL});
                         walls = _.sortBy(walls,"hits");
 
-                        if (walls.length > 0 && walls[0].hits < ramparts[0].hits) {
+                        if (walls.length > 0 && ((ramparts[0] != undefined && walls[0].hits < ramparts[0].hits) || (ramparts.length == 0))) {
                             target = walls[0];
                         }
                         else if (ramparts.length > 0) {
@@ -75,6 +75,7 @@ module.exports = {
                         // if we can't fine one
                         else {
                             // look for construction sites
+                            //console.log(creep.name + ": " + target);
                             roleBuilder.run(creep);
                         }
                     }

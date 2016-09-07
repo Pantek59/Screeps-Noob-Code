@@ -6,7 +6,7 @@ module.exports = function() {
         var flag;
         var flagCreeps;
         var volume;
-        //TODO Claimers only get flag if the reservation ticker is below 3000
+        //TODO Claimers should only get flag if the reservation ticker is below 3000
 
 		if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
 		    // static volumes

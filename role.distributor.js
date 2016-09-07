@@ -71,7 +71,8 @@ module.exports = {
                             }
                         }
                     }
-                    else {
+
+                    if (_.sum(terminal.store) == 0) {
                         // Terminal has no more to give
                         delete creep.memory.subRole;
                         delete creep.memory.path;

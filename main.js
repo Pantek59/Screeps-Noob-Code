@@ -241,7 +241,7 @@ module.exports.loop = function() {
                     else {
                         for (var x in Game.rooms) {
                             if(Game.rooms[x] != undefined && Game.rooms[x] != Game.rooms[r]){
-                                var newUpgraders = Game.rooms[x].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "upgrader")});
+                                var newUpgraders = Game.rooms[x].find(FIND_MY_CREEPS, {filter: (s) => s.memory.role == "upgrader" && s.carry.energy == 0});
                                 if (newUpgraders.length > 0) {
                                     var targetCreep = newUpgraders[0];
                                     roomName=Game.rooms[x].name;
@@ -272,7 +272,7 @@ module.exports.loop = function() {
                     else {
                         for (var x in Game.rooms) {
                             if(Game.rooms[x] != undefined && Game.rooms[x] != Game.rooms[r]){
-                                var newBuilders = Game.rooms[x].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "repairer")});
+                                var newBuilders = Game.rooms[x].find(FIND_MY_CREEPS, {filter: (s) => s.memory.role == "repairer" && s.carry.energy == 0});
                                 if (newBuilders.length > 0) {
                                     var targetCreepBuilder = newBuilders[0];
                                     roomName=Game.rooms[x].name;
@@ -436,7 +436,7 @@ module.exports.loop = function() {
         if (CPUdebug == true) {CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
         if (Game.rooms[r].memory.terminalTransfer != undefined) {
             var terminal = Game.rooms[r].terminal;
-            if (terminal != undefined) {
+            if (terminal != undefined && Game.rooms[r].memory.terminalTransfer != undefined) {
                 //Terminal exists
                 var targetRoom;
                 var amount;
@@ -454,17 +454,25 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.terminalEnergyCost = energyCost;
                 var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
 
-                if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount) || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
+                if (amount > 500 && terminal.store[resource] >= 500 && terminal.store[RESOURCE_ENERGY] >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom)) {
+                    if (terminal.send(resource,500,targetRoom,comment) == OK) {
+                        info[1] -= 500;
+                        Game.rooms[r].memory.terminalTransfer = info.join(":");
+                        console.log("<font color=#009bff type='highlight'>500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + Game.market.calcTransactionCost(500, terminal.room.name, targetRoom) + " energy: " + comment + "</font>");
+                    }
+                    else {
+                        console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource,500,targetRoom,comment) + "</font>");
+                    }
+                }
+                else if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount) || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
                     // Amount to be transferred reached and enough energy available -> GO!
                     if (terminal.send(resource,amount,targetRoom,comment) == OK) {
                         delete Game.rooms[r].memory.terminalTransfer;
                         delete Game.rooms[r].memory.terminalEnergyCost;
                         console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment + "</font>");
-                        Game.notify(amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment);
                     }
                     else {
                         console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment) + "</font>");
-                        Game.notify("Terminal transfer error: " + terminal.send(resource,amount,targetRoom,comment));
                     }
                 }
             }
