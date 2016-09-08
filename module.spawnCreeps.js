@@ -123,10 +123,23 @@ module.exports = {
             minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
         }
 
-        if (spawnRoom.memory.terminalTransfer != undefined || (spawnRoom.terminal != undefined && spawnRoom.memory.terminalTransfer == undefined && _.sum(spawnRoom.terminal.store) > spawnRoom.terminal.store[RESOURCE_ENERGY])) {
+        if (spawnRoom.memory.terminalTransfer != undefined) {
+            //ongoing terminal transfer
+            var info = spawnRoom.memory.terminalTransfer;
+            info = info.split(":");
+            if (parseInt(info[1]) > 3000 || minimumSpawnOf.stationaryHarvester == 0) {
+                minimumSpawnOf["distributor"] = 1;
+            }
+            else {
+                // Amount too small -> pick up with energyTransporter
+                minimumSpawnOf["distributor"] = 0;
+            }
+        }
+        else if (spawnRoom.terminal != undefined && (_.sum(spawnRoom.terminal.store) - spawnRoom.terminal.store[RESOURCE_ENERGY] > 3000 || minimumSpawnOf.stationaryHarvester == 0)) {
             minimumSpawnOf["distributor"] = 1;
         }
         else {
+            // Amount too small -> pick up with energyTransporter
             minimumSpawnOf["distributor"] = 0;
         }
 

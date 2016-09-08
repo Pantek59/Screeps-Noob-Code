@@ -7,6 +7,7 @@ require('prototype.spawn')();
 require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
 require('functions.creeps')();
+require('functions.game');
 
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
@@ -358,10 +359,7 @@ module.exports.loop = function() {
                     // Creep found to pick up dropped energy
                     collector.memory.jobQueueObject = energyID;
                     collector.memory.jobQueueTask = "pickUpEnergy";
-
-                    roleJobber.run(collector, "droppedEnergy")
                 }
-                //console.log(collector.name + " is picking up dropped energy (" + energyAmount + ") in room " + energies[energy].room);
             }
         }
 
@@ -478,6 +476,27 @@ module.exports.loop = function() {
             }
         }
 
+        // Turn energyTransporter to distributor if necessary
+        var surrogate = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.jobQueueTask == "distributor")});
+        if (surrogate.length == 0 && Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined) {
+            if (Game.rooms[r].memory.terminalTransfer != undefined) {
+                // ongoing terminal transfer and amount too small for distributor -> activate energyTransporter
+                info = Game.rooms[r].memory.terminalTransfer;
+                info = info.split(":");
+                surrogate = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")});
+                if (parseInt(info[1]) <= 3000 && surrogate.length > 0) {
+                    surrogate[0].memory.jobQueueTask = "distributor";
+                }
+            }
+            else if (Game.rooms[r].memory.terminalTransfer == undefined  && (_.sum(Game.rooms[r].terminal.store) - Game.rooms[r].terminal.store[RESOURCE_ENERGY]) < 3000 && _.sum(Game.rooms[r].storage.store) > 0) {
+                surrogate = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")});
+                if (surrogate.length > 0) {
+                    surrogate = surrogate[0];
+                    surrogate.memory.jobQueueTask = "distributor";
+                }
+            }
+        }
+
         // Lab production code (dead code)
         if (Game.rooms[r].memory.labOrder != undefined) { //FORMAT: ZH20:500
 
@@ -540,8 +559,8 @@ module.exports.loop = function() {
                     roleJobber.run(creep,"droppedEnergy");
                     break;
 
-                case "remoteBuild": //Room without spawner needs builder
-                    var newroom = Game.getObjectById(creep.memory.jobQueueObject);
+                case "distributor": //Small amount distribution job pending
+                    roleJobber.run(creep,"distributor");
                     break;
             }
             creep.memory.jobQueueTask = undefined;

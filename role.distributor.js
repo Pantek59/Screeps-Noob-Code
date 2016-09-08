@@ -5,7 +5,7 @@ var roleEnergyTransporter = require('role.energyTransporter');
 module.exports = {
     // state working = Transporting stuff somewhere
     run: function(creep) {
-        if (Game.cpu.bucket > 6000) {
+        if (Game.cpu.bucket > 6000 && creep.room.storage != undefined && creep.room.terminal != undefined) {
             // Load terminal transfer info
             var terminal = creep.room.terminal;
             var transferAmount = 0;
@@ -29,6 +29,10 @@ module.exports = {
 
             if (creep.memory.subRole == undefined || creep.memory.subRole == null) {
                 // Determine next subrole
+                if ((info == undefined && _.sum(terminal.store) == 0) && creep.memory.jobQueueTask == "distributor") {
+                    // Converter energy transporter with nothing further to do
+                    creep.memory.subRole = "play_transporter";
+                }
                 if (_.sum(creep.carry) == creep.carryCapacity) {
                     // Creep full, has to be emptied
                     creep.memory.subRole = "empty_creep";
@@ -275,6 +279,9 @@ module.exports = {
                     }
                     break;
             }
+        }
+        else {
+            roleEnergyTransporter.run(creep);
         }
     }
 };

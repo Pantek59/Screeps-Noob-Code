@@ -1,3 +1,5 @@
+var roleDistributor = require("role.distributor");
+
 module.exports = {
     // a function to run the logic for this role
     run: function(creep, target) {
@@ -5,21 +7,15 @@ module.exports = {
     	var returncode;
 
     	switch (target) {
-    		case "source":
-				var source = creep.pos.findClosestByPath(FIND_SOURCES,{filter: (s) => s.energy > 0});
-				returncode = creep.harvest(source);
-    			break;
-
 			case "droppedEnergy":
     			var source = creep.pos.findClosestByPath(FIND_DROPPED_ENERGY);
     			returncode = creep.pickup(source);
-
 				creep.jobQueueTask = undefined;
     			break;
 
-			case "remoteBuild":
-				creep.jobQueueTask = undefined;
-				break;
+            case "distributor":
+                roleDistributor.run(creep);
+                break;
     	}
 
     	//Collecting finished
@@ -64,7 +60,9 @@ module.exports = {
 			break;
 
 			default:
-				creep.say(returncode);
+			    if (returncode != undefined) {
+                    creep.say(returncode);
+                }
 			break;
 		}	
     }    

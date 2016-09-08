@@ -6,9 +6,8 @@ var roleScientist = require("role.scientist");
 
 module.exports = {
     // state working = Returning energy to structure
-	
     run: function(creep) {
-        if (creep.room.memory.labOrderArray == undefined) {
+        if (creep.getRidOfMinerals() == false) {
             // if creep is bringing energy to a structure but has no energy left
             if (creep.carry.energy == 0) {
                 if (creep.memory.working == true) {
@@ -57,9 +56,6 @@ module.exports = {
             else {
                 roleCollector.run(creep);
             }
-        }
-        else {
-            roleScientist.run(creep);
         }
     }
 };
