@@ -37,7 +37,7 @@ module.exports = {
                     // Creep full, has to be emptied
                     creep.memory.subRole = "empty_creep";
                 }
-                else if ((info == undefined && _.sum(terminal.store) > 0) || (info != undefined && terminal.store[transferResource] >= transferAmount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
+                else if (info == undefined && _.sum(terminal.store) > 0 ) {
                     // Terminal full, has to be emptied
                     creep.memory.subRole = "empty_terminal";
                 }
@@ -76,7 +76,7 @@ module.exports = {
                         }
                     }
 
-                    if (_.sum(terminal.store) == 0) {
+                    if (_.sum(terminal.store) == 0 || _.sum(creep.carry) == creep.carryCapacity) {
                         // Terminal has no more to give
                         delete creep.memory.subRole;
                         delete creep.memory.path;
@@ -213,7 +213,7 @@ module.exports = {
                     }
 
                     if (_.sum(creep.carry) == creep.carryCapacity || mineralTerminal + mineralCreep >= transferAmount) {
-                        // No more minerals needed
+                        // No more minera3ls needed
                         delete creep.memory.subRole;
                         delete creep.memory.path;
                         delete creep.memory.targetBuffer;
@@ -223,7 +223,7 @@ module.exports = {
 
                 case "get_energy":
                     if (_.sum(creep.carry) < creep.carryCapacity && ((transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost + transferAmount) || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost))) {
-                        //Terminal lacking stuff and creep does not have enough
+                        //Terminal lackin3g stuff and creep does not have enough
                         var energyContainer;
 
                         if (creep.room.storage != undefined && creep.room.storage.store[RESOURCE_ENERGY] > 0) {

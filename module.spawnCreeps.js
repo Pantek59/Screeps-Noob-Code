@@ -138,7 +138,6 @@ module.exports = {
             //ongoing terminal transfer
             var info = spawnRoom.memory.terminalTransfer;
             info = info.split(":");
-            console.log(info[1]);
             if (parseInt(info[1]) > 3000 || minimumSpawnOf.stationaryHarvester == 0) {
                 minimumSpawnOf["distributor"] = 1;
             }

@@ -62,49 +62,41 @@ module.exports.loop = function() {
     }
 
     // Market Code
-    if (Game.time % 20 == 0) {
+    if (Game.time % 5 == 0) {
         //Look for surplus materials
-        var surplusMinerals = new Array();
+        var surplusMinerals = 0;
+        var resource;
 
         for (var r in Game.rooms) {
             if (Game.rooms[r].memory.roomMarketLimit != undefined) {
-                var resource = Game.getObjectById(Game.rooms[r].memory.roomArrayMinerals);
-                if (Game.rooms[r].storage.store[resource.mineralType] > Game.rooms[r].memory.roomMarketLimit) {
-                    if (surplusMinerals[resource.mineralType] == undefined) {
-                        surplusMinerals[resource.mineralType] = 0;
+                resource = Game.getObjectById(Game.rooms[r].memory.roomArrayMinerals);
+                if (Game.rooms[r].storage.store[resource.mineralType] > Game.rooms[r].memory.roomMarketLimit + 100) {
+                    surplusMinerals = Game.rooms[r].storage.store[resource.mineralType] - Game.rooms[r].memory.roomMarketLimit;
+
+                    var orders = new Array();
+                    orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource.mineralType});
+
+                    for (var o in orders) {
+                        var orderResource = orders[o].resourceType;
+                        var orderRoomName = orders[o].roomName;
+                        var orderPrice = orders[o].price;
+                        var orderAmount;
+                        if (surplusMinerals > orders[o].amount) {
+                            orderAmount = orders[o].amount;
+                        }
+                        else {
+                            orderAmount = surplusMinerals;
+                        }
+                        var orderCosts = global.terminalTransfer(orderResource,orderAmount,orderRoomName,"cost");
+
+                        if (orderCosts < (orderAmount + orderPrice)) {
+                            console.log("Market opportunity found: " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + (orderPrice * orderAmount) + " credits.");
+                        }
                     }
-                    surplusMinerals[resource.mineralType] += Game.rooms[r].storage.store[resource.mineralType] - Game.rooms[r].memory.roomMarketLimit;
                 }
             }
         }
-
-        if (surplusMinerals.length > 0) {
-            var orders = new Array();
-            for (var resource in surplusMinerals) {
-                orders[resource] = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
-            }
-
-            for (var o in orders) {
-                var orderList = orders[o];
-
-                for (var n in orderList) {
-                    var orderResource = orderList[n].resourceType;
-                    var orderRoomName = orderList[n].roomName;
-                    var orderPrice = orderList[n].price;
-                    var orderAmount;
-                    if (surplusMinerals[orderResource] > orderList[n].amount) {
-                        orderAmount = orderList[n].amount;
-                    }
-                    else {
-                        orderAmount = surplusMinerals[orderResource];
-                    }
-                    var orderCosts = global.terminalTransfer(orderResource,orderAmount,orderRoomName,"cost");
-                    
-                    console.log("Market opportunity found: " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + orderPrice + " credits.");
-                }
-            }
-        }
-  }
+    }
 
     if (CPUdebug == true) {CPUdebugString.concat("<br>Start cycling through rooms: " + Game.cpu.getUsed())}
     // Cycle through rooms    
@@ -525,7 +517,7 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.terminalEnergyCost = energyCost;
                 var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
 
-                if (amount > 500 && terminal.store[resource] >= 500 && terminal.store[RESOURCE_ENERGY] >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom)) {
+                if (amount > 500 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY] - 500) >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom)) {
                     if (terminal.send(resource,500,targetRoom,comment) == OK) {
                         info[1] -= 500;
                         Game.rooms[r].memory.terminalTransfer = info.join(":");
