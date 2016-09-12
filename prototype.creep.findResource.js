@@ -195,12 +195,11 @@ module.exports = function() {
             if (target != null) {
                 this.memory.targetBuffer = target.id;
                 this.memory.roomBuffer = this.room.name;
+                return target;
             }
             else {
                 return null;
             }
-
-            return target;
         }
 	}
 };

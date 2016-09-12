@@ -19,6 +19,21 @@ module.exports = {
                 var flag = Game.flags[creep.memory.currentFlag];
                 if (creep.pos.isEqualTo(flag)) {
                     // Harvesting position reached
+                    if (creep.carry.energy == creep.carryCapacity) {
+                        //Identify and save container
+                        if (creep.memory.narrowContainer == undefined) {
+                            var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER && s.storeCapacity - _.sum(s.store) > 0) || (s.structureType == STRUCTURE_LINK && s.energyCapacity - s.energy) > 0});
+                            if (container != null) {
+                                creep.memory.narrowContainer = container.id;
+                            }
+                        }
+                        else {
+                            container = Game.getObjectById(creep.memory.narrowContainer);
+                        }
+                        if (creep.transfer(container, RESOURCE_ENERGY) != OK) {
+                            delete creep.memory.narrowContainer;
+                        }
+                    }
 
                     if (creep.carry.energy < creep.carryCapacity) {
                         //Time to refill
@@ -38,21 +53,6 @@ module.exports = {
                             creep.memory.statusHarvesting = source.id;
                         }
 
-                    }
-                    if (creep.carry.energy == creep.carryCapacity) {
-                        //Identify and save container
-                        if (creep.memory.narrowContainer == undefined) {
-                            var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER && s.storeCapacity - _.sum(s.store) > 0) || (s.structureType == STRUCTURE_LINK && s.energyCapacity - s.energy) > 0});
-                            if (container != null) {
-                                creep.memory.narrowContainer = container.id;
-                            }
-                        }
-                        else {
-                            container = Game.getObjectById(creep.memory.narrowContainer);
-                        }
-                        if (creep.transfer(container, RESOURCE_ENERGY) != OK) {
-                            delete creep.memory.narrowContainer;
-                        }
                     }
                 }
                 else if (flag != undefined) {

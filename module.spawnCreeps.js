@@ -37,7 +37,9 @@ module.exports = {
         minimumSpawnOf["claimer"] = 0;
         minimumSpawnOf["protector"] = 0;
         minimumSpawnOf["stationaryHarvester"] = 0;
+        minimumSpawnOf["remoteStationaryHarvester"] = 0;
         minimumSpawnOf["demolisher"] = 0;
+        minimumSpawnOf["energyHauler"] = 0;
 
         // Check for demolisher flags
         var demolisherFlags = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: spawnRoom.memory.masterSpawn}});
@@ -58,6 +60,14 @@ module.exports = {
         for (var t in remoteSources) {
             //Iterate through remote source flags of this spawn
             minimumSpawnOf.remoteHarvester += remoteSources[t].memory.volume;
+        }
+
+        // Check for energy hauling flags
+        var energyHaulingFlags = _.filter(Game.flags,{ memory: { function: 'haulEnergy', spawn: spawnRoom.memory.masterSpawn}});
+        for (var t in energyHaulingFlags) {
+            //Iterate through remote source flags of this spawn
+            minimumSpawnOf.energyHauler += (energyHaulingFlags[t].memory.volume - 1);
+            minimumSpawnOf.remoteStationaryHarvester++;
         }
 
         // Check for narrow source flags
@@ -84,6 +94,7 @@ module.exports = {
         var constructionSites = spawnRoom.find(FIND_CONSTRUCTION_SITES);
         var constructionOfRampartsAndWalls = 0;
 
+        // Builder
         if (constructionSites.length == 0) {
             minimumSpawnOf.builder = 0;
         }
@@ -106,16 +117,15 @@ module.exports = {
             minimumSpawnOf.builder = Math.ceil(numberOfSources * 1.5);
         }
 
+        // Updater
         if (spawnRoom.controller.level == 8 && spawnRoom.controller.ticksToDowngrade > 5000) {
             minimumSpawnOf["upgrader"] = 0;
         }
         else {
             minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
         }
-        minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
-        minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
-        minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
 
+        //Wall Repairer
         if (spawnRoom.memory.roomSecure == true && constructionOfRampartsAndWalls == 0) {
             minimumSpawnOf["wallRepairer"] = 0;
         }
@@ -123,10 +133,12 @@ module.exports = {
             minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
         }
 
+        // Distributor
         if (spawnRoom.memory.terminalTransfer != undefined) {
             //ongoing terminal transfer
             var info = spawnRoom.memory.terminalTransfer;
             info = info.split(":");
+            console.log(info[1]);
             if (parseInt(info[1]) > 3000 || minimumSpawnOf.stationaryHarvester == 0) {
                 minimumSpawnOf["distributor"] = 1;
             }
@@ -143,16 +155,26 @@ module.exports = {
             minimumSpawnOf["distributor"] = 0;
         }
 
+        // Miner
+        minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
         if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]).mineralAmount == 0 || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.roomMineralLimit)) {
             minimumSpawnOf.miner = 0;
         }
 
+        // Harvester & Repairer
+        minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
+        minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
         // Adjustments in case of hostile presence
         var enemyCreeps = spawnRoom.find(FIND_HOSTILE_CREEPS);
         for (var g in enemyCreeps) {
             var username = enemyCreeps[g].owner.username;
             if (allies.indexOf(username) == -1) {
-                minimumSpawnOf.protector++;
+                if (spawnRoom.memory.roomArrayTowers.length > 0) {
+                    minimumSpawnOf.protector = enemyCreeps.length - 1;
+                }
+                else {
+                    minimumSpawnOf.protector = enemyCreeps.length;
+                }
                 minimumSpawnOf.upgrader = 0;
                 minimumSpawnOf.builder = 0;
                 minimumSpawnOf.remoteHarvester = 0;
@@ -162,6 +184,7 @@ module.exports = {
                 break;
             }
         }
+        //console.log(spawnRoom.name + ": " + minimumSpawnOf.remoteStationaryHarvester + " / " + minimumSpawnOf.energyHauler);
 
         // Measuring number of active creeps
         var numberOf = new Array();
@@ -178,9 +201,11 @@ module.exports = {
 
         //Creeps leaving room
         numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["remoteStationaryHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteStationaryHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["claimer"] = _.filter(Game.creeps,{ memory: { role: 'claimer', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["protector"] = _.filter(Game.creeps,{ memory: { role: 'protector', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["demolisher"] = _.filter(Game.creeps,{ memory: { role: 'demolisher', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["energyHauler"] = _.filter(Game.creeps,{ memory: { role: 'energyHauler', spawn: spawnRoom.memory.masterSpawn}}).length;
 
         // Addition of creeps being spawned
         for (s in spawnRoom.memory.roomArraySpawns) {
@@ -222,6 +247,12 @@ module.exports = {
         }
         else if (numberOf.stationaryHarvester < minimumSpawnOf.stationaryHarvester) {
             var rolename = 'stationaryHarvester';
+        }
+        else if (numberOf.remoteStationaryHarvester < minimumSpawnOf.remoteStationaryHarvester) {
+            var rolename = 'remoteStationaryHarvester';
+        }
+        else if (numberOf.energyHauler < minimumSpawnOf.energyHauler) {
+            var rolename = 'energyHauler';
         }
         else if (numberOf.remoteHarvester < Math.floor(minimumSpawnOf.remoteHarvester / 2)) {
             var rolename = 'remoteHarvester';

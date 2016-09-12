@@ -26,8 +26,9 @@ module.exports = {
             // if creep is supposed to repair something
             if (creep.memory.working == true) {
                 if (creep.memory.statusRepairing == undefined) {
+                    var rampartsBeingSetUp = creep.room.find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART && s.hits < 100000});
                     var constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, { filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
-                    if (constructionSite != null && constructionSite.progressTotal == 1) {
+                    if (constructionSite != null && rampartsBeingSetUp.length == 0) {
                         // Construction sites found
                         var position = constructionSite.pos;
                         var buildResult = creep.build(constructionSite)
@@ -42,7 +43,6 @@ module.exports = {
                     }
                     else {
                         var target = undefined;
-                        // loop with increasing percentages
                         var ramparts = creep.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART});
                         ramparts = _.sortBy(ramparts,"hits");
 
@@ -58,7 +58,6 @@ module.exports = {
 
                         // if we find a wall that has to be repaired
                         if (target != undefined) {
-                            // try to repair it, if not in range
                             var result = creep.repair(target);
                             if (result == ERR_NOT_IN_RANGE) {
                                 // move towards it
@@ -75,7 +74,6 @@ module.exports = {
                         // if we can't fine one
                         else {
                             // look for construction sites
-                            //console.log(creep.name + ": " + target);
                             roleBuilder.run(creep);
                         }
                     }

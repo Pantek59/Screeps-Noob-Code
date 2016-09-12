@@ -2,7 +2,6 @@ const RESOURCE_SPACE = "space";
 const delayPathfinding = 2;
 
 var roleCollector = require('role.collector');
-var roleScientist = require("role.scientist");
 
 module.exports = {
     // state working = Returning energy to structure

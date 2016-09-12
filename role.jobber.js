@@ -14,7 +14,19 @@ module.exports = {
     			break;
 
             case "distributor":
-                roleDistributor.run(creep);
+                if (creep.room.memory.terminalTransfer == undefined  && (_.sum(creep.room.terminal.store) - creep.room.terminal.store[RESOURCE_ENERGY]) < 1) {
+                    surrogate = creep.room.find(FIND_MY_CREEPS, {filter: (s) => s.memory.role == "energyTransporter" && s.memory.jobQueueTask == "distributor"});
+                    if (surrogate.length > 0) {
+                        for (var q in surrogate) {
+                            delete surrogate[q].memory.jobQueueTask;
+                            delete surrogate[q].memory.targetBuffer;
+                            delete surrogate[q].memory.subRole;
+                        }
+                    }
+                }
+                else {
+                    roleDistributor.run(creep);
+                }
                 break;
     	}
 
@@ -30,7 +42,7 @@ module.exports = {
 
 			case (ERR_NOT_IN_RANGE):
 				// move towards the source
-                if (creep.memory.role != "stationaryHarvester") {
+                if (creep.memory.role != "stationaryHarvester" && creep.memory.role != "remoteStationaryHarvester") {
                     var code = creep.moveTo(source, {reusePath: 3});
                 }
 				else {

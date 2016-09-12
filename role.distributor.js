@@ -29,7 +29,7 @@ module.exports = {
 
             if (creep.memory.subRole == undefined || creep.memory.subRole == null) {
                 // Determine next subrole
-                if ((info == undefined && _.sum(terminal.store) == 0) && creep.memory.jobQueueTask == "distributor") {
+                if ((info == undefined && _.sum(terminal.store) == 0) && creep.memory.role == "energyTransporter") {
                     // Converter energy transporter with nothing further to do
                     creep.memory.subRole = "play_transporter";
                 }

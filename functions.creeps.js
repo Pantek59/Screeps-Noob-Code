@@ -12,7 +12,7 @@ module.exports = function() {
     },
 
     Creep.prototype.getRidOfMinerals = function() {
-        // check for picked up minerals, return true if found
+        // check for picked up minerals and transport them to the next container or storage, return true if found
         var specialResources = false;
         for (var resourceType in this.carry) {
             switch (resourceType) {
@@ -22,7 +22,6 @@ module.exports = function() {
                 default:
                     // find closest container with space to get rid of minerals
                     var freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
-
                     if (this.room.name != this.memory.homeroom) {
                         this.moveTo(this.memory.spawn);
                     }
@@ -33,6 +32,6 @@ module.exports = function() {
                     break;
             }
         }
-        return specialResources
+        return specialResources;
     }
 };

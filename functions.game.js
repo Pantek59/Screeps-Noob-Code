@@ -3,7 +3,11 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
     var roomCandidates = new Array();
     var tempArray = new Array();
     var resourceTotal = 0;
-    //TODO: Rooms for transfer are chosen strangely
+
+    if (transferAmount < 100) {
+        return "Minimal amount for terminal transfers are 100 units.";
+    }
+
     for (var r in Game.rooms) {
         if (Game.rooms[r].terminal != undefined && Game.rooms[r].storage != undefined) {
             //Fill candidate array with rooms
@@ -60,6 +64,9 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
         }
     }
 
+    var totalVolume = 0;
+    var totalCost = 0;
+
     if (roomCandidates.length == 0) {
         return "No rooms with " + transferResource + " found.";
     }
@@ -69,30 +76,38 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
     else {
         // There are rooms holding enough of the transfer resource
         var candidatesByCost = _.sortBy(roomCandidates,"cost");
-        var totalVolume = 0;
 
         for (var c in candidatesByCost) {
             if (candidatesByCost[c].volume > transferAmount) {
                 if (transferFlag == false) {
                     console.log("Terminal Transfer Preview for room " + candidatesByCost[c].name + " // " + targetRoom + ":" + transferAmount + ":" + transferResource + ":global transfer // Total Energy Cost: " + candidatesByCost[c].totalCost);
                 }
-                else {
+                else if (transferFlag == true) {
                     Game.rooms[candidatesByCost[c].name].memory.terminalTransfer = targetRoom + ":" + transferAmount + ":" + transferResource + ":global transfer";
                     console.log(transferAmount + " " + transferResource + " scheduled from room " + candidatesByCost[c].name + " to room " + targetRoom + " for " + candidatesByCost[c].totalCost + " energy.");
                 }
+                totalVolume += transferAmount;
+                totalCost += candidatesByCost[c].totalCost;
                 break;
             }
             else {
                 if (transferFlag == false) {
                     console.log("Terminal Transfer Preview for room " + candidatesByCost[c].name + " // " + targetRoom + ":" + candidatesByCost[c].volume + ":" + transferResource + ":global transfer // Total Energy Cost: " + candidatesByCost[c].totalCost);
                 }
-                else {
+                else if (transferFlag == true) {
                     Game.rooms[candidatesByCost[c].name].memory.terminalTransfer = targetRoom + ":" + candidatesByCost[c].volume + ":" + transferResource + ":global transfer";
                     console.log(candidatesByCost[c].volume + " " + transferResource + " scheduled from room " + candidatesByCost[c].name + " to room " + targetRoom + " for " + candidatesByCost[c].totalCost + " energy.");
                 }
+                totalVolume += candidatesByCost[c].volume;
+                totalCost += candidatesByCost[c].totalCost;
                 transferAmount -= candidatesByCost[c].volume;
             }
         }
+
+        if (transferFlag == "cost") {
+            return totalCost;
+        }
+
         return "OK";
     }
 };

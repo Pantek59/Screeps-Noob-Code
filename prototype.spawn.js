@@ -140,6 +140,51 @@ module.exports = function() {
                     sizelimit = 4;
                     break;
 
+                case "remoteStationaryHarvester":
+                    body.push(WORK); //100
+                    body.push(WORK); //100
+                    body.push(WORK); //100
+                    body.push(WORK); //100
+                    body.push(WORK); //100
+                    body.push(CARRY); //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    size=700;
+                    sizelimit = 1;
+                    break;
+
+                case "energyHauler":
+                    body.push(WORK); //100
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(CARRY); //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    body.push(MOVE);  //50
+                    size=1350;
+                    sizelimit = 1;
+                    break;
+
 				default:
 					body.push(WORK); //100
 					body.push(CARRY); //50

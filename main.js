@@ -24,6 +24,8 @@ var roleDistributor = require("role.distributor");
 var roleDemolisher = require('role.demolisher');
 var moduleSpawnCreeps = require('module.spawnCreeps');
 var roleEnergyTransporter = require("role.energyTransporter");
+var roleEnergyHauler = require("role.energyHauler");
+var roleRemoteStationaryHarvester = require('role.remoteStationaryHarvester');
 
 var CPUdebugString = "CPU Debug<br><br>";
 var playerUsername = "Pantek59";
@@ -58,6 +60,51 @@ module.exports.loop = function() {
     for (var ind in senex) {
         console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
     }
+
+    // Market Code
+    if (Game.time % 20 == 0) {
+        //Look for surplus materials
+        var surplusMinerals = new Array();
+
+        for (var r in Game.rooms) {
+            if (Game.rooms[r].memory.roomMarketLimit != undefined) {
+                var resource = Game.getObjectById(Game.rooms[r].memory.roomArrayMinerals);
+                if (Game.rooms[r].storage.store[resource.mineralType] > Game.rooms[r].memory.roomMarketLimit) {
+                    if (surplusMinerals[resource.mineralType] == undefined) {
+                        surplusMinerals[resource.mineralType] = 0;
+                    }
+                    surplusMinerals[resource.mineralType] += Game.rooms[r].storage.store[resource.mineralType] - Game.rooms[r].memory.roomMarketLimit;
+                }
+            }
+        }
+
+        if (surplusMinerals.length > 0) {
+            var orders = new Array();
+            for (var resource in surplusMinerals) {
+                orders[resource] = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
+            }
+
+            for (var o in orders) {
+                var orderList = orders[o];
+
+                for (var n in orderList) {
+                    var orderResource = orderList[n].resourceType;
+                    var orderRoomName = orderList[n].roomName;
+                    var orderPrice = orderList[n].price;
+                    var orderAmount;
+                    if (surplusMinerals[orderResource] > orderList[n].amount) {
+                        orderAmount = orderList[n].amount;
+                    }
+                    else {
+                        orderAmount = surplusMinerals[orderResource];
+                    }
+                    var orderCosts = global.terminalTransfer(orderResource,orderAmount,orderRoomName,"cost");
+                    
+                    console.log("Market opportunity found: " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + orderPrice + " credits.");
+                }
+            }
+        }
+  }
 
     if (CPUdebug == true) {CPUdebugString.concat("<br>Start cycling through rooms: " + Game.cpu.getUsed())}
     // Cycle through rooms    
@@ -218,6 +265,32 @@ module.exports.loop = function() {
             }
         }
 
+        var stationaryRemoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'haulEnergy'}});
+
+        for (var f in stationaryRemoteHarvestingFlags) {
+            var flag = stationaryRemoteHarvestingFlags[f];
+            if (flag.room != undefined) {
+                // We have visibility in room
+                if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
+                    //Hostiles present in room with remote harvesters
+                    var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
+                    flag.room.memory.panicFlag = panicFlag;
+                    panicFlag = _.filter(Game.flags,{ name: panicFlag})[0];
+                    panicFlag.memory.function = "protector";
+                    panicFlag.memory.volume = flag.room.memory.hostiles;
+                    panicFlag.memory.spawn = flag.memory.spawn;
+
+                    console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
+                }
+                else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
+                    // No hostiles present in room with remote harvesters
+                    var tempFlag = _.filter(Game.flags,{ name: flag.room.memory.panicFlag})[0];
+                    tempFlag.remove();
+                    delete flag.room.memory.panicFlag;
+                }
+            }
+        }
+
         if (CPUdebug == true) {CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
         // Spawn code
         if (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0) {
@@ -346,7 +419,7 @@ module.exports.loop = function() {
             var energyID = energies[energy].id;
             var energyAmount = energies[energy].amount;
 
-            if (energyAmount > 5 && Game.rooms[r].memory.hostiles == 0) {
+            if (energyAmount > 15 && Game.rooms[r].memory.hostiles == 0) {
                 var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
                         filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "distributor"});
 
@@ -478,6 +551,7 @@ module.exports.loop = function() {
 
         // Turn energyTransporter to distributor if necessary
         var surrogate = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.jobQueueTask == "distributor")});
+
         if (surrogate.length == 0 && Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined) {
             if (Game.rooms[r].memory.terminalTransfer != undefined) {
                 // ongoing terminal transfer and amount too small for distributor -> activate energyTransporter
@@ -488,7 +562,7 @@ module.exports.loop = function() {
                     surrogate[0].memory.jobQueueTask = "distributor";
                 }
             }
-            else if (Game.rooms[r].memory.terminalTransfer == undefined  && (_.sum(Game.rooms[r].terminal.store) - Game.rooms[r].terminal.store[RESOURCE_ENERGY]) < 3000 && _.sum(Game.rooms[r].storage.store) > 0) {
+            else if (Game.rooms[r].memory.terminalTransfer == undefined  && (_.sum(Game.rooms[r].terminal.store) - Game.rooms[r].terminal.store[RESOURCE_ENERGY]) < 3000 && (_.sum(Game.rooms[r].terminal.store) - Game.rooms[r].terminal.store[RESOURCE_ENERGY]) > 0 && _.sum(Game.rooms[r].storage.store) > 0) {
                 surrogate = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")});
                 if (surrogate.length > 0) {
                     surrogate = surrogate[0];
@@ -636,6 +710,12 @@ module.exports.loop = function() {
                 }
                 else if (creep.memory.role == 'energyTransporter') {
                     roleEnergyTransporter.run(creep);
+                }
+                else if (creep.memory.role == 'energyHauler') {
+                    roleEnergyHauler.run(creep);
+                }
+                else if (creep.memory.role == 'remoteStationaryHarvester') {
+                    roleRemoteStationaryHarvester.run(creep);
                 }
             }
         }
