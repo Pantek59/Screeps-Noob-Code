@@ -55,8 +55,7 @@ module.exports = {
                                 }
                             }
                         }
-
-                        if (creep.carry.energy < creep.carryCapacity) {
+                        else if (creep.carry.energy < creep.carryCapacity) {
                             //Time to refill
                             //Identify and save source
                             if (creep.memory.source == undefined) {
