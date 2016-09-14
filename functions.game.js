@@ -1,8 +1,14 @@
+var playerUsername = "Pantek59";
+
 global.terminalTransfer = function (transferResource, transferAmount, targetRoom, transferFlag) {
     // transfer resources to remote room from whatever room(s) is cheapest
     var roomCandidates = new Array();
     var tempArray = new Array();
     var resourceTotal = 0;
+
+    if (arguments.length == 0) {
+        return "terminalTransfer (transferResource, transferAmount, targetRoom, transferFlag) --> terminalTransfer(\"Z\", 10000, \"W16S47\", false)";
+    }
 
     if (transferAmount < 100) {
         return "Minimal amount for terminal transfers are 100 units.";
@@ -15,7 +21,7 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
             var roomArray = new Array();
 
             // Add resource in storage
-            if (Game.rooms[r].storage != undefined) {
+            if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[transferResource] != undefined) {
                 roomResourceTotal += Game.rooms[r].storage.store[transferResource];
             }
 
@@ -107,7 +113,25 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
         if (transferFlag == "cost") {
             return totalCost;
         }
-
         return "OK";
+    }
+};
+
+global.getRoomMineralLimit = function (roomName) {
+    if (Game.rooms[roomName].memory.roomMineralLimit == undefined) {
+        return "No roomMineralLimit defined in room " + roomName + ".";
+    }
+    else {
+        return Game.rooms[roomName].memory.roomMineralLimit;
+    }
+};
+
+global.setRoomMineralLimit = function (roomName, limit) {
+    if (Game.rooms[roomName].controller.owner.username == playerUsername) {
+        Game.rooms[roomName].memory.roomMineralLimit = limit;
+        return "roomMineralLimit for room " + roomName + " has been set to " + Game.rooms[roomName].memory.roomMineralLimit + ".";
+    }
+    else {
+        return "Unowned room"
     }
 };

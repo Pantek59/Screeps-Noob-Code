@@ -85,7 +85,7 @@ module.exports = {
                                 }
                             }
                             else {
-                                //creep.moveTo(remoteSource, {reusePath: 10});
+                                creep.say("No energy in container!");
                                 roleCollector.run(creep);
                             }
                         }

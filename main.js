@@ -62,7 +62,7 @@ module.exports.loop = function() {
     }
 
     // Market Code
-    if (Game.time % 5 == 0) {
+    if (Game.time % 10 == 0) {
         //Look for surplus materials
         var surplusMinerals = 0;
         var resource;
@@ -89,8 +89,8 @@ module.exports.loop = function() {
                         }
                         var orderCosts = global.terminalTransfer(orderResource,orderAmount,orderRoomName,"cost");
 
-                        if (orderCosts < (orderAmount + orderPrice)) {
-                            console.log("Market opportunity found: " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + (orderPrice * orderAmount) + " credits.");
+                        if (orderCosts < orderAmount && Game.map.getRoomLinearDistance(Game.rooms[r].name, orderRoomName) < 10) {
+                            console.log("Market opportunity found (" + orders[o].id + "): " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + (orderPrice * orderAmount) + " credits.");
                         }
                     }
                 }
@@ -516,8 +516,8 @@ module.exports.loop = function() {
                 energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, targetRoom);
                 Game.rooms[r].memory.terminalEnergyCost = energyCost;
                 var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
-
-                if (amount > 500 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY] - 500) >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom)) {
+                if ((resource != RESOURCE_ENERGY && amount > 500 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom))
+                 || (resource == RESOURCE_ENERGY && amount > 500 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) - 500 >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom))) {
                     if (terminal.send(resource,500,targetRoom,comment) == OK) {
                         info[1] -= 500;
                         Game.rooms[r].memory.terminalTransfer = info.join(":");
@@ -527,7 +527,8 @@ module.exports.loop = function() {
                         console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource,500,targetRoom,comment) + "</font>");
                     }
                 }
-                else if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount) || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
+                else if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount)
+                      || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
                     // Amount to be transferred reached and enough energy available -> GO!
                     if (terminal.send(resource,amount,targetRoom,comment) == OK) {
                         delete Game.rooms[r].memory.terminalTransfer;

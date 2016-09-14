@@ -117,8 +117,8 @@ module.exports = {
             minimumSpawnOf.builder = Math.ceil(numberOfSources * 1.5);
         }
 
-        // Updater
-        if (spawnRoom.controller.level == 8 && spawnRoom.controller.ticksToDowngrade > 5000) {
+        // Upgrader
+        if (spawnRoom.controller.level == 8) {
             minimumSpawnOf["upgrader"] = 0;
         }
         else {

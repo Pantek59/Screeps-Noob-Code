@@ -29,6 +29,23 @@ module.exports = function() {
                 flagCreeps = _.filter(Game.creeps,{ currentFlag: this.memory.currentFlag});
 
                 if (flagCreeps.length <= volume) {
+                    if (flagFunction == "haulEnergy") {
+                        if (this.memory.role == "remoteStationaryHarvester") {
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', spawn: spawnRoom.memory.masterSpawn}});
+                            if (peers.length > 1) {
+                                //Two remoteStationaryHarvesters on same source
+                                delete this.memory.currentFlag;
+                            }
+                            else {return this.memory.currentFlag;}
+                        }
+                        else if (this.memory.role == "energyHauler") {
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
+                            if (peers.length >= flag.memory.volume) {
+                                delete this.memory.currentFlag;
+                            }
+                            else {return this.memory.currentFlag;}
+                        }
+                    }
                     //creep still needed at this flag -> OK
                     return this.memory.currentFlag;
                 }
@@ -52,6 +69,20 @@ module.exports = function() {
                 if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
                     // static volumes
                     volume = 1;
+                }
+                if (flagFunction == "haulEnergy") {
+                    if (this.memory.role == "remoteStationaryHarvester") {
+                        var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', spawn: this.room.memory.masterSpawn}});
+                        if (peers.length <= 1) {
+                            return this.memory.currentFlag;
+                        }
+                    }
+                    else if (this.memory.role == "energyHauler") {
+                        var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
+                        if (peers.length < flagList[flag].memory.volume) {
+                            return this.memory.currentFlag;
+                        }
+                    }
                 }
                 else {
                     volume = flagList[flag].memory.volume;

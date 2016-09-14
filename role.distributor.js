@@ -12,6 +12,7 @@ module.exports = {
             var targetRoom;
             var transferResource;
             var energyCost = 0;
+            var packageVolume = 0;
             var info = creep.room.memory.terminalTransfer; // Format: ROOM:AMOUNT:RESOURCE:COMMENT W21S38:100:Z:TestTransfer
             if (info != undefined) {
                 info = info.split(":");
@@ -19,6 +20,13 @@ module.exports = {
                 transferAmount = parseInt(info[1]);
                 transferResource = info[2];
                 energyCost = Game.market.calcTransactionCost(transferAmount, terminal.room.name, targetRoom);
+
+                if (transferAmount > 500) {
+                    packageVolume = 500;
+                }
+                else {
+                    packageVolume = transferAmount;
+                }
             }
 
             var mineralTerminal = terminal.store[transferResource];
@@ -41,11 +49,12 @@ module.exports = {
                     // Terminal full, has to be emptied
                     creep.memory.subRole = "empty_terminal";
                 }
-                else if (info != undefined && transferResource != RESOURCE_ENERGY && (mineralTerminal + mineralCreep) < transferAmount) {
+                else if (info != undefined && transferResource != RESOURCE_ENERGY && (mineralTerminal + mineralCreep) <= packageVolume) {
                     // Terminals lacks minerals to execute transfer
                     creep.memory.subRole = "get_minerals";
                 }
-                else if (info != undefined && ((transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < (energyCost + transferAmount)) || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost))) {
+                else if (info != undefined && ((transferResource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < (energyCost + transferAmount))
+                                            || (transferResource != RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] + creep.carry.energy < energyCost))) {
                     // Terminals lacks energy to execute transfer
                     creep.memory.subRole = "get_energy";
                 }

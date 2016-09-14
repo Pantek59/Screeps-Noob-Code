@@ -1,5 +1,6 @@
 var roleBuilder = require('role.builder');
 var roleCollector = require('role.collector');
+var roleUpgrader = require('role.upgrader');
 
 module.exports = {
     // a function to run the logic for this role
@@ -29,7 +30,11 @@ module.exports = {
                     creep.towerEmergencyFill();
                 }
                 else {
-                    if (creep.room.memory.roomArraySpawns.length > 0) {
+                    if (creep.room.controller.level == 8 && spawnRoom.controller.ticksToDowngrade < 1000) {
+                        // Refresh level 8 controller
+                        roleUpgrader.run(creep);
+                    }
+                    else if (creep.room.memory.roomArraySpawns.length > 0) {
                         // find closest structure with less than max hits, exclude walls
                         var structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART) || (s.structureType == STRUCTURE_RAMPART && s.hits < 100000)});
                         // if we find one
