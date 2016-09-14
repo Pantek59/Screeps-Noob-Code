@@ -1,9 +1,13 @@
 var roleCollector = require('role.collector');
+var roleHarvester = require('role.harvester');
 
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
-        if (creep.room.name != creep.memory.homeroom) {
+        if (creep.room.controller.level == 8) {
+            roleHarvester.run(creep);
+        }
+        else if (creep.room.name != creep.memory.homeroom) {
             //return to home room
             var hometarget = Game.getObjectById(creep.memory.spawn);
             creep.moveTo(hometarget, {reusePath: 3});

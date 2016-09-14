@@ -6,29 +6,7 @@ module.exports = {
     // state working = Returning energy to structure
     run: function(creep) {
         // check for picked up minerals
-        var specialResources = false;
-
-        for (var resourceType in creep.carry) {
-            switch (resourceType) {
-                case RESOURCE_ENERGY:
-                    break;
-
-                default:
-                    // find closest container with space to get rid of minerals
-                    var freeContainer = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
-
-                    if (creep.room.name != creep.memory.homeroom) {
-                        creep.moveTo(creep.memory.spawn);
-                    }
-                    else if (creep.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(freeContainer, {reusePath: delayPathfinding});
-                    }
-                    specialResources = true;
-                    break;
-            }
-        }
-
-        if (specialResources == false) { // if creep is bringing energy to a structure but has no energy left
+        if (creep.getRidOfMinerals() == false) { // if creep is bringing energy to a structure but has no energy left
             if (_.sum(creep.carry) == 0) {
                 // switch state to harvesting
                 if (creep.memory.working == true) {

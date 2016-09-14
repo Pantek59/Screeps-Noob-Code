@@ -21,12 +21,15 @@ module.exports = function() {
 
                 default:
                     // find closest container with space to get rid of minerals
-                    var freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+
                     if (this.room.name != this.memory.homeroom) {
-                        this.moveTo(this.memory.spawn);
+                        this.moveTo(Game.getObjectById(this.memory.spawn));
                     }
-                    else if (this.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                        this.moveTo(freeContainer, {reusePath: 3});
+                    else {
+                        var freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+                        if (this.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
+                            this.moveTo(freeContainer, {reusePath: 3});
+                        }
                     }
                     specialResources = true;
                     break;

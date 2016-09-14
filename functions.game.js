@@ -118,6 +118,9 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
 };
 
 global.getRoomMineralLimit = function (roomName) {
+    if (arguments.length == 0) {
+        return "getRoomMineralLimit (roomName) --> getRoomMineralLimit(\"W16S47\")";
+    }
     if (Game.rooms[roomName].memory.roomMineralLimit == undefined) {
         return "No roomMineralLimit defined in room " + roomName + ".";
     }
@@ -127,11 +130,14 @@ global.getRoomMineralLimit = function (roomName) {
 };
 
 global.setRoomMineralLimit = function (roomName, limit) {
+    if (arguments.length == 0) {
+        return "setRoomMineralLimit (roomName, limit) --> getRoomMineralLimit(\"W16S47\", 250000)";
+    }
     if (Game.rooms[roomName].controller.owner.username == playerUsername) {
-        Game.rooms[roomName].memory.roomMineralLimit = limit;
+        Game.rooms[roomName].memory.roomMineralLimit = parseInt(limit);
         return "roomMineralLimit for room " + roomName + " has been set to " + Game.rooms[roomName].memory.roomMineralLimit + ".";
     }
     else {
-        return "Unowned room"
+        return "Room not owned by player!"
     }
 };

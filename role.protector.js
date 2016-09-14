@@ -47,8 +47,16 @@ module.exports = {
             }
         }
         else {
-            //No flag for protector -> probably spawned to defend room
-            //console.log("False protector flag: " + protectorFlag);
+            //No flag for protector anymore
+            var spawn = Game.getObjectById(creep.memory.spawn);
+            if (creep.room.name != creep.memory.homeroom) {
+                creep.moveTo(spawn, {reusePath: 5});
+            }
+            else {
+                var range = creep.pos.getRangeTo(spawn);
+                if (range > 10);
+                creep.moveTo(spawn, {reusePath: 3});
+            }
         }
     }
 };

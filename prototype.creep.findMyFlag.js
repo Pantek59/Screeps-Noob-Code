@@ -28,10 +28,10 @@ module.exports = function() {
                 }
                 flagCreeps = _.filter(Game.creeps,{ currentFlag: this.memory.currentFlag});
 
-                if (flagCreeps.length <= volume) {
+                if (this.memory.currentFlag != undefined && flagCreeps.length <= volume) {
                     if (flagFunction == "haulEnergy") {
                         if (this.memory.role == "remoteStationaryHarvester") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', spawn: spawnRoom.memory.masterSpawn}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
                             if (peers.length > 1) {
                                 //Two remoteStationaryHarvesters on same source
                                 delete this.memory.currentFlag;
@@ -70,22 +70,23 @@ module.exports = function() {
                     // static volumes
                     volume = 1;
                 }
+                else {
+                    volume = flagList[flag].memory.volume;
+                }
+
                 if (flagFunction == "haulEnergy") {
                     if (this.memory.role == "remoteStationaryHarvester") {
-                        var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', spawn: this.room.memory.masterSpawn}});
+                        var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
                         if (peers.length <= 1) {
                             return this.memory.currentFlag;
                         }
                     }
                     else if (this.memory.role == "energyHauler") {
-                        var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
+                        var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', currentFlag: this.memory.currentFlag}});
                         if (peers.length < flagList[flag].memory.volume) {
                             return this.memory.currentFlag;
                         }
                     }
-                }
-                else {
-                    volume = flagList[flag].memory.volume;
                 }
                 //console.log(this.name + " @ " + flagList[flag].name + ": " + flagCreeps.length);
 

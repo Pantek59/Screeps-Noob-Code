@@ -12,7 +12,7 @@ module.exports = {
                 creep.memory.currentFlag = creep.findMyFlag("narrowSource");
             }
 
-            if (creep.memory.currentFlag == undefined && creep.memory.currentFlag == -1) {
+            if (creep.memory.currentFlag == undefined) {
                 console.log(creep.name + " has no source to stationary harvest in room " + creep.room.name + ".");
             }
             else {

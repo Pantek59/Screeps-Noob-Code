@@ -79,13 +79,15 @@ module.exports = {
                         if (creep.room.memory.hostiles == 0) {
                             //No enemy creeps
                             var container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_CONTAINER);
-                            if (container != null) {
-                                if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(container, {reusePath: 10});
+                            container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
+                            container = _.filter(container, { structureType: STRUCTURE_CONTAINER});
+                            if (container.length > 0) {
+                                if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(container[0], {reusePath: 10});
                                 }
                             }
                             else {
-                                creep.say("No energy in container!");
+                                //creep.say("No energy in container!");
                                 roleCollector.run(creep);
                             }
                         }

@@ -634,29 +634,9 @@ module.exports.loop = function() {
         }
         else if (creep.spawning == false) {
             if (CPUdebug == true) {CPUdebugString.concat("<br>Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
-            if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "scientist" &&_.sum(creep.carry) != creep.carry.energy) {
+            if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
                 // Minerals found in creep
-                for (var resourceType in creep.carry) {
-                    switch (resourceType) {
-                        case RESOURCE_ENERGY:
-                            break;
-                        default:
-                            if (creep.room.name != creep.memory.homeroom) {
-                                creep.moveTo(Game.getObjectById(creep.memory.spawn), {reusePath: 5});
-                            }
-                            else {
-                                // find closest container with space to get rid of minerals
-                                var freeContainer = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
-                                if (creep.room.name != creep.memory.homeroom) {
-                                    creep.moveTo(creep.memory.spawn);
-                                }
-                                else if (creep.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(freeContainer, {reusePath: delayPathfinding});
-                                }
-                            }
-                            break;
-                    }
-                }
+                creep.getRidOfMinerals();
             }
             else {
                 // if creep is harvester, call harvester script

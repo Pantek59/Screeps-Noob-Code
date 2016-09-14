@@ -122,7 +122,7 @@ module.exports = function() {
 
                 case "distributor":
                     body.push(CARRY); //50
-                    body.push(MOVE);  //50
+                    body.push(CARRY);  //50
                     body.push(MOVE);  //50
                     size=150;
                     sizelimit = 10;
