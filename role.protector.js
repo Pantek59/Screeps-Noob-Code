@@ -54,8 +54,9 @@ module.exports = {
             }
             else {
                 var range = creep.pos.getRangeTo(spawn);
-                if (range > 10);
-                creep.moveTo(spawn, {reusePath: 3});
+                if (range > 10) {
+                    creep.moveTo(spawn, {reusePath: 3});
+                }
             }
         }
     }
