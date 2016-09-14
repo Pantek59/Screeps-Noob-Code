@@ -81,7 +81,7 @@ module.exports = {
                             var container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_CONTAINER);
                             container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
                             container = _.filter(container, { structureType: STRUCTURE_CONTAINER});
-                            if (container.length > 0) {
+                            if (container.length > 0 && container[0][RESOURCE_ENERGY] > 0) {
                                 if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                     creep.moveTo(container[0], {reusePath: 10});
                                 }

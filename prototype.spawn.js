@@ -184,6 +184,20 @@ module.exports = function() {
                     sizelimit = 1;
                     break;
 
+                case "attacker":
+                    body.push(MOVE); //50
+                    body.push(ATTACK); //80
+                    size = 130;
+                    sizelimit = 25;
+                    break;
+
+                case "healer":
+                    body.push(MOVE); //50
+                    body.push(HEAL); //250
+                    size = 300;
+                    sizelimit = 25;
+                    break;
+
 				default:
 					body.push(WORK); //100
 					body.push(CARRY); //50
