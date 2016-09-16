@@ -141,3 +141,37 @@ global.setRoomMineralLimit = function (roomName, limit) {
         return "Room not owned by player!"
     }
 };
+
+global.listStorages = function () {
+    // "<table><tr><th>Room</th><th>Lastname</th><th>Age</th></tr><tr><td>Jill</td><td>Smith</td><td>50</td></tr><tr><td>Eve</td><td>Jackson</td><td>94</td></tr></table>"
+    var returnstring = "<table><tr><th>Resource  </th>";
+    var resourceTable = new Array();
+
+    for (var r in Game.rooms) {
+        if (Game.rooms[r].storage != undefined) {
+            for (var res in Game.rooms[r].storage.store) {
+                if (resourceTable[res] == undefined) {
+                    resourceTable[res] = 0;
+                }
+                resourceTable[res] = new Array;
+                resourceTable[res].push(Game.rooms[r].storage.store[res]);
+
+                returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "</th>");
+
+            }
+        }
+    }
+
+    returnstring = returnstring.concat("</tr><tr>");
+
+    for (res in resourceTable) {
+        returnstring = returnstring.concat("<td>" + res + "  </td>");
+
+        for (var h = 0; h < resourceTable[res].length; h++) {
+            returnstring = returnstring.concat("<td>" )
+        }
+        //resourceInfo = resourceTable[res].pull ??
+    }
+    returnstring = returnstring.concat("</tr></table>");
+    console.log (returnstring);
+};

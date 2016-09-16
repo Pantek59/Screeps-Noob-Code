@@ -30,9 +30,13 @@ module.exports = {
                     creep.towerEmergencyFill();
                 }
                 else {
-                    if (creep.room.controller.level == 8 && spawnRoom.controller.ticksToDowngrade < 1000) {
+
+                    if (creep.room.controller.level == 8 && creep.room.controller.ticksToDowngrade < 3000) {
                         // Refresh level 8 controller
-                        roleUpgrader.run(creep);
+                        if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+                            // try to upgrade the controller, if not in range, move towards the controller
+                            creep.moveTo(creep.room.controller, {reusePath: 10});
+                        }
                     }
                     else if (creep.room.memory.roomArraySpawns.length > 0) {
                         // find closest structure with less than max hits, exclude walls
