@@ -1,4 +1,4 @@
-var playerUsername = "Pantek59";
+require ("globals");
 
 global.terminalTransfer = function (transferResource, transferAmount, targetRoom, transferFlag) {
     // transfer resources to remote room from whatever room(s) is cheapest
@@ -117,6 +117,44 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
     }
 };
 
+global.terminalTransferX = function (transferResource, transferAmount, sourceRoomName, targetRoomName, transferFlag) {
+    // transfer resources to from source to target
+    var roomCandidates = new Array();
+    var sourceRoom = Game.rooms[sourceRoomName];
+
+    if (arguments.length == 0) {
+        return "terminalTransferX (transferResource, transferAmount, sourceRoomName, targetRoomName, transferFlag) --> terminalTransfer(\"Z\", 10000, \"W18S49\", \"W16S47\", false)";
+    }
+
+    if (transferAmount < 100) {
+        return "Minimal amount for terminal transfers are 100 units.";
+    }
+
+    var totalCost = 0;
+
+    if (sourceRoom.storage == undefined || sourceRoom.terminal == undefined || (sourceRoom.storage.store[transferResource] + sourceRoom.terminal.store[transferResource]) < transferAmount) {
+        return "Error scheduling terminal transfer job.";
+    }
+    else {
+        var candidatesByCost = _.sortBy(roomCandidates,"cost");
+        if (transferFlag == false) {
+            console.log("Terminal Transfer Preview for room " + sourceRoom.name + " // " + targetRoomName + ":" + transferAmount + ":" + transferResource + ":global transfer // Total Energy Cost: " + Game.market.calcTransactionCost(transferAmount, sourceRoomName, targetRoomName));
+        }
+        else if (transferFlag == true) {
+            sourceRoom.memory.terminalTransfer = targetRoomName + ":" + transferAmount + ":" + transferResource + ":global transfer";
+            console.log(transferAmount + " " + transferResource + " scheduled from room " + sourceRoomName + " to room " + targetRoomName + " for " + Game.market.calcTransactionCost(transferAmount, sourceRoomName, targetRoomName) + " energy.");
+        }
+        else {
+            return "Transfer Flag missing.";
+        }
+
+        if (transferFlag == "cost") {
+            return totalCost;
+        }
+        return "OK";
+    }
+};
+
 global.getRoomMineralLimit = function (roomName) {
     if (arguments.length == 0) {
         return "getRoomMineralLimit (roomName) --> getRoomMineralLimit(\"W16S47\")";
@@ -143,35 +181,71 @@ global.setRoomMineralLimit = function (roomName, limit) {
 };
 
 global.listStorages = function () {
-    // "<table><tr><th>Room</th><th>Lastname</th><th>Age</th></tr><tr><td>Jill</td><td>Smith</td><td>50</td></tr><tr><td>Eve</td><td>Jackson</td><td>94</td></tr></table>"
     var returnstring = "<table><tr><th>Resource  </th>";
     var resourceTable = new Array();
 
+    //Prepare header row
     for (var r in Game.rooms) {
         if (Game.rooms[r].storage != undefined) {
+            returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "  </th>");
             for (var res in Game.rooms[r].storage.store) {
-                if (resourceTable[res] == undefined) {
-                    resourceTable[res] = 0;
+                if (resourceTable.indexOf(res) == -1) {
+                    resourceTable.push(res);
                 }
-                resourceTable[res] = new Array;
-                resourceTable[res].push(Game.rooms[r].storage.store[res]);
-
-                returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "</th>");
-
             }
         }
     }
-
-    returnstring = returnstring.concat("</tr><tr>");
-
+    returnstring = returnstring.concat("</tr>");
     for (res in resourceTable) {
-        returnstring = returnstring.concat("<td>" + res + "  </td>");
-
-        for (var h = 0; h < resourceTable[res].length; h++) {
-            returnstring = returnstring.concat("<td>" )
+        returnstring = returnstring.concat("<tr></tr><td>" + resourceTable[res] + "  </td>");
+        for (var r in Game.rooms) {
+            if (Game.rooms[r].storage != undefined) {
+                if (Game.rooms[r].storage.store[resourceTable[res]] == undefined) {
+                    var amount = 0;
+                }
+                else {
+                    var amount = Game.rooms[r].storage.store[resourceTable[res]];
+                }
+                returnstring = returnstring.concat("<td>" + amount + "  </td>");
+            }
         }
-        //resourceInfo = resourceTable[res].pull ??
+        returnstring = returnstring.concat("</tr>");
     }
     returnstring = returnstring.concat("</tr></table>");
-    console.log (returnstring);
+    return returnstring;
+};
+
+global.listLimits = function () {
+    var returnstring = "<table><tr><th>Resource  </th>";
+    var resourceTable = new Array();
+
+    //Prepare header row
+    for (var r in Game.rooms) {
+        if (Game.rooms[r].storage != undefined) {
+            returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "  </th>");
+            for (var res in Game.rooms[r].storage.store) {
+                if (resourceTable.indexOf(res) == -1) {
+                    resourceTable.push(res);
+                }
+            }
+        }
+    }
+    returnstring = returnstring.concat("</tr>");
+    for (res in resourceTable) {
+        returnstring = returnstring.concat("<tr></tr><td>" + resourceTable[res] + "  </td>");
+        for (var r in Game.rooms) {
+            if (Game.rooms[r].storage != undefined) {
+                if (Game.rooms[r].storage.store[resourceTable[res]] == undefined) {
+                    var amount = 0;
+                }
+                else {
+                    var amount = Game.rooms[r].storage.store[resourceTable[res]];
+                }
+                returnstring = returnstring.concat("<td>" + amount + "  </td>");
+            }
+        }
+        returnstring = returnstring.concat("</tr>");
+    }
+    returnstring = returnstring.concat("</tr></table>");
+    return returnstring;
 };

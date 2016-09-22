@@ -1,4 +1,4 @@
-const RESOURCE_SPACE = "space";
+require ("globals");
 
 var roleHarvester = require('role.harvester');
 

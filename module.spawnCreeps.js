@@ -35,11 +35,15 @@ module.exports = {
         //Volume defined by flags
         minimumSpawnOf["remoteHarvester"] = 0;
         minimumSpawnOf["claimer"] = 0;
+        minimumSpawnOf["bigClaimer"] = 0;
         minimumSpawnOf["protector"] = 0;
         minimumSpawnOf["stationaryHarvester"] = 0;
         minimumSpawnOf["remoteStationaryHarvester"] = 0;
         minimumSpawnOf["demolisher"] = 0;
         minimumSpawnOf["energyHauler"] = 0;
+        minimumSpawnOf["attacker"] = 0;
+        minimumSpawnOf["healer"] = 0;
+        minimumSpawnOf["einarr"] = 0;
 
         // Check for demolisher flags
         var demolisherFlags = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: spawnRoom.memory.masterSpawn}});
@@ -83,10 +87,29 @@ module.exports = {
             if (remoteController[t].room != undefined && remoteController[t].room != undefined && remoteController[t].room.controller.owner != undefined && remoteController[t].room.controller.owner.username == spawnRoom.controller.owner.username) {
                 //Target room already claimed
             }
-            else {
-                if (remoteController[t].room == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation.ticksToEnd < 3000) {
-                    minimumSpawnOf.claimer ++;
-                }
+            else if (remoteController[t].room == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation.ticksToEnd < 3000) {
+                minimumSpawnOf.claimer ++;
+            }
+        }
+
+        // Check for active flag "attackController"
+        var attackController = _.filter(Game.flags,{ memory: { function: 'attackController', spawn: spawnRoom.memory.masterSpawn}});
+        for (var t in attackController) {
+            minimumSpawnOf.bigClaimer += attackController.memory.volume;
+        }
+
+        // Check for unit groups
+        var groups = _.filter(Game.flags,{ memory: { function: 'unitGroup', spawn: spawnRoom.memory.masterSpawn}});
+        for (var g in groups) {
+
+            if (groups[g].memory.attacker != undefined) {
+                minimumSpawnOf.attacker += groups[g].memory.attacker;
+            }
+            if (groups[g].memory.healer != undefined) {
+                minimumSpawnOf.healer += groups[g].memory.healer;
+            }
+            if (groups[g].memory.einarr != undefined) {
+                minimumSpawnOf.einarr += groups[g].memory.einarr;
             }
         }
 
@@ -183,7 +206,6 @@ module.exports = {
                 break;
             }
         }
-        //console.log(spawnRoom.name + ": " + minimumSpawnOf.remoteStationaryHarvester + " / " + minimumSpawnOf.energyHauler);
 
         // Measuring number of active creeps
         var numberOf = new Array();
@@ -202,9 +224,13 @@ module.exports = {
         numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["remoteStationaryHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteStationaryHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["claimer"] = _.filter(Game.creeps,{ memory: { role: 'claimer', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["bigClaimer"] = _.filter(Game.creeps,{ memory: { role: 'bigClaimer', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["protector"] = _.filter(Game.creeps,{ memory: { role: 'protector', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["demolisher"] = _.filter(Game.creeps,{ memory: { role: 'demolisher', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["energyHauler"] = _.filter(Game.creeps,{ memory: { role: 'energyHauler', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["attacker"] = _.filter(Game.creeps,{ memory: { role: 'attacker', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["healer"] = _.filter(Game.creeps,{ memory: { role: 'healer', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["einarr"] = _.filter(Game.creeps,{ memory: { role: 'einarr', spawn: spawnRoom.memory.masterSpawn}}).length;
 
         // Addition of creeps being spawned
         for (s in spawnRoom.memory.roomArraySpawns) {
@@ -219,7 +245,7 @@ module.exports = {
                 }
             }
         }
-
+        //console.log(spawnRoom.name + ": " + _.filter(Game.creeps,{ memory: { role: 'energyHauler', spawn: spawnRoom.memory.masterSpawn}}));
         // Role selection
         var energy = spawnRoom.energyCapacityAvailable;
         var name = undefined;
@@ -243,6 +269,18 @@ module.exports = {
         }
         else if (numberOf.claimer < minimumSpawnOf.claimer) {
             var rolename = 'claimer';
+        }
+        else if (numberOf.einarr < minimumSpawnOf.einarr) {
+            var rolename = 'einarr';
+        }
+        else if (numberOf.bigClaimer < minimumSpawnOf.bigClaimer) {
+            var rolename = 'bigClaimer';
+        }
+        else if (numberOf.attacker < minimumSpawnOf.attacker) {
+            var rolename = 'attacker';
+        }
+        else if (numberOf.healer < minimumSpawnOf.healer) {
+            var rolename = 'healer';
         }
         else if (numberOf.stationaryHarvester < minimumSpawnOf.stationaryHarvester) {
             var rolename = 'stationaryHarvester';

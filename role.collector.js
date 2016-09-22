@@ -1,6 +1,4 @@
-const delayPathfinding = 2;
-const delayRoomScanning = 10;
-const RESOURCE_SPACE = "space";
+require ("globals");
 
 module.exports = {
     // a function to run the logic for this role

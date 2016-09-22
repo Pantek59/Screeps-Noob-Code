@@ -1,6 +1,5 @@
-const RESOURCE_SPACE = "space";
+require("globals");
 var roleCollector = require('role.collector');
-
 var roleBuilder = require('role.builder');
 
 module.exports = {
@@ -32,10 +31,23 @@ module.exports = {
                     roleBuilder.run(creep);
                 }
                 else {
+
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
-                        creep.repair(road[0]);
+                        var repairFlag = false;
+                        for (var part in creep.body) {
+                            if (creep.body[part].type == WORK && creep.body[part].hits > 0) {
+                                creep.repair(road[0]);
+                                repairFlag = true;
+                                break;
+                            }
+                        }
+                        if (repairFlag == false) {
+                            var spawn = Game.getObjectById(creep.memory.spawn);
+                            creep.moveTo(spawn, {reusePath: 5})
+                        }
+
                     }
                     else {
                         // Find exit to spawn room
@@ -67,7 +79,7 @@ module.exports = {
             else {
                 //Find remote source
                 var remoteSource = Game.flags[creep.findMyFlag("haulEnergy")];
-                if (remoteSource != -1 && remoteSource != undefined) {
+                if (remoteSource != undefined) {
 
                     // Find exit to target room
                     if (creep.room.name != remoteSource.pos.roomName) {
@@ -78,16 +90,19 @@ module.exports = {
                         //new room reached, start collecting
                         if (creep.room.memory.hostiles == 0) {
                             //No enemy creeps
-                            var container = creep.findResource(RESOURCE_ENERGY, STRUCTURE_CONTAINER);
-                            container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
+                            var container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
                             container = _.filter(container, { structureType: STRUCTURE_CONTAINER});
-                            if (container.length > 0 && container[0][RESOURCE_ENERGY] > 0) {
+                            if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
                                 if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(container[0], {reusePath: 10});
+                                    creep.moveTo(container[0], {reusePath: 5});
                                 }
                             }
+                            if (remoteSource.pos == creep.pos && Game.time % 5 == 0) {
+                                // Creep is blocking position
+                                //console.log(Game.time % 5);
+                                creep.moveTo(creep.room.controller);
+                            }
                             else {
-                                //creep.say("No energy in container!");
                                 roleCollector.run(creep);
                             }
                         }

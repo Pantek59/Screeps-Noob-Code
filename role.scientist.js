@@ -1,4 +1,4 @@
-const RESOURCE_SPACE = "space";
+require ("globals");
 
 module.exports = {
     // prepares ingredients and performs the reaction

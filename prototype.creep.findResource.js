@@ -1,5 +1,4 @@
-const delayPathfinding = 5;
-const RESOURCE_SPACE = "space";
+require ("globals");
 
 module.exports = function() {
     // find nearest requested resource and return object

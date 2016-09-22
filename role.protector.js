@@ -48,14 +48,11 @@ module.exports = {
         }
         else {
             //No flag for protector anymore
-            var spawn = Game.getObjectById(creep.memory.spawn);
-            if (creep.room.name != creep.memory.homeroom) {
-                creep.moveTo(spawn, {reusePath: 5});
-            }
-            else {
-                var range = creep.pos.getRangeTo(spawn);
-                if (range > 10) {
-                    creep.moveTo(spawn, {reusePath: 3});
+            if (creep.goToHomeRoom() == true) {
+                var spawn = Game.getObjectById(creep.memory.spawn);
+                var range = creep.pos.getRangeTo(creep.room.controller);
+                if (range > 6) {
+                    creep.moveTo(creep.room.controller, {reusePath: 3});
                 }
             }
         }

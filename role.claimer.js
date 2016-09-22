@@ -75,8 +75,17 @@ module.exports = {
                             creep.moveTo(creep.room.controller, {reusePath: 5});
                         break;
 
-                    case OK:  //TODO Spawn is for some reason not automatically constructed
-                        //remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
+                    case OK:  //TODO Spawn could be automatically constructed
+                        if (creep.room.controller.owner.username == playerUsername) {
+                            var spawns = creep.room.find(FIND_MY_SPAWNS).length;
+                            if (spawns == 0) {
+                                var spawnConstructionsites = creep.room.find(FIND_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
+                                if (spawnConstructionsites == 0) {
+                                    remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
+                                }
+                            }
+                        }
+
                         break;
 
                     default:

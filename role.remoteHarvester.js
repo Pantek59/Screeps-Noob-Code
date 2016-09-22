@@ -1,6 +1,7 @@
+require ("globals");
+
 var roleCollector = require('role.collector');
 var roleBuilder = require('role.builder');
-const RESOURCE_SPACE = "space";
 
 module.exports = {
     // state working = Returning energy to structure

@@ -1,10 +1,10 @@
-
+require ("globals");
 
 module.exports = {
     // state working = Returning energy to structure
 
     run: function(creep) {
-        if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false) {
+        if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false || creep.carry.energy == creep.carryCapacity) {
             if (creep.memory.currentFlag == undefined) {
                 creep.memory.currentFlag = creep.findMyFlag("haulEnergy");
             }

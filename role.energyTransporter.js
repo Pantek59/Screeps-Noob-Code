@@ -1,5 +1,4 @@
-const RESOURCE_SPACE = "space";
-const delayPathfinding = 2;
+require ("globals");
 
 var roleCollector = require('role.collector');
 

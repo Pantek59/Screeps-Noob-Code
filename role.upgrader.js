@@ -4,13 +4,14 @@ var roleHarvester = require('role.harvester');
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
-        if (creep.room.controller.level == 8) {
-            roleHarvester.run(creep);
-        }
-        else if (creep.room.name != creep.memory.homeroom) {
+
+        if (creep.room.name != creep.memory.homeroom) {
             //return to home room
             var hometarget = Game.getObjectById(creep.memory.spawn);
             creep.moveTo(hometarget, {reusePath: 3});
+        }
+        else if (creep.room.controller.level == 8) {
+            roleHarvester.run(creep);
         }
         else {
             // if creep is bringing energy to the controller but has no energy left

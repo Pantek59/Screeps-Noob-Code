@@ -1,8 +1,5 @@
 const CPUdebug = true;
-const delayPathfinding = 2;
-const delayRoomScanning = 50;
-const RESOURCE_SPACE = "space";
-
+require("globals");
 require('prototype.spawn')();
 require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
@@ -26,19 +23,10 @@ var moduleSpawnCreeps = require('module.spawnCreeps');
 var roleEnergyTransporter = require("role.energyTransporter");
 var roleEnergyHauler = require("role.energyHauler");
 var roleRemoteStationaryHarvester = require('role.remoteStationaryHarvester');
+var roleAttacker = require('role.attacker');
+var roleEinarr = require('role.einarr');
 
 var CPUdebugString = "CPU Debug<br><br>";
-var playerUsername = "Pantek59";
-var allies = new Array();
-allies.push("king_lispi");
-allies.push("Tanjera");
-allies.push("Atavus");
-allies.push("BlackLotus");
-allies.push("Atlan");
-allies.push("Moria");
-allies.push("Ashburnie");
-allies.push("seancl");
-
 // Any modules that you use that modify the game's prototypes should be require'd before you require the profiler.
 const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
 
@@ -62,7 +50,7 @@ module.exports.loop = function() {
         }
 
         // Market Code
-        if (Game.time % 10 == 0) {
+        if (Game.time == 0) { //dead code
             //Look for surplus materials
             var surplusMinerals = 0;
             var resource;
@@ -90,7 +78,7 @@ module.exports.loop = function() {
                             var orderCosts = global.terminalTransfer(orderResource,orderAmount,orderRoomName,"cost");
 
                             if (orderCosts < orderAmount && Game.map.getRoomLinearDistance(Game.rooms[r].name, orderRoomName) < 10) {
-                                console.log("Market opportunity found (" + orders[o].id + "): " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + (orderPrice * orderAmount) + " credits.");
+                                Game.notify("Market opportunity found (" + orders[o].id + "): " + orderAmount + " of " + orderResource + " to room " + orderRoomName + " for " + orderCosts + " energy and " + (orderPrice * orderAmount) + " credits.");
                             }
                         }
                     }
@@ -104,30 +92,29 @@ module.exports.loop = function() {
             var recipientRooms = new Array();
 
             for (var r in Game.rooms) {
-                if (Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 100000 && Game.rooms[r].memory.terminalTransfer == undefined) {
+                if (Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined && (Game.rooms[r].terminal.store[RESOURCE_ENERGY] + Game.rooms[r].storage.store[RESOURCE_ENERGY]) > 120000 && Game.rooms[r].memory.terminalTransfer == undefined) {
                     fullRooms.push(Game.rooms[r]);
                 }
-                else if (Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined) {
+                else if (Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined && (Game.rooms[r].terminal.store[RESOURCE_ENERGY] + Game.rooms[r].storage.store[RESOURCE_ENERGY]) < 100000) {
                     recipientRooms.push(Game.rooms[r]);
                 }
             }
 
             if (fullRooms.length > 0) {
                 if (recipientRooms.length > 0) {
-                    //recipientRooms = _.sortBy(recipientRooms, storage.store[RESOURCE_ENERGY]);
-                    fullRooms[0].memory.terminalTransfer = recipientRooms[0].name + ":10000:energy:Energy Balance";
+                    recipientRooms = _.sortBy(recipientRooms, function(room){ return room.storage.store[RESOURCE_ENERGY]});
+                    fullRooms[0].memory.terminalTransfer = recipientRooms[0].name + ":3500:energy:Energy Balance";
                 }
                 else {
-                    fullRooms[0].memory.terminalTransfer = "W16S47:10000:energy:King_Lispi";
+                    fullRooms[0].memory.terminalTransfer = "W16S47:3500:energy:King_Lispi";
                 }
             }
 
-            /* Inter-room mineral balancing
+            /* TODO: Inter-room mineral balancing
             var fullRooms = _.filter(Game.rooms, {filter: (s) => s.storage != undefined && s.terminal != undefined && _.sum(s.storage.store) > 750000});
             if (fullRooms.length > 0) {
                 var recipientRooms = _.filter(Game.rooms, {filter: (s) => s.storage != undefined && s.terminal != undefined && _.sum(s.storage.store) < 500000});
                 if (recipientRooms.length > 0) {
-                    //TODO Send 250'000 of resources to one of these rooms
                 }
             }*/
         }
@@ -150,9 +137,20 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.terminalEnergyCost = 0;
             }
 
+            //TODO: ResourceLimits
+            if (Game.rooms[r].memory.resourceLimits == undefined) {
+                //Set default resource limits
+                var roomLimits = {};
+                for (var res in RESOURCES_ALL) {
+                    roomLimits[RESOURCES_ALL[res]] = {};
+                    var limit = {maxTerminal:0, maxMining:100000, minMarket:100000};
+                    roomLimits[RESOURCES_ALL[res]] = limit;
+                }
+                Game.rooms[r].memory.resourceLimits = roomLimits;
+            }
+
             //  Refresher (will be executed every few ticks)
             var searchResult;
-
             if (Game.time % delayRoomScanning == 0) {
                 Game.rooms[r].memory.resourceTicker = Game.time;
 
@@ -266,6 +264,7 @@ module.exports.loop = function() {
             }
 
             //Flag code
+            //TODO Energyhaul sites must be included in one step
             if (CPUdebug == true) {CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
             var remoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'remoteSource'}});
 
@@ -533,6 +532,11 @@ module.exports.loop = function() {
 
             // Terminal code
             if (CPUdebug == true) {CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
+            if (Game.rooms[r].memory.terminalQueue != undefined && Game.rooms[r].memory.terminalQueue.length > 0 && Game.rooms[r].memory.terminalTransfer == undefined) {
+                Game.rooms[r].memory.terminalTransfer = Game.rooms[r].memory.terminalQueue[0];
+                delete Game.rooms[r].memory.terminalQueue[0];
+            }
+
             if (Game.rooms[r].memory.terminalTransfer != undefined) {
                 var terminal = Game.rooms[r].terminal;
                 if (terminal != undefined && Game.rooms[r].memory.terminalTransfer != undefined) {
@@ -557,10 +561,10 @@ module.exports.loop = function() {
                         if (terminal.send(resource,500,targetRoom,comment) == OK) {
                             info[1] -= 500;
                             Game.rooms[r].memory.terminalTransfer = info.join(":");
-                            console.log("<font color=#009bff type='highlight'>500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + Game.market.calcTransactionCost(500, terminal.room.name, targetRoom) + " energy: " + comment + "</font>");
+                            console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": 500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + Game.market.calcTransactionCost(500, terminal.room.name, targetRoom) + " energy: " + comment + "</font>");
                         }
                         else {
-                            console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource,500,targetRoom,comment) + "</font>");
+                            console.log("<font color=#ff0000 type='highlight'>Terminal transfer error (" + Game.rooms[r].name + "): " + terminal.send(resource,500,targetRoom,comment) + "</font>");
                         }
                     }
                     else if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount)
@@ -707,6 +711,9 @@ module.exports.loop = function() {
                     else if (creep.memory.role == 'claimer') {
                         roleClaimer.run(creep);
                     }
+                    else if (creep.memory.role == 'bigClaimer') {
+                        roleClaimer.run(creep);
+                    }
                     else if (creep.memory.role == 'stationaryHarvester') {
                         roleStationaryHarvester.run(creep);
                     }
@@ -727,6 +734,12 @@ module.exports.loop = function() {
                     }
                     else if (creep.memory.role == 'remoteStationaryHarvester') {
                         roleRemoteStationaryHarvester.run(creep);
+                    }
+                    else if (creep.memory.role == 'attacker') {
+                        roleAttacker.run(creep);
+                    }
+                    else if (creep.memory.role == 'einarr') {
+                        roleEinarr.run(creep);
                     }
                 }
             }

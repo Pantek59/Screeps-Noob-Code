@@ -1,6 +1,5 @@
 var roleBuilder = require('role.builder');
 var roleCollector = require('role.collector');
-var roleUpgrader = require('role.upgrader');
 
 module.exports = {
     // a function to run the logic for this role
@@ -31,7 +30,7 @@ module.exports = {
                 }
                 else {
 
-                    if (creep.room.controller.level == 8 && creep.room.controller.ticksToDowngrade < 3000) {
+                    if (creep.room.controller.level == 8 && creep.room.controller.ticksToDowngrade < 10000) {
                         // Refresh level 8 controller
                         if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
                             // try to upgrade the controller, if not in range, move towards the controller

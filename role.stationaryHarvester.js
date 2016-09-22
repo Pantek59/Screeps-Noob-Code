@@ -1,12 +1,10 @@
-
-
 module.exports = {
     // state working = Returning energy to structure
 
     run: function(creep) {
         //console.log(creep.name + ": " + creep.memory.statusHarvesting);
 
-        if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false) {
+        if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false || creep.carry.energy == creep.carryCapacity) {
             //Look for vacant source marked as narrowSource
             if (creep.memory.currentFlag == undefined) {
                 creep.memory.currentFlag = creep.findMyFlag("narrowSource");
@@ -57,24 +55,17 @@ module.exports = {
                 }
                 else if (flag != undefined) {
                     // Move to harvesting point
-                    if (!creep.memory.path) {
-                        creep.memory.path = creep.pos.findPathTo(flag);
-                    }
-                    if (creep.moveByPath(creep.memory.path) == ERR_NOT_FOUND) {
-                        creep.memory.path = creep.pos.findPathTo(flag);
-                        creep.moveByPath(creep.memory.path);
-                    }
+                    creep.moveTo(flag, {reusePath: 5});
                 }
                 else {
                     console.log(creep.name + " in room " + creep.room.name + " has a problem.");
-                    //creep.suicide();
                 }
             }
         }
         else {
             // Creep is harvesting, try to keep harvesting
             var result = creep.harvest(Game.getObjectById(creep.memory.statusHarvesting));
-            if (creep.harvest(creep.memory.statusHarvesting) != OK) {
+            if (result != OK) {
                 creep.memory.statusHarvesting = false;
             }
         }

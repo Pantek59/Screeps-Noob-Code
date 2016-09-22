@@ -6,7 +6,57 @@ var roleEnergyTransporter = require('role.energyTransporter');
 module.exports = {
     // state working = Transporting stuff somewhere
     run: function(creep) {
+        if (_.sum(creep.carry) == creep.carryCapacity) {
+            // Creep full
+            if (creep.room.memory.terminalTransfer == undefined) {
+                // No terminal transfer running
+                var terminalDrop  = false;
+
+                for (var res in creep.carry) {
+                    var delta = creep.checkTerminalLimits(res);
+                    if (delta != true && delta.amount < 0) {
+                        //Terminal needs attention
+                        var load = Math.abs(delta.amount);
+                        if (load > creep.carry[res]) {
+                            load = creep.carry[res];
+                        }
+                        if (creep.transfer(creep.room.storage, creep.carry[res], load) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(creep.room.storage);
+                        }
+                    }
+                }
+
+
+            }
+        }
+
+
         if (creep.room.storage != undefined && creep.room.terminal != undefined) {
+            if (creep.room.memory.terminalTransfer == undefined) {
+                // No ongoing terminal
+
+
+                if (delta == true) {
+                    // Terminal filled with the material it should be
+                    if (creep.getRidOfMinerals() == false) {
+                        roleEnergyTransporter.run(creep);
+                    }
+                }
+                else {
+                    // Terminal needs attention
+                    if (delta.amount > 0) {
+                        //Too much material in terminal
+
+                        if (creep.pos.getRangeTo(creep.room.terminal) > 1) {
+                            creep.moveTo(creep.room.terminal);
+                        }
+                        else {
+
+                        }
+                    }
+
+                }
+            }
             // Load terminal transfer info
             var terminal = creep.room.terminal;
             var transferAmount = 0;
