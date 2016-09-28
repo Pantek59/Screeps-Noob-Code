@@ -25,7 +25,7 @@ module.exports = {
                             //Lab has to be prepared
                             if (currentInnerLab.mineralType == undefined || currentInnerLab.mineralType == innerLabs[lb].resource) {
                                 //Lab needs minerals
-                                if (creep.dropAllToStorageBut(innerLabs[lb].resource) == true) {
+                                if (creep.storeAllBut(innerLabs[lb].resource) == true) {
                                     if (_.sum(creep.carry) == 0) {
                                         //Get minerals from storage
                                         var creepPackage;
@@ -48,7 +48,7 @@ module.exports = {
                             }
                             else {
                                 //Lab has to be emptied -> get rid of stuff in creep
-                                if (creep.dropAllToStorageBut() == true) {
+                                if (creep.storeAllBut() == true) {
                                     //Get minerals from storage
                                     if (creep.withdraw(currentInnerLab, currentInnerLab.mineralType) == ERR_NOT_IN_RANGE) {
                                         creep.moveTo(currentInnerLab, {reusePath: 5});
@@ -87,7 +87,7 @@ module.exports = {
                                 }
                             }
                             else {
-                                creep.dropAllToStorageBut();
+                                creep.storeAllBut();
                             }
                         }
                     }
@@ -104,7 +104,7 @@ module.exports = {
                             // Restart process to do more of the same
                             amount -= lab.mineralCapacity;
                             labOrder[0] = amount;
-                            labOrder[3] = "preparing";
+                            labOrder[3] = "prepare";
                             creep.room.memory.labOrder = labOrder.join(":");
                         }
                     }
@@ -125,7 +125,7 @@ module.exports = {
             for (var c in creep.room.memory.roomArrayLabs) {
                 lab = Game.getObjectById(creep.room.memory.roomArrayLabs[c]);
                 if (lab.mineralAmount > 0) {
-                    if (creep.dropAllToStorageBut() == true) {
+                    if (creep.storeAllBut() == true) {
                         if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(lab, {reusePath: 5});
                         }

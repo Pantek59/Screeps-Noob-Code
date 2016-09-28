@@ -1,7 +1,7 @@
 require ("globals");
 
 module.exports = function() {
-    // find nearest requested resource and return object
+    // find nearest requested resource and return object, otherwise return null
 
 
 	Creep.prototype.findResource =

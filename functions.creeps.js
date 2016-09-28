@@ -114,7 +114,7 @@ module.exports = function() {
         return checkTerminalLimits(this.room, resource);
     };
 
-    Creep.prototype.dropAllToStorageBut = function(resource) {
+    Creep.prototype.storeAllBut = function(resource) {
         // send creep to storage to empty itself into it, keeping one resource type. Use null to drop all resource types.
         if (arguments.length == 0 && _.sum(this.carry) == 0) {
             return true;
@@ -123,9 +123,13 @@ module.exports = function() {
             return true;
         }
 
-        if (this.room.storage != undefined && _.sum(this.carry) > 0) {
-            if (this.pos.getRangeTo(this.room.storage) > 1) {
-                this.moveTo(this.room.storage, {reusePath: 3});
+        if (_.sum(this.carry) > 0) {
+            var targetContainer = this.findResource(RESOURCE_SPACE,STRUCTURE_STORAGE);
+            if (targetContainer == null) {
+                targetContainer = this.findResource(RESOURCE_SPACE,STRUCTURE_CONTAINER);
+            }
+            if (this.pos.getRangeTo(targetContainer) > 1) {
+                this.moveTo(targetContainer, {reusePath: 3});
             }
             else {
                 for (var res in this.carry) {
@@ -133,7 +137,7 @@ module.exports = function() {
                         //keep this stuff
                     }
                     else {
-                        this.transfer(this.room.storage,res);
+                        this.transfer(targetContainer,res);
                     }
                 }
             }

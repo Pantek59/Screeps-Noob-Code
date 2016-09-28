@@ -69,7 +69,7 @@ module.exports = {
         }
         else if (creep.room.memory.roomArrayNukers != undefined && creep.room.memory.roomArrayNukers[0] != undefined && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= creep.carryCapacity || nuker.ghodium + creep.room.storage.store[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity)) {
             //Nuker in need of Ghodium and storage has enough of it
-            if (creep.dropAllToStorageBut(RESOURCE_GHODIUM) == true) {
+            if (creep.storeAllBut(RESOURCE_GHODIUM) == true) {
                 if (_.sum(creep.carry) < creep.carryCapacity && creep.room.storage.store[RESOURCE_GHODIUM] > 0) {
                     if (creep.withdraw(creep.room.storage, RESOURCE_GHODIUM) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(creep.room.storage, {reusePath: 5});
@@ -104,7 +104,7 @@ module.exports = {
 
             if (terminalDelta == 0) {
                 //Everything perfect!
-                if (creep.dropAllToStorageBut(RESOURCE_ENERGY) == true) {
+                if (creep.storeAllBut(RESOURCE_ENERGY) == true) {
                     roleEnergyTransporter.run(creep);
                 }
             }
@@ -129,7 +129,7 @@ module.exports = {
                     }
                     if (terminalResources.length == 0) {
                         // Material for storage left in creep
-                        creep.dropAllToStorageBut();
+                        creep.storeAllBut();
                     }
                 }
                 else {

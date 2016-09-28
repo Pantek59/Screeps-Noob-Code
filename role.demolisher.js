@@ -123,10 +123,10 @@ module.exports = {
                                 // find structures with energy
                                 var target = creep.findResource(RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TERMINAL, STRUCTURE_STORAGE, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_LAB);
                                 if (target == null) {
-                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_WALL});
+                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_CONTAINER});
                                 }
                                 if (target == null) {
-                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD});
+                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_CONTAINER});
                                 }
                                 if (target != null) {
                                     if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || target.energy != undefined && target.energy > 20) {
