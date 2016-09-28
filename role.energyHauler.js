@@ -99,7 +99,6 @@ module.exports = {
                             }
                             if (remoteSource.pos == creep.pos && Game.time % 5 == 0) {
                                 // Creep is blocking position
-                                //console.log(Game.time % 5);
                                 creep.moveTo(creep.room.controller);
                             }
                             else {

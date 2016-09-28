@@ -61,12 +61,7 @@ module.exports = {
                 }
                 switch (returncode) {
                     case ERR_NOT_IN_RANGE:
-                        // if not in range, move towards the controller
                         creep.moveTo(creep.room.controller, {reusePath: 5});
-                        break;
-
-                    case ERR_INVALID_TARGET:
-                        //if invalid, probably claimed
                         break;
 
                     case ERR_GCL_NOT_ENOUGH:
@@ -75,23 +70,28 @@ module.exports = {
                             creep.moveTo(creep.room.controller, {reusePath: 5});
                         break;
 
-                    case OK:  //TODO Spawn could be automatically constructed
-                        if (creep.room.controller.owner.username == playerUsername) {
-                            var spawns = creep.room.find(FIND_MY_SPAWNS).length;
-                            if (spawns == 0) {
-                                var spawnConstructionsites = creep.room.find(FIND_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
-                                if (spawnConstructionsites == 0) {
-                                    remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
-                                }
-                            }
-                        }
-
-                        break;
-
                     default:
                         creep.say(returncode);
                         creep.moveTo(creep.room.controller, {reusePath: 5});
                         break;
+                }
+
+                if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == playerUsername) {
+                    //Roomed successfully claimed, now build spawn and remove spawns and extensions from previous owner
+                    var spawns = creep.room.find(FIND_MY_SPAWNS).length;
+                    if (spawns == 0) {
+                        var spawnConstructionsites = creep.room.find(FIND_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
+                        if (spawnConstructionsites == 0) {
+                            remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
+                        }
+                    }
+
+                    var oldBuildings = creep.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION});
+                    for (var b in oldBuildings) {
+                        if (oldBuildings[b].isActive() == false) {
+                            oldBuildings.destroy();
+                        }
+                    }
                 }
             }
             else {

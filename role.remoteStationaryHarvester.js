@@ -15,7 +15,7 @@ module.exports = {
             else if (creep.room.memory.hostiles == 0) {
                 var flag = Game.flags[creep.memory.currentFlag];
                 if (flag != undefined) {
-                    if (flag.room == undefined || flag.room.name != creep.room.name) {
+                    if (flag.pos.roomName != creep.room.name) {
                         // Creep not in assigned room
                         creep.moveTo(flag, {reusePath: 10});
                     }

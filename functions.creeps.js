@@ -13,6 +13,7 @@ module.exports = function() {
 
     Creep.prototype.getRidOfMinerals = function() {
         // check for picked up minerals and transport them to the next container or storage, return true if found
+        // TODO Can this be replace by creep.dropAlltoStorageBut(RESOURCE_ENERGY)?
         var specialResources = false;
         for (var resourceType in this.carry) {
             switch (resourceType) {
@@ -21,7 +22,6 @@ module.exports = function() {
 
                 default:
                     // find closest container with space to get rid of minerals
-
                     if (this.room.name != this.memory.homeroom) {
                         this.moveTo(Game.getObjectById(this.memory.spawn));
                     }
@@ -111,22 +111,34 @@ module.exports = function() {
     };
 
     Creep.prototype.checkTerminalLimits = function(resource) {
-        // Check if terminal has exactly what it needs. If everything is as it should be true is returned.
-        // If material is missing or too much is in terminal, an array will be returned with the following format:
-        // delta.type = Type of resource / delta.amount = volume (positive number means surplus material)
+        return checkTerminalLimits(this.room, resource);
+    };
 
-        if (this.room.memory.resourceLimits == undefined) {
+    Creep.prototype.dropAllToStorageBut = function(resource) {
+        // send creep to storage to empty itself into it, keeping one resource type. Use null to drop all resource types.
+        if (arguments.length == 0 && _.sum(this.carry) == 0) {
             return true;
         }
-        var roomLimits = this.room.memory.resourceLimits;
-        if (this.room.terminal[resource] != roomLimits[resource].maxTerminal) {
-            var delta = {};
-            delta["type"] = resource;
-            delta["amount"] = this.room.terminal[res] - roomLimits[res].maxTerminal;
-            return delta;
-        }
-        else {
+        if (arguments.length == 1 && (_.sum(this.carry) == this.carry[resource] || _.sum(this.carry) == 0)) {
             return true;
         }
-    }
+
+        if (this.room.storage != undefined && _.sum(this.carry) > 0) {
+            if (this.pos.getRangeTo(this.room.storage) > 1) {
+                this.moveTo(this.room.storage, {reusePath: 3});
+            }
+            else {
+                for (var res in this.carry) {
+                    if (arguments.length == 1 && resource == res) {
+                        //keep this stuff
+                    }
+                    else {
+                        this.transfer(this.room.storage,res);
+                    }
+                }
+            }
+            return false;
+        }
+        else {return true;}
+    };
 };

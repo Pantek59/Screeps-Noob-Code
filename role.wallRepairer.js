@@ -26,7 +26,7 @@ module.exports = {
             // if creep is supposed to repair something
             if (creep.memory.working == true) {
                 if (creep.memory.statusRepairing == undefined) {
-                    var rampartsBeingSetUp = creep.room.find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART && s.hits < 100000});
+                    var rampartsBeingSetUp = creep.room.find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART && s.hits < 70000});
                     var constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, { filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                     if (constructionSite != null && rampartsBeingSetUp.length == 0) {
                         // Construction sites found

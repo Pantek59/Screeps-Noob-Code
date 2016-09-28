@@ -87,7 +87,7 @@ module.exports = {
                          creep.moveTo(mineral);
                          creep.memory.statusHarvesting = false;
                      }
-                     else if (mineral != null && result == OK) {
+                     else if (mineral != null && (result == OK || result == ERR_TIRED)) {
                          creep.memory.statusHarvesting = mineral.id;
                      }
                      else {

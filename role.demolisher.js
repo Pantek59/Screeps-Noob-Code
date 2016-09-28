@@ -4,6 +4,7 @@ var roleHarvester = require('role.harvester');
 
 module.exports = {
     run: function(creep) {
+        var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
         // if creep is bringing energy to a structure but has no energy left
         if (creep.room.memory.hostiles > 0) {
             var homespawn = Game.getObjectById(creep.memory.spawn);
@@ -17,14 +18,23 @@ module.exports = {
         }
 
         if (creep.carry.energy == 0) {
-
-            // switch state to harvesting
+            // switch state to demolishing
             creep.memory.working = false;
         }
-        // if creep is harvesting energy but is full
         else if (creep.carry.energy == creep.carryCapacity) {
-            creep.memory.working = true;
-            delete creep.memory.path;
+            // if creep is demolishing but is full
+            demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
+            if (demolishFlag.length > 0) {
+                demolishFlag = demolishFlag[0];
+                if (demolishFlag.memory.dropEnergy == true) {
+                    creep.drop(RESOURCE_ENERGY);
+                    creep.memory.dropEnergy = true;
+                }
+                else {
+                    creep.memory.working = true;
+                    delete creep.memory.path;
+                }
+            }
         }
 
         // if creep is supposed to transfer energy to a structure
@@ -58,18 +68,23 @@ module.exports = {
         else {
             //TODO Several demolishers per spawn; use creep.findMyFlag()
             //Find something to demolish
-            var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}})[0];
 
-            //var demolishFlag = creep.findMyFlag("demolish");
-            //demolishFlag = _.filter(Game.flags,{ name: demolishFlag});
-            if (demolishFlag != null) {
+            var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
+            if (demolishFlag.length > 0) {
                 // Find exit to target room
-                if (demolishFlag.room == undefined || creep.room.name != demolishFlag.room.name) {
+                demolishFlag = demolishFlag[0];
+
+                if (creep.room.name != demolishFlag.pos.roomName) {
                     //still in old room, go out
-                    creep.moveTo(demolishFlag, {reusePath: 3});
+                    if (creep.moveTo(demolishFlag) == ERR_NO_PATH) {
+                        delete creep.memory._move;
+                        delete creep.memory.path;
+                    }
                     creep.memory.oldRoom = true;
                 }
-                else {
+
+                if (creep.room.name == demolishFlag.pos.roomName) {
+
                     if (creep.room.memory.hostiles == 0) {
                         if (creep.memory.statusDemolishing == undefined) {
                             //new room reached, start demolishing
@@ -106,12 +121,13 @@ module.exports = {
                             else if (demolishFlag.memory.target == "room") {
                                 //demolish all structures in room
                                 // find structures with energy
-                                //var target = creep.pos.findClosestByPath(FIND_STRUCTURES,{ filter: (s) =>((s.energy != undefined && s.energy > 0) || (s.store != undefined && s.store[RESOURCE_ENERGY] > 0)) && (s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION || s.structureType == STRUCTURE_TOWER || s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE || s.structureType == STRUCTURE_TERMINAL || s.structureType == STRUCTURE_LINK || s.structureType == STRUCTURE_LAB)});
                                 var target = creep.findResource(RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TERMINAL, STRUCTURE_STORAGE, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_LAB);
+                                if (target == null) {
+                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_WALL});
+                                }
                                 if (target == null) {
                                     target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD});
                                 }
-
                                 if (target != null) {
                                     if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || target.energy != undefined && target.energy > 20) {
                                         //empty structure of energy first

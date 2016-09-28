@@ -40,10 +40,12 @@ module.exports = {
         minimumSpawnOf["stationaryHarvester"] = 0;
         minimumSpawnOf["remoteStationaryHarvester"] = 0;
         minimumSpawnOf["demolisher"] = 0;
+        minimumSpawnOf["distributor"] = 0;
         minimumSpawnOf["energyHauler"] = 0;
         minimumSpawnOf["attacker"] = 0;
         minimumSpawnOf["healer"] = 0;
         minimumSpawnOf["einarr"] = 0;
+        minimumSpawnOf["scientist"] = 0;
 
         // Check for demolisher flags
         var demolisherFlags = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: spawnRoom.memory.masterSpawn}});
@@ -87,7 +89,7 @@ module.exports = {
             if (remoteController[t].room != undefined && remoteController[t].room != undefined && remoteController[t].room.controller.owner != undefined && remoteController[t].room.controller.owner.username == spawnRoom.controller.owner.username) {
                 //Target room already claimed
             }
-            else if (remoteController[t].room == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation.ticksToEnd < 3000) {
+            else if (remoteController[t].room == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation.ticksToEnd < 3000) {
                 minimumSpawnOf.claimer ++;
             }
         }
@@ -113,7 +115,7 @@ module.exports = {
             }
         }
 
-        //Spawning volumes scaling with # of sources in room
+        /**Spawning volumes scaling with # of sources in room**/
         var constructionSites = spawnRoom.find(FIND_CONSTRUCTION_SITES);
         var constructionOfRampartsAndWalls = 0;
 
@@ -159,33 +161,40 @@ module.exports = {
         // Distributor
         if (spawnRoom.memory.terminalTransfer != undefined) {
             //ongoing terminal transfer
-            var info = spawnRoom.memory.terminalTransfer;
-            info = info.split(":");
-            if (parseInt(info[1]) > 3000 || minimumSpawnOf.stationaryHarvester == 0) {
-                minimumSpawnOf["distributor"] = 1;
-            }
-            else {
-                // Amount too small -> pick up with energyTransporter
-                minimumSpawnOf["distributor"] = 0;
-            }
-        }
-        else if (spawnRoom.terminal != undefined && (_.sum(spawnRoom.terminal.store) - spawnRoom.terminal.store[RESOURCE_ENERGY] > 3000 || minimumSpawnOf.stationaryHarvester == 0)) {
             minimumSpawnOf["distributor"] = 1;
         }
-        else {
-            // Amount too small -> pick up with energyTransporter
-            minimumSpawnOf["distributor"] = 0;
-        }
-
-        // Miner
-        minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
-        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]).mineralAmount == 0 || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.roomMineralLimit)) {
-            minimumSpawnOf.miner = 0;
+        else if (spawnRoom.terminal != undefined && spawnRoom.storage != undefined) {
+            for (var rs in RESOURCES_ALL) {
+                //console.log(spawnRoom.name + ": " + checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount);
+                if ((checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount < 0 && spawnRoom.storage.store[RESOURCES_ALL[rs]] > 0)
+                  || checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount > 0) {
+                    minimumSpawnOf["distributor"] = 1;
+                    break;
+                }
+            }
         }
 
         // Harvester & Repairer
         minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
+
+        /** Rest **/
+        // Miner
+        minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
+        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]).mineralAmount == 0 || spawnRoom.memory.resourceLimits[roomMineralType] == undefined || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.resourceLimits[roomMineralType].maxMining)) {
+            minimumSpawnOf.miner = 0;
+        }
+
+
+
+        // Scientist
+        if (spawnRoom.memory.labOrder != undefined) {
+            var info = spawnRoom.memory.labOrder.split(":");
+            if (info[3] != "running") {
+                minimumSpawnOf.scientist = 1;
+            }
+        }
+
         // Adjustments in case of hostile presence
         var enemyCreeps = spawnRoom.find(FIND_HOSTILE_CREEPS);
         for (var g in enemyCreeps) {
@@ -219,6 +228,7 @@ module.exports = {
         numberOf["upgrader"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "upgrader")}).length;
         numberOf["distributor"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "distributor")}).length;
         numberOf["energyTransporter"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
+        numberOf["scientist"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "scientist")}).length;
 
         //Creeps leaving room
         numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
@@ -245,7 +255,8 @@ module.exports = {
                 }
             }
         }
-        //console.log(spawnRoom.name + ": " + _.filter(Game.creeps,{ memory: { role: 'energyHauler', spawn: spawnRoom.memory.masterSpawn}}));
+        //console.log(spawnRoom.name + ": " + minimumSpawnOf.distributor);
+
         // Role selection
         var energy = spawnRoom.energyCapacityAvailable;
         var name = undefined;
@@ -285,6 +296,9 @@ module.exports = {
         else if (numberOf.stationaryHarvester < minimumSpawnOf.stationaryHarvester) {
             var rolename = 'stationaryHarvester';
         }
+        else if (numberOf.demolisher < minimumSpawnOf.demolisher) {
+            var rolename = 'demolisher';
+        }
         else if (numberOf.remoteStationaryHarvester < minimumSpawnOf.remoteStationaryHarvester) {
             var rolename = 'remoteStationaryHarvester';
         }
@@ -315,11 +329,11 @@ module.exports = {
         else if (numberOf.builder < minimumSpawnOf.builder) {
             var rolename = 'builder';
         }
-        else if (numberOf.demolisher < minimumSpawnOf.demolisher) {
-            var rolename = 'demolisher';
-        }
         else if (numberOf.wallRepairer < minimumSpawnOf.wallRepairer) {
             var rolename = 'wallRepairer';
+        }
+        else if (numberOf.scientist < minimumSpawnOf.scientist) {
+            var rolename = 'scientist';
         }
         else {
             // Surplus spawning

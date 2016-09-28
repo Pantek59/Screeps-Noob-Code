@@ -48,12 +48,11 @@ module.exports = function() {
 					body.push(WORK); //100
                     body.push(WORK); //100
                     body.push(WORK); //100
-                    body.push(WORK); //100
 					body.push(CARRY); //50
                     body.push(CARRY); //50
 					body.push(MOVE);  //50
                     body.push(MOVE);  //50
-					size=800;
+					size=700;
 					sizelimit = 1;
 					break;
 				
@@ -110,11 +109,11 @@ module.exports = function() {
                     break;
 
 				case "protector":
-					body.push(ATTACK);//100
-					body.push(ATTACK);//100
+					body.push(ATTACK);//80
+					body.push(ATTACK);//80
 					body.push(MOVE);  //50
 					body.push(MOVE);  //50
-					size=300;
+					size=260;
 					sizelimit = 7;
 					break;
 
@@ -129,11 +128,12 @@ module.exports = function() {
 					break;
 
                 case "distributor":
+                case "scientist":
                     body.push(CARRY); //50
                     body.push(CARRY);  //50
                     body.push(MOVE);  //50
                     size=150;
-                    sizelimit = 10;
+                    sizelimit = 5;
                     break;
 
                 case "demolisher":

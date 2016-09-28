@@ -1,120 +1,145 @@
 require ("globals");
+var roleEnergyTransporter = require("role.energyTransporter");
 
 module.exports = {
     // prepares ingredients and performs the reaction
+    run: function(creep) {
+        if (creep.room.memory.labOrder != undefined && creep.room.memory.innerLabs != undefined) {
+            // Ongoing labOrder with defined innerLabs
+            var labOrder = creep.room.memory.labOrder.split(":");
+            var amount = labOrder[0];
+            var innerLabs = creep.room.memory.innerLabs;
+            var status = labOrder[3];
 
-    run: function(creep) { // Lab order format (room.memory.labOrder): [VOLUME]:[INGREDIENT1]:[INGREDIENT2]:[RESULT] e.g. 100:Z:O:ZO
-        var creepPickingUp;
-        var order = creep.room.memory.labOrder.split(":");
-        var orderAmount = order[0];
+            if (innerLabs.length != 2) {return "Not enough inner labs found!"};
+            switch (status) {
+                case "prepare":
+                    var labs = [];
+                    var labsReady = 0;
+                    labs.push(Game.getObjectById(innerLabs[0].labID));
+                    labs.push(Game.getObjectById(innerLabs[1].labID));
+                    for (var lb in labs) {
+                        //Checking inner labs
+                        var currentInnerLab = labs[lb];
+                        if (currentInnerLab.mineralType != innerLabs[lb].resource || (currentInnerLab.mineralType == innerLabs[lb].resource && (currentInnerLab.mineralAmount < currentInnerLab.mineralCapacity && currentInnerLab.mineralAmount < amount))) {
+                            //Lab has to be prepared
+                            if (currentInnerLab.mineralType == undefined || currentInnerLab.mineralType == innerLabs[lb].resource) {
+                                //Lab needs minerals
+                                if (creep.dropAllToStorageBut(innerLabs[lb].resource) == true) {
+                                    if (_.sum(creep.carry) == 0) {
+                                        //Get minerals from storage
+                                        var creepPackage;
+                                        if (amount > creep.carryCapacity) {
+                                            creepPackage = creep.carryCapacity;
+                                        }
+                                        else {
+                                            creepPackage = amount;
+                                        }
+                                        if (creep.withdraw(creep.room.storage, innerLabs[lb].resource, creepPackage) == ERR_NOT_IN_RANGE) {
+                                            creep.moveTo(creep.room.storage, {reusePath: 5});
+                                        }
+                                    }
+                                    else {
+                                        if (creep.transfer(currentInnerLab, innerLabs[lb].resource) == ERR_NOT_IN_RANGE) {
+                                            creep.moveTo(currentInnerLab, {reusePath: 5});
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                //Lab has to be emptied -> get rid of stuff in creep
+                                if (creep.dropAllToStorageBut() == true) {
+                                    //Get minerals from storage
+                                    if (creep.withdraw(currentInnerLab, currentInnerLab.mineralType) == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(currentInnerLab, {reusePath: 5});
+                                    }
+                                }
+                            }
+                            break;
+                        }
 
-        if (creep.room.memory.labOrderArray == undefined) {
-            // Find and load labs in creep memory
-            var labsArray = new Array();
+                        if (currentInnerLab.mineralType == innerLabs[lb].resource && (currentInnerLab.mineralAmount == currentInnerLab.mineralCapacity || currentInnerLab.mineralAmount >= amount)) {
+                            labsReady++;
+                        }
+                    }
 
-            for (var l in creep.room.memory.roomArrayLabs) {
-                var lab = Game.getObjectById(creep.room.memory.roomArrayLabs[l]);
-                var neighboringLabs = lab.pos.findInRange(FIND_MY_STRUCTURES, 1, {filter: (s) => (s.structureType == STRUCTURE_LAB)});
-                if (neighboringLabs.length > 1) {
-                    var outputLab = new Array();
-                    var inputLab1 = new Array();
-                    var inputLab2 = new Array();
-
-                    outputLab["id"] = lab.id;
-                    outputLab["mineralType"] = order[3];
-
-                    inputLab1["id"] = neighboringLabs[0].id;
-                    inputLab1["mineralType"] = order[1];
-
-                    inputLab2["id"] = neighboringLabs[1].id;
-                    inputLab2["mineralType"] = order[2];
-
-                    labsArray["outputLab"] = outputLab;
-                    labsArray["inputLab1"] = inputLab1;
-                    labsArray["inputLab2"] = inputLab2;
-
-                    creep.room.memory.labOrderArray = labsArray;
+                    if (labsReady == 2) {
+                        /*
+                        var info = creep.room.memory.labOrder.split(":");
+                        info[3] = "running";
+                        creep.room.memory.labOrder = info.join(":");
+                         */
+                        creep.say("Done?");
+                    }
                     break;
+
+                case "done":
+                    //Empty all labs to storage
+                    var emptylabs = 0;
+                    var lab;
+                    for (var c in creep.room.memory.roomArrayLabs) {
+                        lab = Game.getObjectById(creep.room.memory.roomArrayLabs[c]);
+                        if (lab.mineralAmount > 0 && lab.id != innerLabs[0].labID && lab.id != innerLabs[1].labID) {
+                        {
+                            if (_.sum(creep.carry) < creep.carryCapacity) {
+                                if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(lab, {reusePath: 5});
+                                }
+                            }
+                            else {
+                                creep.dropAllToStorageBut();
+                            }
+                        }
+                    }
+                else
+                {
+                    emptylabs++;
                 }
+            }
+            if (emptylabs == creep.room.memory.roomArrayLabs.length && lab != undefined) {
+                        if (amount <= lab.mineralCapacity) {
+                            delete creep.room.memory.labOrder;
+                        }
+                        else {
+                            // Restart process to do more of the same
+                            amount -= lab.mineralCapacity;
+                            labOrder[0] = amount;
+                            labOrder[3] = "preparing";
+                            creep.room.memory.labOrder = labOrder.join(":");
+                        }
+                    }
+                    break;
+
+                case "running":
+                default:
+                    delete creep.memory.targetBuffer;
+                    delete creep.memory.resourceBuffer;
+                    roleEnergyTransporter.run(creep);
+                    break;
             }
         }
-
-        if (creep.room.memory.labOrder != undefined && creep.room.memory.labOrderArray != undefined){
-            // Lab order exists and lab array has been loaded successfully
-            var inputLab1 = Game.getObjectById(creep.room.memory.labOrderArray.inputLab1.id);
-            var inputLab2 = Game.getObjectById(creep.room.memory.labOrderArray.inputLab2.id);
-            var outputLab = Game.getObjectById(creep.room.memory.labOrderArray.outputLab.id);
-
-            if (_.sum(creep.carry) == 0) {
-                creepPickingUp = true;
-            }
-            else if (_.sum(creep.carry) == creep.carryCapacity) {
-                creepPickingUp = false;
-            }
-
-            if (creepPickingUp == true) {
-                // Scientist picking up material
-                if (inputLab1.mineralType != creep.room.memory.labOrderArray.inputLab1.mineralType) {
-                    // Input lab 1 has to be emptied
-                    if (creep.withdraw(inputLab1,inputLab1.mineralType) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(inputLab1, {reusePath: 3});
-                    }
-                }
-                else if (inputLab2.mineralType != creep.room.memory.labOrderArray.inputLab2.mineralType) {
-                    // Input lab 2 has to be emptied
-                    if (creep.withdraw(inputLab2,inputLab1.mineralType) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(inputLab2, {reusePath: 3});
-                    }
-                }
-                else if (outputLab.mineralType != creep.room.memory.labOrderArray.outputLab.mineralType) {
-                    // Output lab has to be emptied
-                    if (creep.withdraw(outputLab,inputLab1.mineralType) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(outputLab, {reusePath: 3});
+        else {
+            //Empty all labs to storage
+            var emptylabs = 0;
+            var lab;
+            for (var c in creep.room.memory.roomArrayLabs) {
+                lab = Game.getObjectById(creep.room.memory.roomArrayLabs[c]);
+                if (lab.mineralAmount > 0) {
+                    if (creep.dropAllToStorageBut() == true) {
+                        if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(lab, {reusePath: 5});
+                        }
                     }
                 }
                 else {
-                    //Scientist ready for filling from storage
-                    if (inputLab1.mineralAmount + creep.carry[creep.room.memory.labOrderArray.inputLab1.mineralType] < orderAmount) {
-                        if (creep.withdraw(creep.room.storage,inputLab1.mineralType) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(creep.room.storage, {reusePath: 3});
-                        }
-                    }
-                    else if (inputLab2.mineralAmount + creep.carry[creep.room.memory.labOrderArray.inputLab2.mineralType] < orderAmount) {
-                        if (creep.withdraw(creep.room.storage,inputLab2.mineralType) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(creep.room.storage, {reusePath: 3});
-                        }
-                    }
-                    else {
-                        creepPickingUp = false;
-                    }
+                    emptylabs++;
                 }
             }
 
-            if (creepPickingUp == false) {
-                // Scientist delivering material
-                for (var resourceType in creep.carry) {
-                    if (resourceType == creep.room.memory.labOrderArray.inputLab1.mineralType) {
-                        //Found ingredient of input lab 1
-                        if (creep.transfer(inputLab1,creep.room.memory.labOrderArray.inputLab1.mineralType) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(inputLab1, {reusePath: 2});
-                        }
-                    }
-                    else if (resourceType == order[2]) {
-                        //Found ingredient of input lab 2
-                        if (creep.transfer(inputLab2,creep.room.memory.labOrderArray.inputLab2.mineralType) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(inputLab2, {reusePath: 2});
-                        }
-                    }
-                    else {
-                        //Get rid of it
-                        if (creep.room.name != creep.memory.homeroom) {
-                            creep.moveTo(creep.memory.spawn);
-                        }
-                        else if (creep.transfer(creep.room.storage, resourceType) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(creep.room.storage, {reusePath: delayPathfinding});
-                        }
-                    }
-                }
+            if (emptylabs == creep.room.memory.roomArrayLabs.length) {
+                delete creep.memory.targetBuffer;
+                delete creep.memory.resourceBuffer;
+                roleEnergyTransporter.run(creep);
             }
         }
     }
