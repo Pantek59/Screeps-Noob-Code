@@ -53,8 +53,13 @@ module.exports = {
 
             if (creep.room.memory.hostiles == 0) {
                 // try to claim the controller
+                var returncode;
                 if (remoteController.memory.claim == 1) {
-                    var returncode = creep.claimController(creep.room.controller);
+                    if(creep.room.controller.owner!=playerUsername){
+                        returncode=creep.attackController(creep.room.controller);
+                    }else{
+                        returncode = creep.claimController(creep.room.controller);
+                    }
                 }
                 else {
                     returncode = ERR_GCL_NOT_ENOUGH;
