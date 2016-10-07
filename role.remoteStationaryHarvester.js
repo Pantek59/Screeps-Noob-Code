@@ -24,8 +24,8 @@ module.exports = {
 
                         if (creep.carry.energy > 0) {
                             //Identify and save container
-                            var buildContainers = creep.pos.findInRange(FIND_CONSTRUCTION_SITES, 1, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
-                            var repairContainers = creep.pos.findInRange(FIND_STRUCTURES, 1, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.hits < s.hitsMax});
+                            var buildContainers = creep.pos.findInRange(FIND_CONSTRUCTION_SITES, 0, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
+                            var repairContainers = creep.pos.findInRange(FIND_STRUCTURES, 0, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.hits < s.hitsMax});
                             if (buildContainers.length > 0) {
                                 creep.build(buildContainers[0]);
                             }
@@ -35,7 +35,7 @@ module.exports = {
                             else {
                                 if (creep.memory.container == undefined) {
                                     var container;
-                                    var containers = creep.pos.findInRange(FIND_STRUCTURES, 1, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER && s.storeCapacity - _.sum(s.store) > 0) || (s.structureType == STRUCTURE_LINK && s.energyCapacity - s.energy) > 0});
+                                    var containers = creep.pos.findInRange(FIND_STRUCTURES, 0, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER && s.storeCapacity - _.sum(s.store) > 0) || (s.structureType == STRUCTURE_LINK && s.energyCapacity - s.energy) > 0});
                                     if (containers.length > 0) {
                                         creep.memory.container = containers[0].id;
                                         container = containers[0];
@@ -47,7 +47,7 @@ module.exports = {
 
                                 if (creep.transfer(container, RESOURCE_ENERGY) != OK) {
                                     delete creep.memory.container;
-                                    containers = creep.pos.findInRange(FIND_STRUCTURES, 1, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER)});
+                                    containers = creep.pos.findInRange(FIND_STRUCTURES, 0, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER)});
                                     var constructionSites =  creep.pos.findInRange(FIND_CONSTRUCTION_SITES, 1, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER)});
                                     if (containers.length == 0 && constructionSites.length == 0) {
                                         creep.pos.createConstructionSite(STRUCTURE_CONTAINER);

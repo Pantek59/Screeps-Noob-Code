@@ -5,7 +5,7 @@ module.exports = {
         var group = creep.findMyFlag("unitGroup");
         var groupFlag = _.filter(Game.flags,{ name: group})[0];
 
-        if (groupFlag != undefined && groupFlag != null && creep.room.memory.hostiles > 0 || creep.room.name == groupFlag.pos.roomName) {
+        if (groupFlag != undefined && (groupFlag != null && creep.room.memory.hostiles > 0 || creep.room.name == groupFlag.pos.roomName)) {
             // Attack when hostiles are present or when target room is reached
             // Look for structures designated by flag
             if (creep.room.name == groupFlag.pos.roomName) {
@@ -21,32 +21,50 @@ module.exports = {
                             }
                         }
                     }
+
+                    var flagStructures = groupFlag.pos.lookFor(LOOK_CONSTRUCTION_SITES);
+                    if (flagStructures.length > 0) {
+                        for (var struct in flagStructures) {
+                            if (flagStructures[struct].structureType != STRUCTURE_ROAD) {
+                                target = flagStructures[struct];
+                            }
+                        }
+                    }
+                }
+
+                if (target == null || target == undefined) {
+                    // No structure to be attacked
+                    target = creep.findNearestEnemyAttacker(8, groupFlag.pos);
+                    if (target == null) {
+                        target = creep.findNearestEnemyHealer(8, groupFlag.pos);
+                    }
+                    if (target == null) {
+                        target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS);
+                    }
+                }
+            }
+            else {
+                // Creep still on route
+                let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3);
+                if (nearTargets.length > 0) {
+                    target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS);
+                }
+                else {
+                    creep.moveTo(groupFlag, {reusePath: 5});
                 }
             }
 
-            if (target == null || target == undefined) {
-                // No structure to be attacked
-                target = creep.findNearestEnemyAttacker();
-
-                if (target == null) {
-                    target = creep.findNearestEnemyHealer();
-                }
-            }
 
             if (target != undefined) { // Attack target
                 if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                    var nearTarget = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1);
-                    if (nearTarget.length > 0) {
-                        creep.attack(nearTarget[0]);
-                        creep.moveTo(target);
-                    }
+                    creep.moveTo(target);
                 }
             }
             else {
                 //There is nothing to attack
                 var range = creep.pos.getRangeTo(groupFlag);
                 if (range > 5) {
-                    creep.moveTo(groupFlag);
+                    creep.moveTo(groupFlag, {reusePath: 5});
                 }
             }
         }
@@ -60,6 +78,7 @@ module.exports = {
         else {
             //No flag for protector anymore -> go home
             if (creep.goToHomeRoom() == true) {
+                let spawn = Game.getObjectById(creep.memory.spawn);
                 var range = creep.pos.getRangeTo(spawn);
                 if (range > 3) {
                     creep.moveTo(spawn, {reusePath: 3});

@@ -1,11 +1,9 @@
-var roleCollector = require('role.collector');
-var roleUpgrader = require('role.upgrader');
-
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
         // Find exit to target room
         var remoteControllers = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: creep.memory.spawn}});
+
         var remoteController;
         var busyCreeps;
         //TODO Switch claimer to creep.findMyFlag() and somehow include 3000 ticksToEnd rule
@@ -23,7 +21,7 @@ module.exports = {
                 creep.memory.remoteControllerFlag = remoteControllers[rem].name;
                 busyCreeps = _.filter(Game.creeps,{ memory: { remoteControllerFlag: flagName, spawn: creep.memory.spawn}});
 
-                if (busyCreeps.length == 1 && (remoteControllers[rem].room == undefined || remoteControllers[rem].room.controller.reservation == undefined|| remoteControllers[rem].room.controller.reservation.ticksToEnd < 3000)) {
+                if (busyCreeps.length == 1 && (remoteControllers[rem].room == undefined || remoteControllers[rem].room.controller.reservation == undefined || remoteControllers[rem].room.controller.reservation.ticksToEnd < 3000)) {
                     //No other claimer working on this flag
                     remoteController = remoteControllers[rem];
                     creep.memory.remoteControllerFlag = remoteController.name;
@@ -37,7 +35,6 @@ module.exports = {
             remoteController = remoteControllers[0];
         }
 
-
         if (remoteController != undefined && (remoteController.room == undefined || creep.room.name != remoteController.pos.roomName)) {
             //still in wrong room, go out
             if (!creep.memory.path) {
@@ -50,30 +47,24 @@ module.exports = {
         }
         else if (remoteController != undefined) {
             //new room reached, start reserving / claiming
+            var returncode;
 
             if (creep.room.memory.hostiles == 0) {
                 // try to claim the controller
-                if (remoteController.memory.claim == 1) {
-                    var returncode = creep.claimController(creep.room.controller);
+                if (creep.room.controller.owner == undefined) {
+                    if (remoteController.memory.claim == 1) {
+                        returncode = creep.claimController(creep.room.controller);
+                    }
+                    else {
+                        returncode = creep.reserveController(creep.room.controller);
+                    }
                 }
                 else {
-                    returncode = ERR_GCL_NOT_ENOUGH;
+                    returncode = creep.attackController(creep.room.controller);
                 }
-                switch (returncode) {
-                    case ERR_NOT_IN_RANGE:
-                        creep.moveTo(creep.room.controller, {reusePath: 5});
-                        break;
 
-                    case ERR_GCL_NOT_ENOUGH:
-                        //Global level not high enough, switch to reserving
-                        if (creep.reserveController(creep.room.controller) == ERR_NOT_IN_RANGE)
-                            creep.moveTo(creep.room.controller, {reusePath: 5});
-                        break;
-
-                    default:
-                        creep.say(returncode);
-                        creep.moveTo(creep.room.controller, {reusePath: 5});
-                        break;
+                if (returncode == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(creep.room.controller, {reusePath: 5});
                 }
 
                 if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == playerUsername) {
@@ -104,9 +95,6 @@ module.exports = {
                     creep.moveTo(homespawn), {reusePath: 10};
                 }
             }
-        }
-        else {
-            //console.log(creep.name + ": no remote controller flag found!");
         }
     }
 };

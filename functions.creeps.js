@@ -40,7 +40,7 @@ module.exports = function() {
 
     Creep.prototype.findNearestEnemyAttacker = function(range, pos) {
         // returns object of A) nearest hostile if no argument is given or B) nearest hostile within range when a range is indicated
-        var attackerCreeps = new Array();
+        var attackerCreeps = [];
         var foreignCreeps;
         if (arguments.length == 0) {
             foreignCreeps = this.room.find(FIND_HOSTILE_CREEPS);

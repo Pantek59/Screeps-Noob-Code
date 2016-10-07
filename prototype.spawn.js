@@ -124,7 +124,7 @@ module.exports = function() {
 					body.push(MOVE);  //50
 					body.push(MOVE);  //50
 					size=300;
-					sizelimit = 4;
+					sizelimit = 7;
 					break;
 
                 case "distributor":
@@ -196,26 +196,30 @@ module.exports = function() {
                     body.push(MOVE); //50
                     body.push(ATTACK); //80
                     size = 130;
-                    //sizelimit = 25;
-                    sizelimit = 1;
+                    sizelimit = 25;
+                    //sizelimit = 1;
                     break;
 
                 case "healer":
                     body.push(MOVE); //50
                     body.push(HEAL); //250
                     size = 300;
-                    //sizelimit = 25;
-                    sizelimit = 1;
+                    sizelimit = 25;
+                    //sizelimit = 1;
                     break;
 
                 case "einarr":
                     body.push(MOVE); //50
                     body.push(MOVE); //50
+                    body.push(MOVE); //50
+                    body.push(MOVE); //50
+                    body.push(HEAL); //250
+                    body.push(HEAL); //250
                     body.push(HEAL); //250
                     body.push(ATTACK); //80
-                    size = 430;
-                    //sizelimit = 12;
-                    sizelimit = 1;
+                    size = 1030;
+                    sizelimit = 6;
+                    //sizelimit = 1;
                     break;
 
 				default:

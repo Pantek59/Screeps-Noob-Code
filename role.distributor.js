@@ -48,7 +48,7 @@ module.exports = {
                 // Check resource status
                 if (creep.room.terminal.store[transferResource] >= packageVolume) {
                     //Check for energy level
-                    if ((transferResource != RESOURCE_ENERGY && creep.room.terminal.store[RESOURCE_ENERGY] < energyCost)
+                    if ((transferResource != RESOURCE_ENERGY && creep.room.terminal.store[RESOURCE_ENERGY] < energyCost + packageVolume)
                         || transferResource == RESOURCE_ENERGY && creep.room.terminal.store[RESOURCE_ENERGY] - transferAmount < energyCost) {
                         //Get energy
                         if (energyCost > creep.carryCapacity) {
@@ -67,7 +67,7 @@ module.exports = {
                 }
             }
         }
-        else if (creep.room.memory.roomArrayNukers != undefined && creep.room.memory.roomArrayNukers[0] != undefined && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= creep.carryCapacity || nuker.ghodium + creep.room.storage.store[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity)) {
+        else if (creep.room.memory.roomArrayNukers != undefined && creep.room.memory.roomArrayNukers[0] != undefined && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= creep.carryCapacity || nuker.ghodium + creep.room.storage.store[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity || nuker.ghodium + creep.carry[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity)) {
             //Nuker in need of Ghodium and storage has enough of it
             if (creep.storeAllBut(RESOURCE_GHODIUM) == true) {
                 if (_.sum(creep.carry) < creep.carryCapacity && creep.room.storage.store[RESOURCE_GHODIUM] > 0) {

@@ -98,7 +98,6 @@ module.exports = function() {
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).energy > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
-                                    //console.log(this.memory.role + " " + this.name + " link: " + Game.getObjectById(tempArray[s]).energy);
                                 }
                             }
                         }

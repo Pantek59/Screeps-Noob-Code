@@ -97,7 +97,7 @@ module.exports = {
         // Check for active flag "attackController"
         var attackController = _.filter(Game.flags,{ memory: { function: 'attackController', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in attackController) {
-            minimumSpawnOf.bigClaimer += attackController.memory.volume;
+            minimumSpawnOf.bigClaimer += attackController[t].memory.volume;
         }
 
         // Check for unit groups
@@ -165,7 +165,6 @@ module.exports = {
         }
         else if (spawnRoom.terminal != undefined && spawnRoom.storage != undefined) {
             for (var rs in RESOURCES_ALL) {
-                //console.log(spawnRoom.name + ": " + checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount);
                 if ((checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount < 0 && spawnRoom.storage.store[RESOURCES_ALL[rs]] > 0)
                   || checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount > 0) {
                     minimumSpawnOf["distributor"] = 1;
@@ -181,16 +180,14 @@ module.exports = {
         /** Rest **/
         // Miner
         minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
-        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]).mineralAmount == 0 || spawnRoom.memory.resourceLimits[roomMineralType] == undefined || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.resourceLimits[roomMineralType].maxMining)) {
+        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArrayMinerals[0]).mineralAmount == 0 || spawnRoom.memory.resourceLimits[roomMineralType] == undefined || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.resourceLimits[roomMineralType].minProduction)) {
             minimumSpawnOf.miner = 0;
         }
-
-
 
         // Scientist
         if (spawnRoom.memory.labOrder != undefined) {
             var info = spawnRoom.memory.labOrder.split(":");
-            if (info[3] != "running") {
+            if (info[3] == "prepare" || info[3] == "done") {
                 minimumSpawnOf.scientist = 1;
             }
         }
@@ -255,7 +252,6 @@ module.exports = {
                 }
             }
         }
-        //console.log(spawnRoom.name + ": " + minimumSpawnOf.distributor);
 
         // Role selection
         var energy = spawnRoom.energyCapacityAvailable;

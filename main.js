@@ -1,4 +1,4 @@
-const CPUdebug = true;
+const CPUdebug = false;
 require("globals");
 require('prototype.spawn')();
 require('prototype.creep.findMyFlag')();
@@ -28,6 +28,7 @@ var roleEinarr = require('role.einarr');
 var roleScientist = require('role.scientist');
 
 var CPUdebugString = "CPU Debug<br><br>";
+
 // Any modules that you use that modify the game's prototypes should be require'd before you require the profiler.
 const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
 
@@ -35,7 +36,8 @@ const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/packa
 //profiler.enable();
 module.exports.loop = function() {
     //profiler.wrap(function() {
-        if (CPUdebug == true) {CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
+
+        if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
         // check for memory entries of died creeps by iterating over Memory.creeps
         for (var name in Memory.creeps) {
             // and checking if the creep is still alive
@@ -49,36 +51,46 @@ module.exports.loop = function() {
             console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
         }
 
-        // Market Code
-        if (Game.time % 10 == 0) {
+        /*Observer Code
+        //TODO: Scan rooms in 10 rooms distance for room info and save it in an object
+        var observerRooms = _.filter(Game.rooms, function(room) {return room.memory.roomArrayObservers != undefined && room.memory.roomArrayObservers.length > 0;});
+        */
+
+        // Market Selling Code
+    if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Market Code: " + Game.cpu.getUsed())}
+        if (Game.time % 31 == 0) {
             //Look for surplus materials
             var surplusMinerals;
 
             for (var r in Game.rooms) {
-                for (var resource in Game.rooms[r].memory.resourceLimits) {
-                    if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket && Game.rooms[r].terminal != undefined && Game.rooms[r].memory.terminalTransfer == undefined && Game.rooms[r].memory.resourceLimits[resource] != undefined) {
-                        if (Game.rooms[r].storage.store[resource] + Game.rooms[r].terminal.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket + 100) {
-                            surplusMinerals = Game.rooms[r].storage.store[resource] + Game.rooms[r].terminal.store[resource] - Game.rooms[r].memory.resourceLimits[resource].minMarket;
+                if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
+                    for (var resource in Game.rooms[r].memory.resourceLimits) {
+                        if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket && Game.rooms[r].memory.resourceLimits[resource] != undefined) {
 
-                            if (surplusMinerals >= 500) {
-                                surplusMinerals = 500;
-                                var orders = new Array();
-                                orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
-                                orders = _.sortBy(orders, "price");
-                                orders.reverse();
-                                for (var o = 0; o < orders.length; o++) {
-                                    var orderResource = orders[o].resourceType;
-                                    var orderRoomName = orders[o].roomName;
-                                    var orderAmount;
-                                    if (surplusMinerals > orders[o].amount) {
-                                        orderAmount = orders[o].amount;
-                                    }
-                                    else {
-                                        orderAmount = surplusMinerals;
-                                    }
-                                    var orderCosts = global.terminalTransfer(orderResource, orderAmount, orderRoomName, "cost");
-                                    if (orderAmount >= 500 && Game.map.getRoomLinearDistance(Game.rooms[r].name, orderRoomName) < 13 && orderCosts <= Game.rooms[r].storage.store[RESOURCE_ENERGY] - 10000) {
-                                        Game.rooms[r].memory.terminalTransfer = orders[o].id + ":" + orderAmount + ":" + orderResource + ":MarketOrder";
+                            if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket + 100) {
+                                surplusMinerals = Game.rooms[r].storage.store[resource] - Game.rooms[r].memory.resourceLimits[resource].minMarket;
+                                if (surplusMinerals >= 500) {
+                                    surplusMinerals = 500;
+                                    var orders = [];
+                                    orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
+                                    orders = _.sortBy(orders, "price");
+                                    orders.reverse();
+
+                                    for (var o = 0; o < orders.length; o++) {
+                                        var orderResource = orders[o].resourceType;
+                                        var orderRoomName = orders[o].roomName;
+                                        var orderAmount;
+                                        if (surplusMinerals > orders[o].amount) {
+                                            orderAmount = orders[o].amount;
+                                        }
+                                        else {
+                                            orderAmount = surplusMinerals;
+                                        }
+                                        var orderCosts = global.terminalTransfer(orderResource, orderAmount, orderRoomName, "cost");
+                                        var roomDistance = Math.floor(Game.rooms[r].storage.store[RESOURCE_ENERGY] / 7500);
+                                        if (orderAmount >= 500 && Game.map.getRoomLinearDistance(Game.rooms[r].name, orderRoomName) < roomDistance && orderCosts <= Game.rooms[r].storage.store[RESOURCE_ENERGY] - 10000) {
+                                            Game.rooms[r].memory.terminalTransfer = orders[o].id + ":" + orderAmount + ":" + orderResource + ":MarketOrder";
+                                        }
                                     }
                                 }
                             }
@@ -87,46 +99,88 @@ module.exports.loop = function() {
                 }
             }
         }
-
-        if (Game.time % 10 == 0) {
-            // Inter-room energy balancing
-            var fullRooms = new Array();
-            var recipientRooms = new Array();
-
-            for (var r in Game.rooms) {
-                if (Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined && (Game.rooms[r].terminal.store[RESOURCE_ENERGY] + Game.rooms[r].storage.store[RESOURCE_ENERGY]) > 120000 && Game.rooms[r].memory.terminalTransfer == undefined) {
-                    fullRooms.push(Game.rooms[r]);
+    if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Resource Balancing: " + Game.cpu.getUsed())}
+    if (Game.time % 27 == 0) {
+        // Inter-room resource balancing
+        for (let r in Game.rooms) {
+            if (Game.rooms[r].terminal != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername
+                && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 5000 && Game.rooms[r].memory.terminalTransfer == undefined) {
+                var combinedResources = [];
+                for (let e in Game.rooms[r].storage.store) {
+                    if (combinedResources.indexOf(e) == -1) {
+                        combinedResources.push(e);
+                    }
                 }
-                else if (Game.rooms[r].storage != undefined && Game.rooms[r].terminal != undefined && (Game.rooms[r].terminal.store[RESOURCE_ENERGY] + Game.rooms[r].storage.store[RESOURCE_ENERGY]) < 100000) {
-                    recipientRooms.push(Game.rooms[r]);
+                for (let e in Game.rooms[r].terminal.store) {
+                    if (combinedResources.indexOf(e) == -1) {
+                        combinedResources.push(e);
+                    }
+                }
+                var checkedResources = [];
+                combinedResources = _.sortBy(combinedResources, function (res) {return checkStorageLimits(Game.rooms[r], res);});
+                combinedResources = combinedResources.reverse();
+                for (let res in combinedResources) {
+                    //Iterate through resources in terminal and/or storage
+                    if (checkedResources.indexOf(combinedResources[res]) == -1) {
+                        var storageDelta = checkStorageLimits(Game.rooms[r], combinedResources[res]);
+                        var packetSize = RBS_PACKETSIZE;
+                        if (combinedResources[res] == RESOURCE_ENERGY) {
+                            packetSize = RBS_PACKETSIZE * 10;
+                        }
+
+
+                        if (storageDelta >= (Game.rooms[r].memory.resourceLimits[combinedResources[res]].maxStorage * 0.1) && packetSize <= Game.rooms[r].storage.store[combinedResources[res]]&& storageDelta <= Game.rooms[r].storage.store[combinedResources[res]] && Game.rooms[r].memory.terminalTransfer == undefined) {
+                            // Resource can be shared with other rooms if their maxStorage is not reached yet
+                            checkedResources.push(res);
+                            let recipientRooms = [];
+                            let fullRooms = [];
+                            for (var ru in Game.rooms) {
+                                if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && checkStorageLimits(Game.rooms[ru], combinedResources[res]) < 0) {
+                                    recipientRooms.push(Game.rooms[ru]);
+                                }
+                                else if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && Game.rooms[ru].storage.owner.username == playerUsername && checkStorageLimits(Game.rooms[ru], combinedResources[res]) >= 0) {
+                                    fullRooms.push(Game.rooms[ru]);
+                                }
+                            }
+
+                            recipientRooms = _.sortBy(recipientRooms,function (room) { return checkStorageLimits(room, combinedResources[res]);});
+                            fullRooms = _.sortBy(fullRooms,function (room) { return checkStorageLimits(room, combinedResources[res]);});
+                            if (recipientRooms.length > 0) {
+                            }
+                            if (recipientRooms.length > 0) {
+                                let recipientDelta = checkStorageLimits(recipientRooms[0], combinedResources[res]);
+                                if (recipientDelta < 0) {
+                                    // Recipient room need the resource
+                                    let transferAmount;
+                                    if (storageDelta + recipientDelta >= 0) {
+                                        transferAmount = Math.abs(recipientDelta);
+                                    }
+                                    else {
+                                        transferAmount = storageDelta;
+                                    }
+                                    terminalTransferX(combinedResources[res], transferAmount, Game.rooms[r].name, recipientRooms[0].name, true);
+                                    break;
+                                }
+                            }
+                            else if (fullRooms.length > 0) {
+                                // Room is over storage limit --> look for rooms with less of the resource
+                                for (let p in fullRooms) {
+                                    if (fullRooms[p].storage != undefined && (fullRooms[p].storage.store[combinedResources[res]] == undefined || checkStorageLimits(Game.rooms[r], combinedResources[res]) > checkStorageLimits(fullRooms[p], combinedResources[res]) + packetSize)) {
+                                        //room with less minerals found
+                                        terminalTransferX(combinedResources[res], packetSize, Game.rooms[r].name, fullRooms[p].name, true);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-
-            if (fullRooms.length > 0) {
-                if (recipientRooms.length > 0) {
-                    recipientRooms = _.sortBy(recipientRooms, function(room){ return room.storage.store[RESOURCE_ENERGY]});
-                    fullRooms[0].memory.terminalTransfer = recipientRooms[0].name + ":2000:energy:Energy Balance";
-                }
-                else {
-                    fullRooms[0].memory.terminalTransfer = "W16S47:3500:energy:King_Lispi";
-                }
-            }
-
-            /* TODO: Inter-room mineral balancing
-            var fullRooms = _.filter(Game.rooms, {filter: (s) => s.storage != undefined && s.terminal != undefined && _.sum(s.storage.store) > 750000});
-            if (fullRooms.length > 0) {
-                var recipientRooms = _.filter(Game.rooms, {filter: (s) => s.storage != undefined && s.terminal != undefined && _.sum(s.storage.store) < 500000});
-                if (recipientRooms.length > 0) {
-                }
-            }*/
         }
-
-
-
-        if (CPUdebug == true) {CPUdebugString.concat("<br>Start cycling through rooms: " + Game.cpu.getUsed())}
+    }
+    if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start cycling through rooms: " + Game.cpu.getUsed())}
         // Cycle through rooms
         for (var r in Game.rooms) {
-            //if (Game.rooms[r].memory.terminalTransfer == 0) {delete Game.rooms[r].memory.terminalTransfer}
 
             //Save # of hostile creeps in room
             Game.rooms[r].memory.hostiles = 0;
@@ -141,17 +195,28 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.terminalEnergyCost = 0;
             }
 
-            if (Game.rooms[r].memory.resourceLimits == undefined) {
-                //Set default resource limits
+            if (Game.rooms[r].memory.resourceLimits == undefined && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
+                //Set default resource limits:
+                //minTerminal = Minimal amount of this resource in terminal  OK
+                //maxStorage = Maximal amount in storage before resource is shared with other rooms via terminal transfer
+                //minMarket = Minimal amount in storage before market is searched for buying orders OK
+                //maxProduction = Amount until the resource is attempted to be produced in room
+
                 var roomLimits = {};
                 var limit;
                 for (var res in RESOURCES_ALL) {
                     roomLimits[RESOURCES_ALL[res]] = {};
                     if (Game.rooms[r].memory.roomArrayMinerals != undefined && Game.getObjectById(Game.rooms[r].memory.roomArrayMinerals[0]).mineralType == RESOURCES_ALL[res]) {
-                        limit = {maxTerminal:0, maxMining:350000, minMarket:1000000, maxLab: 0};
+                        //Room mineral
+                        limit = {minTerminal:0, maxStorage:100000, minMarket:500000, minProduction: 600000};
+                    }
+                    else if (RESOURCES_ALL[res] == RESOURCE_ENERGY) {
+                        //Energy
+                        limit = {minTerminal:0, maxStorage:100000, minMarket:900000, minProduction: 1000000};
                     }
                     else {
-                        limit = {maxTerminal:0, maxMining:0, minMarket:1000000, maxLab: 0};
+                        // Rest
+                        limit = {minTerminal:0, maxStorage:6000, minMarket:900000, minProduction: 0};
                     }
                     roomLimits[RESOURCES_ALL[res]] = limit;
                 }
@@ -179,7 +244,7 @@ module.exports.loop = function() {
                 }
 
                 if (Game.rooms[r].memory.roomArraySources == undefined) {
-                    var sourceIDs = new Array();
+                    var sourceIDs = [];
                     searchResult = Game.rooms[r].find(FIND_SOURCES);
                     for (let s in searchResult) {
                         sourceIDs.push(searchResult[s].id);
@@ -188,7 +253,7 @@ module.exports.loop = function() {
                 }
 
                 if (Game.rooms[r].memory.roomArrayMinerals == undefined) {
-                    var sourceIDs = new Array();
+                    var sourceIDs = [];
                     searchResult = Game.rooms[r].find(FIND_MINERALS);
                     for (let s in searchResult) {
                         sourceIDs.push(searchResult[s].id);
@@ -196,63 +261,78 @@ module.exports.loop = function() {
                     Game.rooms[r].memory.roomArrayMinerals = sourceIDs;
                 }
 
-                var containerIDs = new Array();
+                var containerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
                 for (let s in searchResult) {
                     containerIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArrayContainers = containerIDs;
 
-                var spawnIDs = new Array();
+                var powerSpawnIDs = [];
+                searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_POWER_SPAWN});
+                for (let s in searchResult) {
+                    powerSpawnIDs.push(searchResult[s].id);
+                }
+                Game.rooms[r].memory.roomArrayPowerSpawns = powerSpawnIDs;
+
+                //TODO Check whether master spawn still valid. If not, define new master spawn
+                var spawnIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
                 for (let s in searchResult) {
                     spawnIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArraySpawns = spawnIDs;
 
-                var extensionIDs = new Array();
+                var extensionIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_EXTENSION});
                 for (let s in searchResult) {
                     extensionIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArrayExtensions = extensionIDs;
 
-                var LinkIDs = new Array();
+                var LinkIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_LINK});
                 for (let s in searchResult) {
                     LinkIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArrayLinks = LinkIDs;
 
-                var LabIDs = new Array();
+                var LabIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_LAB});
                 for (let s in searchResult) {
                     LabIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArrayLabs = LabIDs;
 
-                var ExtractorIDs = new Array();
+                var ExtractorIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_EXTRACTOR});
                 for (let s in searchResult) {
                     ExtractorIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArrayExtractors = ExtractorIDs;
 
-                var rampartIDs = new Array();
+                var rampartIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART});
                 for (let s in searchResult) {
                     rampartIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArrayRamparts = rampartIDs;
 
-                var NukerIDs = new Array();
+                var nukerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_NUKER});
                 for (let s in searchResult) {
-                    NukerIDs.push(searchResult[s].id);
+                    nukerIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayNukers = NukerIDs;
+                Game.rooms[r].memory.roomArrayNukers = nukerIDs;
 
-                var towerIDs = new Array();
+                var observerIDs = [];
+                searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_OBSERVER});
+                for (let s in searchResult) {
+                    observerIDs.push(searchResult[s].id);
+                }
+                Game.rooms[r].memory.roomArrayObservers = observerIDs;
+
+                var towerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_TOWER});
                 for (let s in searchResult) {
                     towerIDs.push(searchResult[s].id);
@@ -261,7 +341,7 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.roomArrayTowers = towerIDs;
 
                 if (Game.rooms[r].memory.roomArrayConstructionSites == undefined) {
-                    var constructionIDs = new Array();
+                    var constructionIDs = [];
                     searchResult = Game.rooms[r].find(FIND_MY_CONSTRUCTION_SITES);
                     for (let s in searchResult) {
                         constructionIDs.push(searchResult[s].id);
@@ -285,7 +365,7 @@ module.exports.loop = function() {
 
             //Flag code
             //TODO Energyhaul sites must be included in one step
-            if (CPUdebug == true) {CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
+            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
             var remoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'remoteSource'}});
 
             for (var f in remoteHarvestingFlags) {
@@ -338,13 +418,12 @@ module.exports.loop = function() {
                 }
             }
 
-            if (CPUdebug == true) {CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
+            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
             // Spawn code
             if (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0) {
                 //room has no spawner yet
                 if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                     //room is owned and should be updated
-                    //var claimFlags = _.filter(Game.flags,{ memory: { function: 'remoteController'}});
                     var claimFlags = Game.rooms[r].find(FIND_FLAGS, { filter: (s) => s.pos.roomName == Game.rooms[r].name && s.memory.function == "remoteController"});
                     var upgraderRecruits = _.filter(Game.creeps,{ memory: { role: 'upgrader', homeroom: Game.rooms[r].name}});
                     if (upgraderRecruits.length < 1) {
@@ -410,11 +489,11 @@ module.exports.loop = function() {
 
                 }
             }
-            else if (Game.time % 5 == 0) {
+            else if (Game.time % 13 == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                 moduleSpawnCreeps.run(Game.rooms[r], allies);
             }
 
-            if (CPUdebug == true) {CPUdebugString.concat("<br>Starting tower code: " + Game.cpu.getUsed())}
+            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting tower code: " + Game.cpu.getUsed())}
             // Tower code
             var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
             var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
@@ -460,7 +539,7 @@ module.exports.loop = function() {
             }
 
             // Search for dropped energy
-            if (CPUdebug == true) {CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
+            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
             var energies=Game.rooms[r].find(FIND_DROPPED_ENERGY);
             for (var energy in energies) {
                 var energyID = energies[energy].id;
@@ -468,11 +547,11 @@ module.exports.loop = function() {
 
                 if (energyAmount > 15 && Game.rooms[r].memory.hostiles == 0) {
                     var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
-                            filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "distributor" && s.memory.dropEnergy != true});
+                            filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true});
 
                     if (collector == null) {
                         collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
-                                filter: (s) => (s.carryCapacity - _.sum(s.carry)) > 0 && s.memory.role != "protector" && s.memory.role != "distributor" && s.memory.dropEnergy != true});
+                                filter: (s) => (s.carryCapacity - _.sum(s.carry)) > 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true});
                     }
 
                     if (collector != null) {
@@ -485,13 +564,13 @@ module.exports.loop = function() {
 
             // Link code
             if (Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
-                var fillLinks = new Array();
-                var emptyLinks = new Array();
+                var fillLinks = [];
+                var emptyLinks = [];
                 var targetLevel = 0;
 
                 if (Game.rooms[r].memory.linksEmpty == undefined) {
                     // Prepare link roles
-                    var emptyArray = new Array();
+                    var emptyArray = [];
                     emptyArray.push("[LINK_ID]");
                     Game.rooms[r].memory.linksEmpty = emptyArray;
                 }
@@ -551,10 +630,10 @@ module.exports.loop = function() {
             }
 
             // Terminal code
-            if (CPUdebug == true) {CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
-            if (Game.rooms[r].memory.terminalTransfer != undefined) {
+            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
+            if (Game.rooms[r].memory.terminalTransfer != undefined && Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.owner.username == playerUsername) {
                 var terminal = Game.rooms[r].terminal;
-                if (terminal != undefined && Game.rooms[r].memory.terminalTransfer != undefined) {
+                if (terminal != undefined && terminal.owner.username == playerUsername && Game.rooms[r].memory.terminalTransfer != undefined) {
                     //Terminal exists
                     var targetRoom;
                     var amount;
@@ -568,55 +647,120 @@ module.exports.loop = function() {
                     resource = info[2];
                     comment = info[3];
 
-                    energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, targetRoom);
-                    Game.rooms[r].memory.terminalEnergyCost = energyCost;
-                    if (comment != "MarketOrder") {
-                        var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
-                        if ((resource != RESOURCE_ENERGY && amount > 500 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom))
-                            || (resource == RESOURCE_ENERGY && amount > 500 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) - 500 >= Game.market.calcTransactionCost(500, terminal.room.name, targetRoom))) {
-                            if (terminal.send(resource, 500, targetRoom, comment) == OK) {
-                                info[1] -= 500;
-                                Game.rooms[r].memory.terminalTransfer = info.join(":");
-                                console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": 500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + Game.market.calcTransactionCost(500, terminal.room.name, targetRoom) + " energy: " + comment + "</font>");
+                    if (amount >= 100) {
+                        energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, targetRoom);
+                        Game.rooms[r].memory.terminalEnergyCost = energyCost;
+                        if (comment != "MarketOrder") {
+                            var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
+                            var stdEnergyCost = Game.market.calcTransactionCost(500, terminal.room.name, targetRoom);
+                            if ((resource != RESOURCE_ENERGY && amount > 499 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) >= stdEnergyCost)
+                                || (resource == RESOURCE_ENERGY && amount > 499 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) - 500 >= stdEnergyCost)) {
+                                if (terminal.send(resource, 500, targetRoom, comment) == OK) {
+                                    info[1] -= 500;
+                                    Game.rooms[r].memory.terminalTransfer = info.join(":");
+                                    console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": 500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + stdEnergyCost + " energy: " + comment + "</font>");
+                                }
+                                else {
+                                    console.log("<font color=#ff0000 type='highlight'>Terminal transfer error (" + Game.rooms[r].name + "): " + terminal.send(resource, 500, targetRoom, comment) + "</font>");
+                                }
                             }
-                            else {
-                                console.log("<font color=#ff0000 type='highlight'>Terminal transfer error (" + Game.rooms[r].name + "): " + terminal.send(resource, 500, targetRoom, comment) + "</font>");
+                            else if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount)
+                                || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
+                                // Amount to be transferred reached and enough energy available -> GO!
+                                if (terminal.send(resource, amount, targetRoom, comment) == OK) {
+                                    delete Game.rooms[r].memory.terminalTransfer;
+                                    delete Game.rooms[r].memory.terminalEnergyCost;
+                                    console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment + "</font>");
+                                }
+                                else {
+                                    if (amount < 100) {
+                                        delete Game.rooms[r].memory.terminalTransfer;
+                                    }
+                                    else {
+                                        console.log("<font color=#ff0000 type='highlight'>Terminal transfer error (" + Game.rooms[r].name + "): " + terminal.send(resource, amount, targetRoom, comment) + "</font>");
+                                    }
+                                }
                             }
                         }
-                        else if ((resource == RESOURCE_ENERGY && terminal.store[RESOURCE_ENERGY] >= energyTransferAmount)
-                            || (resource != RESOURCE_ENERGY && terminal.store[resource] >= amount && terminal.store[RESOURCE_ENERGY] >= energyCost)) {
-                            // Amount to be transferred reached and enough energy available -> GO!
-                            if (terminal.send(resource, amount, targetRoom, comment) == OK) {
-                                delete Game.rooms[r].memory.terminalTransfer;
-                                delete Game.rooms[r].memory.terminalEnergyCost;
-                                console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment + "</font>");
-                            }
-                            else {
-                                console.log("<font color=#ff0000 type='highlight'>Terminal transfer error: " + terminal.send(resource, amount, targetRoom, comment) + "</font>");
+                        else {
+                            // Market Order
+                            var orderID = targetRoom;
+                            var order = Game.market.getOrderById(orderID);
+
+                            energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, order.roomName);
+                            Game.rooms[r].memory.terminalEnergyCost = energyCost;
+                            if (Game.rooms[r].terminal.store[resource] >= amount) {
+                                console.log("test");
+                                if (resource == RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= amount + energyCost ||
+                                    resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
+                                    //Do the deal!
+
+                                    if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
+                                        console.log("<font color=#33ffff type='highlight'>" + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                        delete Game.rooms[r].memory.terminalTransfer;
+                                    }
+                                }
                             }
                         }
                     }
                     else {
-                        // Market Order
-                        var orderID = targetRoom;
-                        var order = Game.market.getOrderById(orderID);
-
-                        energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, order.roomName);
-                        Game.rooms[r].memory.terminalEnergyCost = energyCost;
-                        if (Game.rooms[r].terminal.store[resource] >= amount && Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket) {
-                            if (resource == RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= amount + energyCost ||
-                                resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
-                                //Do the deal!
-                                if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
-                                    console.log("<font color=#33ffff type='highlight'>" + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
-                                }
-                            }
-                        }
+                        delete Game.rooms[r].memory.terminalTransfer;
                     }
                 }
             }
 
             // Lab code
+            if (Game.time % 5 == 0 && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
+                // Lab Queueing Code
+                var labString = Game.rooms[r].memory.labTarget.split(":");
+                if (mineralDescriptions[labString[1]].tier == 0) {
+                    delete Game.rooms[r].memory.labTarget;
+                    console.log("Removed " + Game.rooms[r].name + ".labTarget as it indicated a tier 0 resource.");
+                }
+                else {
+                    while (mineralDescriptions[labString[1]] != undefined && mineralDescriptions[labString[1]].tier > 0) {
+                        var labTarget = global.whatIsLackingFor(Game.rooms[r], labString[0], labString[1]);
+                        var missingComponent1 = mineralDescriptions[labTarget.resource].component1;
+                        var missingComponent2 = mineralDescriptions[labTarget.resource].component2;
+                        if (Game.rooms[r].storage.store[missingComponent1] != undefined && Game.rooms[r].storage.store[missingComponent2] != undefined
+                            && Game.rooms[r].storage.store[missingComponent1] >= labTarget.amount && Game.rooms[r].storage.store[missingComponent2] >= labTarget.amount) {
+                            //All component available
+                            Game.rooms[r].memory.labOrder = labTarget.amount + ":" + missingComponent1 + ":" + missingComponent2 + ":prepare";
+                            if (missingComponent1 == mineralDescriptions[labString[1]].component1 && missingComponent2 == mineralDescriptions[labString[1]].component2) {
+                                // Last production order given
+                                delete Game.rooms[r].memory.labTarget;
+                            }
+                            break;
+                        }
+                        else {
+                            //Components missing
+                            if (Game.rooms[r].storage.store[missingComponent1] == undefined || Game.rooms[r].storage.store[missingComponent1] < labTarget.amount) {
+                                //Component 1 missing
+                                if (Game.rooms[r].storage.store[missingComponent1] == undefined) {
+                                    labString[0] = labTarget.amount;
+                                }
+                                else {
+                                    labString[0] = labTarget.amount - Game.rooms[r].storage.store[missingComponent1];
+                                }
+                                labString[1] = missingComponent1;
+                            }
+                            else {
+                                //Component 2 missing
+                                if (Game.rooms[r].storage.store[missingComponent2] == undefined) {
+                                    labString[0] = labTarget.amount;
+                                }
+                                else {
+                                    labString[0] = labTarget.amount - Game.rooms[r].storage.store[missingComponent2];
+                                }
+                                labString[1] = missingComponent2;
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            // Lab Production Code
             if (Game.rooms[r].memory.innerLabs == undefined) {
                 // Prepare link roles
                 var emptyArray = {};
@@ -652,10 +796,10 @@ module.exports.loop = function() {
                         if (rawAmount > Game.getObjectById(innerLabs[0].labID).mineralCapacity) {
                             rawAmount = Game.getObjectById(innerLabs[0].labID).mineralCapacity;
                         }
-
-                        if (labOrder[3] == "prepare" && Game.getObjectById(innerLabs[0].labID).mineralType == innerLabs[0].resource && Game.getObjectById(innerLabs[0].labID).mineralAmount == rawAmount
-                         && Game.getObjectById(innerLabs[1].labID).mineralType == innerLabs[1].resource && Game.getObjectById(innerLabs[1].labID).mineralAmount == rawAmount) {
+                        if (labOrder[3] == "prepare" && Game.getObjectById(innerLabs[0].labID).mineralType == innerLabs[0].resource && Game.getObjectById(innerLabs[0].labID).mineralAmount >= rawAmount
+                         && Game.getObjectById(innerLabs[1].labID).mineralType == innerLabs[1].resource && Game.getObjectById(innerLabs[1].labID).mineralAmount >= rawAmount) {
                             labOrder[3] = "running";
+
                             Game.rooms[r].memory.labOrder = labOrder.join(":");
                         }
                         if (labOrder[3] == "running") {
@@ -682,7 +826,7 @@ module.exports.loop = function() {
         }
 
         //Cycle through creeps
-        if (CPUdebug == true) { CPUdebugString.concat("<br>Starting creeps: " + Game.cpu.getUsed()) }
+        if (CPUdebug == true) { CPUdebugString = CPUdebugString.concat("<br>Starting creeps: " + Game.cpu.getUsed()) }
         // for every creep name in Game.creeps
         for (let name in Game.creeps) {
             // get the creep object
@@ -703,7 +847,7 @@ module.exports.loop = function() {
             creep.memory.jobQueueTask = undefined;
             }
             else if (creep.spawning == false) {
-                if (CPUdebug == true) {CPUdebugString.concat("<br>Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
+                if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
                 if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
                     // Minerals found in creep
                     creep.getRidOfMinerals();
@@ -774,10 +918,11 @@ module.exports.loop = function() {
                     }
                 }
             }
-            if (CPUdebug == true) {CPUdebugString.concat("<br>Creep " + creep.name +"( "+ creep.memory.role + ") finished: " + Game.cpu.getUsed())}
+            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Creep " + creep.name +"( "+ creep.memory.role + ") finished: " + Game.cpu.getUsed())}
         }
         if (CPUdebug == true) {
-            CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());
+            CPUdebugString = CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());
+            console.log(CPUdebugString);
         }
     //});
 }

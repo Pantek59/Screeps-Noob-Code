@@ -39,11 +39,18 @@ module.exports = {
                 structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER);
 			}
             var nuker;
+            var powerSpawn;
             if (creep.room.memory.roomArrayNukers != undefined) {
                 nuker = Game.getObjectById(creep.room.memory.roomArrayNukers[0]);
             }
             else {
                 nuker = null;
+            }
+            if (creep.room.memory.roomArrayPowerSpawns != undefined) {
+                powerSpawn = Game.getObjectById(creep.room.memory.roomArrayPowerSpawns[0]);
+            }
+            else {
+                powerSpawn = null;
             }
 			if (structure != undefined && structure != null) {
                 // if we found one -> try to transfer energy, if it is not in range
@@ -57,6 +64,13 @@ module.exports = {
                 if (creep.transfer(nuker, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     // move towards it
                     creep.moveTo(nuker, {reusePath: 3});
+                }
+            }
+            else if (powerSpawn != null && powerSpawn.energy < powerSpawn.energyCapacity && creep.room.storage.store[RESOURCE_ENERGY] > 50000) {
+                //Bring energy to nuker
+                if (creep.transfer(powerSpawn, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    // move towards it
+                    creep.moveTo(powerSpawn, {reusePath: 3});
                 }
             }
 			else {

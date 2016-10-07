@@ -43,7 +43,7 @@ module.exports = {
             //Move to flag if not there
             var range = creep.pos.getRangeTo(protectorFlag);
             if (range > 5) {
-                creep.moveTo(protectorFlag, {ignoreCreeps: true});
+                creep.moveTo(protectorFlag, {ignoreCreeps: false});
             }
         }
         else {
@@ -51,8 +51,8 @@ module.exports = {
             if (creep.goToHomeRoom() == true) {
                 var spawn = Game.getObjectById(creep.memory.spawn);
                 var range = creep.pos.getRangeTo(creep.room.controller);
-                if (range > 6) {
-                    creep.moveTo(creep.room.controller, {reusePath: 3});
+                if (range > 1) {
+                    creep.moveTo(creep.room.controller, {reusePath: 10});
                 }
             }
         }
