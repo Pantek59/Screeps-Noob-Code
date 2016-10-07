@@ -116,6 +116,7 @@ module.exports = function() {
 
     Creep.prototype.storeAllBut = function(resource) {
         // send creep to storage to empty itself into it, keeping one resource type. Use null to drop all resource types.
+        // returns true if only carrying allowed resource
         if (arguments.length == 0 && _.sum(this.carry) == 0) {
             return true;
         }

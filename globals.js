@@ -19,18 +19,18 @@ mineralDescriptions.Z = {tier: 0, component1: false, component2: false };
 mineralDescriptions.G = {tier: 2, component1: "ZK", component2: "UL" };
 mineralDescriptions.X = {tier: 0, component1: false, component2: false };
 mineralDescriptions.OH = {tier: 1, component1: "O", component2: "H" };
-mineralDescriptions.UH = {tier: 1, component1: "U", component2: "H" };
-mineralDescriptions.UO = {tier: 1, component1: "U", component2: "O" };
+mineralDescriptions.UH = {tier: 1, component1: "U", component2: "H", bodyPart: ATTACK};
+mineralDescriptions.UO = {tier: 1, component1: "U", component2: "O", bodyPart: WORK};
 mineralDescriptions.UL = {tier: 1, component1: "U", component2: "L" };
-mineralDescriptions.KH = {tier: 1, component1: "K", component2: "H" };
-mineralDescriptions.KO = {tier: 1, component1: "K", component2: "O" };
-mineralDescriptions.LH = {tier: 1, component1: "L", component2: "H" };
-mineralDescriptions.LO = {tier: 1, component1: "L", component2: "O" };
-mineralDescriptions.ZH = {tier: 1, component1: "Z", component2: "H" };
-mineralDescriptions.ZO = {tier: 1, component1: "Z", component2: "O" };
+mineralDescriptions.KH = {tier: 1, component1: "K", component2: "H", bodyPart: CARRY};
+mineralDescriptions.KO = {tier: 1, component1: "K", component2: "O", bodyPart:RANGED_ATTACK};
+mineralDescriptions.LH = {tier: 1, component1: "L", component2: "H", bodyPart: WORK };
+mineralDescriptions.LO = {tier: 1, component1: "L", component2: "O", bodyPart: HEAL };
+mineralDescriptions.ZH = {tier: 1, component1: "Z", component2: "H", bodyPart: WORK };
+mineralDescriptions.ZO = {tier: 1, component1: "Z", component2: "O", bodyPart: MOVE };
 mineralDescriptions.ZK = {tier: 1, component1: "Z", component2: "K" };
-mineralDescriptions.GH = {tier: 1, component1: "G", component2: "H" };
-mineralDescriptions.GO = {tier: 1, component1: "G", component2: "O" };
+mineralDescriptions.GH = {tier: 1, component1: "G", component2: "H", bodyPart: WORK };
+mineralDescriptions.GO = {tier: 1, component1: "G", component2: "O", bodyPart: TOUGH };
 mineralDescriptions.UH2O = {tier: 2, component1: "UH", component2: "OH" };
 mineralDescriptions.UHO2 = {tier: 2, component1: "UO", component2: "OH" };
 mineralDescriptions.KH2O = {tier: 2, component1: "KH", component2: "OH" };
@@ -52,3 +52,12 @@ mineralDescriptions.XZHO2 = {tier: 3, component1: "X", component2: "ZHO2" };
 mineralDescriptions.XGH2O = {tier: 3, component1: "X", component2: "GH2O" };
 mineralDescriptions.XGHO2 = {tier: 3, component1: "X", component2: "GHO2" };
 
+isHostile = function (creep) {
+    if (allies.indexOf(creep.owner.username) == -1 && creep.owner.username != playerUsername) {
+        //Not own and not allied creep
+        return true;
+    }
+    else {
+        return false;
+    }
+};

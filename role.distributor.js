@@ -67,7 +67,7 @@ module.exports = {
                 }
             }
         }
-        else if (creep.room.memory.roomArrayNukers != undefined && creep.room.memory.roomArrayNukers[0] != undefined && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= creep.carryCapacity || nuker.ghodium + creep.room.storage.store[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity || nuker.ghodium + creep.carry[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity)) {
+        else if (creep.checkTerminalLimits(RESOURCE_GHODIUM).amount == 0 && creep.room.memory.terminalTransfer == undefined && creep.room.memory.roomArrayNukers != undefined && creep.room.memory.roomArrayNukers[0] != undefined && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= creep.carryCapacity || nuker.ghodium + creep.room.storage.store[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity || nuker.ghodium + creep.carry[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity)) {
             //Nuker in need of Ghodium and storage has enough of it
             if (creep.storeAllBut(RESOURCE_GHODIUM) == true) {
                 if (_.sum(creep.carry) < creep.carryCapacity && creep.room.storage.store[RESOURCE_GHODIUM] > 0) {
@@ -114,7 +114,7 @@ module.exports = {
                     var terminalResources = [];
                     for (var res in creep.carry) {
                         delta = creep.checkTerminalLimits(res);
-                        if (delta.amount < 0) {
+                        if (delta.amount < 0 && creep.carry[res] > 0) {
                             //Terminal needs material
                             var load = Math.abs(delta.amount);
                             if (load > creep.carry[res]) {

@@ -167,7 +167,7 @@ module.exports.loop = function() {
                                 for (let p in fullRooms) {
                                     if (fullRooms[p].storage != undefined && (fullRooms[p].storage.store[combinedResources[res]] == undefined || checkStorageLimits(Game.rooms[r], combinedResources[res]) > checkStorageLimits(fullRooms[p], combinedResources[res]) + packetSize)) {
                                         //room with less minerals found
-                                        terminalTransferX(combinedResources[res], packetSize, Game.rooms[r].name, fullRooms[p].name, true);
+                                        terminalTransferX(combinedResources[res], packetSize / 2, Game.rooms[r].name, fullRooms[p].name, true);
                                         break;
                                     }
                                 }
@@ -708,11 +708,45 @@ module.exports.loop = function() {
                     }
                 }
             }
+            // Production Code
+            if (3 == 5 && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]") {
+                for (let res in RESOURCES_ALL) {
+                    var storageLevel;
+                    if (Game.rooms[r].storage.store[RESOURCES_ALL[res]] == undefined) {
+                        storageLevel = 0;
+                    }
+                    else {
+                        storageLevel = Game.rooms[r].storage.store[RESOURCES_ALL[res]];
+                    }
+
+                    if (storageLevel < Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
+                        //Try to produce resource
+                        let delta = Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction - storageLevel;
+                        let resource = RESOURCES_ALL[res];
+                        if (mineralDescriptions[resource].tier > 0) {
+                            var productionTarget = whatIsLackingFor(Game.rooms[r], delta, resource);
+                            if (productionTarget.amount == 0) {
+                                productionTarget.amount = delta;
+                            }
+                            if (mineralDescriptions[productionTarget.resource].tier > 0) {
+                                if (Game.rooms[r].storage.store[mineralDescriptions[resource].component1] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction &&
+                                Game.rooms[r].storage.store[mineralDescriptions[resource].component2] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
+                                    //All components ready, start production
+                                    console.log(productionTarget.amount)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
 
             // Lab code
-            if (Game.time % 5 == 0 && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
+            if (Game.time % 13 == 0 && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
                 // Lab Queueing Code
                 var labString = Game.rooms[r].memory.labTarget.split(":");
+                var origAmount = labString[0];
+                var origResource = labString[1];
                 if (mineralDescriptions[labString[1]].tier == 0) {
                     delete Game.rooms[r].memory.labTarget;
                     console.log("Removed " + Game.rooms[r].name + ".labTarget as it indicated a tier 0 resource.");
@@ -725,8 +759,11 @@ module.exports.loop = function() {
                         if (Game.rooms[r].storage.store[missingComponent1] != undefined && Game.rooms[r].storage.store[missingComponent2] != undefined
                             && Game.rooms[r].storage.store[missingComponent1] >= labTarget.amount && Game.rooms[r].storage.store[missingComponent2] >= labTarget.amount) {
                             //All component available
+                            if (labTarget.amount == 0) {
+                                labTarget.amount = origAmount;
+                            }
                             Game.rooms[r].memory.labOrder = labTarget.amount + ":" + missingComponent1 + ":" + missingComponent2 + ":prepare";
-                            if (missingComponent1 == mineralDescriptions[labString[1]].component1 && missingComponent2 == mineralDescriptions[labString[1]].component2) {
+                            if (missingComponent1 == mineralDescriptions[origResource].component1 && missingComponent2 == mineralDescriptions[origResource].component2) {
                                 // Last production order given
                                 delete Game.rooms[r].memory.labTarget;
                             }
@@ -821,6 +858,9 @@ module.exports.loop = function() {
                             }
                         }
                     }
+                }
+                else {
+                    console.log("Inner links not defined in room " + Game.rooms[r].name);
                 }
             }
         }

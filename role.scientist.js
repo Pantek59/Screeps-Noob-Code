@@ -103,7 +103,9 @@ module.exports = {
                             }
                             if (emptylabs == creep.room.memory.roomArrayLabs.length && lab != undefined) {
                                 if (amount <= lab.mineralCapacity) {
-                                    delete creep.room.memory.labOrder;
+                                    if (creep.storeAllBut() == true) {
+                                        delete creep.room.memory.labOrder;
+                                    }
                                 }
                                 else {
                                     // Restart process to do more of the same

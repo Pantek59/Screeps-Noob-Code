@@ -290,6 +290,7 @@ global.setLimit = function(roomName, type, resource, limit) {
         return "setLimit (roomName, limitType, resource, limit) --> terminalTransfer(\"W18S49\", \"market\", \"Z\", 10000)<br>Known limit types: \"market\", \"storage\", \"production\", \"terminal\"";
     }
     var roomNames = [];
+    var resources = [];
 
     if (roomName == "*") {
         for (var t in myRooms) {
@@ -299,29 +300,41 @@ global.setLimit = function(roomName, type, resource, limit) {
     else {
         roomNames.push(roomName);
     }
-    for (var i in roomNames) {
-        switch (type) {
-            case "market":
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].minMarket = limit;
-                break;
-            case "terminal":
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].minTerminal = limit;
-                break;
-            case "storage":
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].maxStorage = limit;
-                break;
-            case "production":
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].minProductione = limit;
-                break;
-            case "*":
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].minMarket = limit;
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].minTerminal = limit;
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].maxStorage = limit;
-                Game.rooms[roomNames[i]].memory.resourceLimits[resource].minProductione = limit;
-            default:
-                return "Unknown type";
+
+    if (resource == "*") {
+        for (var t in RESOURCES_ALL) {
+            resources.push(RESOURCES_ALL[t]);
         }
-        console.log("Room " + Game.rooms[roomNames[i]].name + " has set the " + type + " limit for " + resource + " to " + limit + ".");
+    }
+    else {
+        resources.push(resource);
+    }
+
+    for (var i in roomNames) {
+        for (let m in resources) {
+            switch (type) {
+                case "market":
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].minMarket = limit;
+                    break;
+                case "terminal":
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].minTerminal = limit;
+                    break;
+                case "storage":
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].maxStorage = limit;
+                    break;
+                case "production":
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].minProduction = limit;
+                    break;
+                case "*":
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].minMarket = limit;
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].minTerminal = limit;
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].maxStorage = limit;
+                    Game.rooms[roomNames[i]].memory.resourceLimits[resources[m]].minProduction = limit;
+                default:
+                    return "Unknown type";
+            }
+            console.log("Room " + Game.rooms[roomNames[i]].name + " has set the " + type + " limit for " + resources[m] + " to " + limit + ".");
+        }
     }
     return "OK";
 };
@@ -337,14 +350,11 @@ global.checkTerminalLimits = function (room, resource) {
     }
 
     var roomLimits = room.memory.resourceLimits;
-    if (roomLimits[resource] != undefined && room.terminal.store[resource] != roomLimits[resource].minTerminal) {
-
-        if (room.terminal.store[resource] == undefined) {
-            delta.amount = 0 - roomLimits[resource].minTerminal
-        }
-        else {
-            delta.amount = room.terminal.store[resource] - roomLimits[resource].minTerminal;
-        }
+    if (roomLimits[resource] != undefined && room.terminal.store[resource] != undefined) {
+        delta.amount = room.terminal.store[resource] - roomLimits[resource].minTerminal;
+    }
+    else if (room.terminal.store[resource] == undefined) {
+        delta.amount = roomLimits[resource].minTerminal;
     }
     else {
         delta.amount = 0
@@ -379,15 +389,7 @@ global.whatIsLackingFor = function(room, amount, resource) {
     if (targetResourceDescription == undefined) {
         console.log(resource + " not found in mineralDescriptions!");
     }
-    if (room.storage.store[resource] == undefined) {
-        returnArray["amount"] = amount;
-    }
-    else if (room.storage.store[resource] >= amount) {
-        returnArray["amount"] = 0;
-    }
-    else {
-        returnArray["amount"] = amount - room.storage.store[resource];
-    }
+    returnArray["amount"] = amount;
 
     if (targetResourceDescription.tier == 0) {
         //Tier 0 resource
@@ -400,7 +402,7 @@ global.whatIsLackingFor = function(room, amount, resource) {
             components[0] = targetResourceDescription.component1;
             components[1] = targetResourceDescription.component2;
             for (let c in components) {
-                if (room.storage.store[components[c]] < returnArray.amount) {
+                if (room.storage.store[components[c]] == undefined || room.storage.store[components[c]] < returnArray.amount) {
                     // not enough of this component
                     targetResourceDescription = mineralDescriptions[components[c]];
                     returnArray.resource = components[c];
@@ -438,14 +440,14 @@ global.buy = function (orderID, amount) {
     }
 
     var left = amount;
-    while (left > 99) {
+    while (left > 499) {
         var bestRoom;
         var bestCost = 9999999999999;
-        for (var r in Game.rooms) {
-            var cost = Game.market.calcTransactionCost(100, order.roomName, Game.rooms[r].name);
-            if (Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.owner.username == playerUsername && Game.rooms[r].storage.store[RESOURCE_ENERGY] >= cost) {
+        for (var r in myRooms) {
+            var cost = Game.market.calcTransactionCost(500, order.roomName, myRooms[r].name);
+            if (myRooms[r].terminal != undefined && myRooms[r].terminal.owner.username == playerUsername && myRooms[r].storage.store[RESOURCE_ENERGY] >= cost) {
                 if (bestCost > cost) {
-                    bestRoom = Game.rooms[r];
+                    bestRoom = myRooms[r];
                     bestCost = cost;
                 }
             }
@@ -454,13 +456,8 @@ global.buy = function (orderID, amount) {
         if (bestRoom == undefined || bestRoom.name == undefined) {
             return "No room with enough energy found!"
         }
-
-        var returnCode = Game.market.deal(order.id, 100, bestRoom.name);
-        if (returnCode == OK) {
-            left -= 100;
-        }
-        else if (returnCode != ERR_NOT_ENOUGH_RESOURCES) {
-            console.log(returnCode);
-        }
+        var returnCode = Game.market.deal(order.id, 500, bestRoom.name);
+        left -= 100;
+        console.log(returnCode);
     }
 }
