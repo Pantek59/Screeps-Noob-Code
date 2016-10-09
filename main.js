@@ -256,17 +256,6 @@ module.exports.loop = function() {
                 }
             }
 
-            //Prepare boost list
-            if (Game.rooms[r].memory.boostList == undefined) {
-                var boostEntry = {};
-                var boostList = [];
-                boostEntry["role"] = "[role]";
-                boostEntry["mineral"] = "[mineral]";
-                boostEntry["volume"] = "[volume]";
-                boostList.push(boostEntry);
-                Game.rooms[r].memory.boostList = boostList;
-            }
-
             if (Game.rooms[r].memory.terminalEnergyCost == undefined) {
                 Game.rooms[r].memory.terminalEnergyCost = 0;
             }

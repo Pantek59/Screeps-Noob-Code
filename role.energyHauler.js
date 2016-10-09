@@ -31,7 +31,6 @@ module.exports = {
                     roleBuilder.run(creep);
                 }
                 else {
-
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair

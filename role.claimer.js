@@ -59,9 +59,6 @@ module.exports = {
                         returncode = creep.reserveController(creep.room.controller);
                     }
                 }
-                else if (creep.room.controller.owner.username != playerUsername) {
-                    returncode = creep.attackController(creep.room.controller);
-                }
                 else {
                     creep.moveTo(creep.room.controller, {reusePath: 5});
                 }

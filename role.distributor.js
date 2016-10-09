@@ -5,7 +5,7 @@ module.exports = {
     run: function(creep) {
         var nuker = Game.getObjectById(creep.room.memory.roomArrayNukers[0]);
 
-        if (creep.room.memory.terminalTransfer != undefined) {
+        if (creep.room.memory.terminalTransfer != undefined && creep.room.terminal.storeCapacity > _.sum(creep.room.terminal.store)) {
             //ongoing terminal transfer
             if (_.sum(creep.carry) > 0) {
                 //Creep full

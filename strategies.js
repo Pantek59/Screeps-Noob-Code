@@ -8,13 +8,6 @@ module.exports = {
 
         switch (strategy) {
             case "remoteDrain":
-                // Place flag at the top, bottom, left or right edge (x = 5 or 45 / y = 5 or 45) of the neighbor room to mark the room you want to drain.
-                // - Healer will remain outside the room and heal all friendly creeps within range 10 of the flag
-                // - Attacker will wait near flag, attack any hostile creep within 10 range of the flag and wait until full health, then enter room.
-                // It makes one step into the room and waits until health is below 66%. Then it leaves the room and returns to flag.
-                // - Einarr will wait near flag until full health, then enter room. It makes one step into the room, waits and tries to heal itself
-                // in the case of damage. If health drops below 66% it leaves the room and returns to flag.
-
                 switch (creep.memory.role) {
                     case "attacker":
                     case "einarr":
@@ -106,10 +99,6 @@ module.exports = {
                 break;
 
             case "destroy":
-                // Place flag at the structure you want to be attacked and destroyed
-                // - Attacker/Einarr: Approach structure and attack until destroyed, unless hostile creeps within range 5 of the structure being attacked.
-                // - Healer: Enter flag room and approach flag until range 5. Then heal any damaged friendly creep.
-
                 switch (creep.memory.role) {
                     case "attacker":
                     case "einarr":
@@ -195,7 +184,6 @@ module.exports = {
         }
 
         if (bunkerDown == true) {
-            // Standard strategy (wait, heal and attack within 5 range)
             switch (creep.memory.role) {
                 case "attacker":
                 case "einarr":

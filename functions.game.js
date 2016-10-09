@@ -515,4 +515,8 @@ global.sellOrder = function (amount, resource, roomName, price) {
 global.produce = function (roomName, amount, resource) {
     Game.rooms[roomName].memory.labTarget = amount + ":" + resource;
     return "OK";
+};
+
+global.addBoost = function (roomName, role, mineralType) {
+
 }

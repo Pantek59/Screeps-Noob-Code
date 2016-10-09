@@ -255,8 +255,14 @@ module.exports = function() {
 		}
 
 		// create creep with the created body and the given role
-		var homeRoom = this.room.name;
-
-		return this.createCreep(finalBody, undefined, { role: roleName, working: false, spawn: spawnID, jobQueueTask: undefined, homeroom: homeRoom});
+        if (this.room.memory.boostList == undefined || 3 == 3) {
+            return this.createCreep(finalBody, undefined, {
+                role: roleName,
+                working: false,
+                spawn: spawnID,
+                jobQueueTask: undefined,
+                homeroom: this.room.name
+            });
+        }
 	}
 };
