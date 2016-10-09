@@ -123,7 +123,7 @@ module.exports.loop = function() {
         }
     // Market Auto Selling Code
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Market Code: " + Game.cpu.getUsed())}
-        if (Game.time % 31 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
+        if (Game.time % 13 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
             //Look for surplus materials
             var surplusMinerals;
 
@@ -134,8 +134,8 @@ module.exports.loop = function() {
 
                             if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket + 100) {
                                 surplusMinerals = Game.rooms[r].storage.store[resource] - Game.rooms[r].memory.resourceLimits[resource].minMarket;
-                                if (surplusMinerals >= 500) {
-                                    surplusMinerals = 500;
+                                if (surplusMinerals >= 10000) {
+                                    surplusMinerals = 10000;
                                     var orders = [];
                                     orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
                                     orders = _.sortBy(orders, "price");
@@ -501,7 +501,7 @@ module.exports.loop = function() {
 
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
             // Spawn code
-            if (Game.time % 13 == 0 && (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0)) {
+            if (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0) {
                 //room has no spawn yet
                 if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                     //room is owned and should be updated
@@ -767,25 +767,30 @@ module.exports.loop = function() {
                             // Market Order
                             var orderID = targetRoom;
                             var order = Game.market.getOrderById(orderID);
-                            if (amount > 500) {
-                                amount = 500;
-                            }
-                            energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, order.roomName);
-                            Game.rooms[r].memory.terminalEnergyCost = energyCost;
-                            if (Game.rooms[r].terminal.store[resource] >= amount) {
-                                if (resource == RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= amount + energyCost ||
-                                    resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
-                                    //Do the deal!
-                                    if (parseInt(info[1]) <= 500 && Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
-                                        console.log("<font color=#33ffff type='highlight'>" + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
-                                        delete Game.rooms[r].memory.terminalTransfer;
-                                    }
-                                    else if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
-                                        console.log("<font color=#33ffff type='highlight'>" + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
-                                        info[1] -= amount;
-                                        Game.rooms[r].memory.terminalTransfer = info.join(":");
+                            if (order != null) {
+                                if (amount > 500) {
+                                    amount = 500;
+                                }
+                                energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, order.roomName);
+                                Game.rooms[r].memory.terminalEnergyCost = energyCost;
+                                if (Game.rooms[r].terminal.store[resource] >= amount) {
+                                    if (resource == RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= amount + energyCost ||
+                                        resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
+                                        //Do the deal!
+                                        if (parseInt(info[1]) <= 500 && Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
+                                            console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                            delete Game.rooms[r].memory.terminalTransfer;
+                                        }
+                                        else if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
+                                            console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                            info[1] -= amount;
+                                            Game.rooms[r].memory.terminalTransfer = info.join(":");
+                                        }
                                     }
                                 }
+                            }
+                            else {
+                                delete Game.rooms[r].memory.terminalTransfer;
                             }
                         }
                     }
