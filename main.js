@@ -29,6 +29,27 @@ var roleBigClaimer = require('role.bigClaimer')
 
 var CPUdebugString = "CPU Debug<br><br>";
 
+function memCleanFlags(){
+    memCleanThingy(Game.flags,Memory.flags);    
+}
+function memCleanCreeps(){
+    memCleanThingy(Game.creeps,Memory.creeps);
+}
+
+//delete obsolete memory entries
+//g - in game objects
+//m - in memory data
+function memCleanThingy(g,m){
+    // check for memory entries of non existent 
+    for (var name in m) {
+        // and checking if the it is still alive
+        if (g[name] == undefined) {
+            // if not, delete the memory entry
+            delete m[name];
+        }
+    }
+}
+
 // Any modules that you use that modify the game's prototypes should be require'd before you require the profiler.
 const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
 
@@ -39,13 +60,10 @@ module.exports.loop = function() {
 
         if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
         // check for memory entries of died creeps by iterating over Memory.creeps
-        for (var name in Memory.creeps) {
-            // and checking if the creep is still alive
-            if (Game.creeps[name] == undefined) {
-                // if not, delete the memory entry
-                delete Memory.creeps[name];
-            }
-        }
+        memCleanCreeps();
+        // same for flags
+        memCleanFlags();
+    
         var senex = _.filter(Game.creeps,{ ticksToLive: 1});
         for (var ind in senex) {
             console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
