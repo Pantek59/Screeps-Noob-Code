@@ -103,9 +103,16 @@ module.exports = function() {
                 case "bigClaimer":
                     body.push(CLAIM);//600
                     body.push(MOVE);  //50
-                    size=650;
-                    sizelimit = 10;
-                    roleName = "claimer";
+                    body.push(CLAIM);//600
+                    body.push(MOVE);  //50
+                    body.push(CLAIM);//600
+                    body.push(MOVE);  //50
+                    body.push(CLAIM);//600
+                    body.push(MOVE);  //50
+                    body.push(CLAIM);//600
+                    body.push(MOVE);  //50
+                    size=3250;
+                    sizelimit = 1;
                     break;
 
 				case "protector":
@@ -119,11 +126,13 @@ module.exports = function() {
 
 				case "miner":
 					body.push(WORK); //100
+					body.push(WORK); //100
+					body.push(WORK); //100
 					body.push(CARRY); //50
 					body.push(CARRY); //50
 					body.push(MOVE);  //50
 					body.push(MOVE);  //50
-					size=300;
+					size=500;
 					sizelimit = 7;
 					break;
 

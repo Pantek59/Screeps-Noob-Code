@@ -194,13 +194,13 @@ global.listStorages = function (displayResource) {
                         amount = Game.rooms[r].storage.store[resourceTable[res]];
                     }
                     if (amount < Game.rooms[r].memory.resourceLimits[resourceTable[res]].maxStorage) {
-                        color = "#ff0000";
+                        color = "#ff3333";
                     }
                     else if (amount > Game.rooms[r].memory.resourceLimits[resourceTable[res]].maxStorage) {
                         color ="#00ff00"
                     }
                     else {
-                        color = "#ffffff";
+                        color = "#aaffff";
                     }
                     returnstring = returnstring.concat("<td><font color='" + color + "'>" + prettyInt(amount) + "  </font></td>");
                 }
@@ -237,6 +237,9 @@ global.prettyInt = function (int) {
 };
 
 global.listLimits = function (limitType, displayResource) {
+    if (arguments.length == 0) {
+        return "listLimits (limitTyoe, [displayResource]) - Known limit types: \"market\", \"storage\", \"production\", \"terminal\"";
+    }
     var returnstring = "<table><tr><th>Resource  </th>";
     var resourceTable = [];
     if (limitType == "market") {
@@ -287,7 +290,7 @@ global.listLimits = function (limitType, displayResource) {
 
 global.setLimit = function(roomName, type, resource, limit) {
     if (arguments.length == 0) {
-        return "setLimit (roomName, limitType, resource, limit) --> terminalTransfer(\"W18S49\", \"market\", \"Z\", 10000)<br>Known limit types: \"market\", \"storage\", \"production\", \"terminal\"";
+        return "setLimit (roomName, limitType, resource, limit) - Known limit types: \"market\", \"storage\", \"production\", \"terminal\"";
     }
     var roomNames = [];
     var resources = [];
@@ -342,6 +345,9 @@ global.checkTerminalLimits = function (room, resource) {
     // Check if terminal has exactly what it needs. If everything is as it should be true is returned.
     // If material is missing or too much is in terminal, an array will be returned with the following format:
     // delta.type = Type of resource / delta.amount = volume (positive number means surplus material)
+
+    //Check terminal limits
+    var uplift = 0;
     var delta = {};
     delta["type"] = resource;
     if (room.memory.resourceLimits == undefined || room.terminal == undefined || room.storage == undefined) {
@@ -359,6 +365,29 @@ global.checkTerminalLimits = function (room, resource) {
     else {
         delta.amount = 0
     }
+
+    //Check market selling orders
+    if (Object.keys(Game.market.orders).length > 0) {
+        //Look through orders to determine whether additional material is needed in terminal
+
+        var relevantOrders = _.filter(Game.market.orders,function (order) {
+            if (order.resourceType == resource && order.roomName == room.name) {return true}
+            else {return false}
+        });
+
+        if (relevantOrders.length > 0) {
+            for (let o in relevantOrders) {
+                if (relevantOrders[o].remainingAmount > 10000) {
+                    uplift = 10000;
+                }
+                else {
+                    uplift += relevantOrders[o].remainingAmount;
+                }
+            }
+            delta.amount -= uplift;
+        }
+    }
+
     return delta;
 };
 
@@ -425,6 +454,9 @@ global.whatIsLackingFor = function(room, amount, resource) {
 };
 
 global.buy = function (orderID, amount) {
+    if (arguments.length == 0) {
+        return "buy (orderID, amount)";
+    }
     var order = Game.market.getOrderById(orderID);
 
     if (order == null) {
@@ -439,25 +471,44 @@ global.buy = function (orderID, amount) {
         return "Not enough credits!"
     }
 
-    var left = amount;
-    while (left > 499) {
-        var bestRoom;
-        var bestCost = 9999999999999;
-        for (var r in myRooms) {
-            var cost = Game.market.calcTransactionCost(500, order.roomName, myRooms[r].name);
-            if (myRooms[r].terminal != undefined && myRooms[r].terminal.owner.username == playerUsername && myRooms[r].storage.store[RESOURCE_ENERGY] >= cost) {
-                if (bestCost > cost) {
-                    bestRoom = myRooms[r];
-                    bestCost = cost;
-                }
-            }
-        }
-
-        if (bestRoom == undefined || bestRoom.name == undefined) {
-            return "No room with enough energy found!"
-        }
-        var returnCode = Game.market.deal(order.id, 500, bestRoom.name);
-        left -= 100;
-        console.log(returnCode);
+    if (Memory.buyOrder != undefined) {
+        return "Active buy order found: " + Game.memory.buyOrder;
     }
-}
+
+    Memory.buyOrder = amount + ":" + order.id;
+    return "Buy queue created!";
+};
+
+global.sell = function (orderID, amount, roomName) {
+    if (arguments.length == 0) {
+        return "sell (orderID, amount, roomName)";
+    }
+    var order = Game.market.getOrderById(orderID);
+
+    if (order == null) {
+        return "Invalid order ID!"
+    }
+    if (Game.rooms[roomName].memory.terminalTransfer == undefined) {
+        Game.rooms[roomName].memory.terminalTransfer = order.id + ":" + amount + ":" + order.resourceType + ":MarketOrder";
+        return "Selling transfer scheduled.";
+    }
+    else {
+        return "Ongoing terminal transfer found. Try later.";
+    }
+};
+
+global.sellOrder = function (amount, resource, roomName, price) {
+    if (arguments.length == 0) {
+        return "sell (amount, resource, roomName, price)";
+    }
+
+    if (Game.rooms[roomName].storage != undefined && Game.rooms[roomName].storage.store[resource] >= amount) {
+        if (Game.market.createSellOrder(resource, price, amount, roomName) == OK) {
+            return "Sell order created!";
+        }
+    }
+    else {
+        return "Room " + roomName + " is not able to sell this resource.";
+    }
+};
+

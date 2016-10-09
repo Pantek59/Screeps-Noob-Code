@@ -101,17 +101,17 @@ module.exports = {
         }
 
         // Check for unit groups
-        var groups = _.filter(Game.flags,{ memory: { function: 'unitGroup', spawn: spawnRoom.memory.masterSpawn}});
-        for (var g in groups) {
+        var groupFlags = _.filter(Game.flags,{ memory: { function: 'unitGroup', spawn: spawnRoom.memory.masterSpawn}});
+        for (var g in groupFlags) {
 
-            if (groups[g].memory.attacker != undefined) {
-                minimumSpawnOf.attacker += groups[g].memory.attacker;
+            if (groupFlags[g].memory.attacker != undefined) {
+                minimumSpawnOf.attacker += groupFlags[g].memory.attacker;
             }
-            if (groups[g].memory.healer != undefined) {
-                minimumSpawnOf.healer += groups[g].memory.healer;
+            if (groupFlags[g].memory.healer != undefined) {
+                minimumSpawnOf.healer += groupFlags[g].memory.healer;
             }
-            if (groups[g].memory.einarr != undefined) {
-                minimumSpawnOf.einarr += groups[g].memory.einarr;
+            if (groupFlags[g].memory.einarr != undefined) {
+                minimumSpawnOf.einarr += groupFlags[g].memory.einarr;
             }
         }
 
@@ -212,7 +212,7 @@ module.exports = {
                 break;
             }
         }
-
+        //console.log(minimumSpawnOf.einarr);
         // Measuring number of active creeps
         var numberOf = new Array();
         // Creeps not leaving room
@@ -292,9 +292,6 @@ module.exports = {
         else if (numberOf.stationaryHarvester < minimumSpawnOf.stationaryHarvester) {
             var rolename = 'stationaryHarvester';
         }
-        else if (numberOf.demolisher < minimumSpawnOf.demolisher) {
-            var rolename = 'demolisher';
-        }
         else if (numberOf.remoteStationaryHarvester < minimumSpawnOf.remoteStationaryHarvester) {
             var rolename = 'remoteStationaryHarvester';
         }
@@ -330,6 +327,9 @@ module.exports = {
         }
         else if (numberOf.scientist < minimumSpawnOf.scientist) {
             var rolename = 'scientist';
+        }
+        else if (numberOf.demolisher < minimumSpawnOf.demolisher) {
+            var rolename = 'demolisher';
         }
         else {
             // Surplus spawning

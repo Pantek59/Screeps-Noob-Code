@@ -23,9 +23,9 @@ var moduleSpawnCreeps = require('module.spawnCreeps');
 var roleEnergyTransporter = require("role.energyTransporter");
 var roleEnergyHauler = require("role.energyHauler");
 var roleRemoteStationaryHarvester = require('role.remoteStationaryHarvester');
-var roleAttacker = require('role.attacker');
-var roleEinarr = require('role.einarr');
+var roleUnit = require('role.unit');
 var roleScientist = require('role.scientist');
+var roleBigClaimer = require('role.bigClaimer')
 
 var CPUdebugString = "CPU Debug<br><br>";
 
@@ -56,9 +56,56 @@ module.exports.loop = function() {
         var observerRooms = _.filter(Game.rooms, function(room) {return room.memory.roomArrayObservers != undefined && room.memory.roomArrayObservers.length > 0;});
         */
 
-        // Market Selling Code
+        // Single Market Orders
+        if (Memory.buyOrder != undefined) {
+            let info = Memory.buyOrder.split(":"); //Format: [AMOUNT]:[ORDERID]
+            var left = info[0];
+            var order =Game.market.getOrderById(info[1]);
+            if (left > 500) {
+                left = 500;
+            }
+
+            var bestRoom;
+            if (Memory.buyRoom != undefined) {
+                bestRoom = Game.rooms[Memory.buyRoom];
+            }
+            else {
+                var bestCost = 999999;
+                for (var r in myRooms) {
+                    var cost = Game.market.calcTransactionCost(left, order.roomName, myRooms[r].name);
+                    if (myRooms[r].terminal != undefined && myRooms[r].terminal.owner.username == playerUsername) {
+                        if (bestCost > cost) {
+                            bestRoom = myRooms[r];
+                            bestCost = cost;
+                        }
+                    }
+                }
+                if (bestRoom == undefined || bestRoom.name == undefined) {
+                    console.log("No room with enough energy found!");
+                }
+                else {
+                    Memory.buyRoom = bestRoom.name;
+                }
+            }
+
+            var returnCode = Game.market.deal(order.id, left, bestRoom.name);
+            if (returnCode == OK) {
+                info[0] -= left;
+                console.log("<font color=#fe2ec8 type='highlight'>" + left + " " + order.resourceType + " bought in room " + bestRoom.name + " for " + (left * order.price) + " credits.</font>");
+
+                if (info[0] > 0) {
+                    Memory.buyOrder = info.join(":");
+                }
+                else {
+                    delete Memory.buyOrder;
+                    delete Memory.buyRoom;
+                    console.log("<font color=#fe2ec8 type='highlight'>Buy order accomplished.</font>");
+                }
+            }
+        }
+    // Market Auto Selling Code
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Market Code: " + Game.cpu.getUsed())}
-        if (Game.time % 31 == 0) {
+        if (Game.time % 31 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
             //Look for surplus materials
             var surplusMinerals;
 
@@ -100,7 +147,7 @@ module.exports.loop = function() {
             }
         }
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Resource Balancing: " + Game.cpu.getUsed())}
-    if (Game.time % 27 == 0) {
+    if (Game.time % 27 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
         // Inter-room resource balancing
         for (let r in Game.rooms) {
             if (Game.rooms[r].terminal != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername
@@ -191,6 +238,17 @@ module.exports.loop = function() {
                 }
             }
 
+            //Prepare boost list
+            if (Game.rooms[r].memory.boostList == undefined) {
+                var boostEntry = {};
+                var boostList = [];
+                boostEntry["role"] = "[role]";
+                boostEntry["mineral"] = "[mineral]";
+                boostEntry["volume"] = "[volume]";
+                boostList.push(boostEntry);
+                Game.rooms[r].memory.boostList = boostList;
+            }
+
             if (Game.rooms[r].memory.terminalEnergyCost == undefined) {
                 Game.rooms[r].memory.terminalEnergyCost = 0;
             }
@@ -275,7 +333,6 @@ module.exports.loop = function() {
                 }
                 Game.rooms[r].memory.roomArrayPowerSpawns = powerSpawnIDs;
 
-                //TODO Check whether master spawn still valid. If not, define new master spawn
                 var spawnIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
                 for (let s in searchResult) {
@@ -349,6 +406,10 @@ module.exports.loop = function() {
                     Game.rooms[r].memory.roomArrayConstructionSites = constructionIDs;
                 }
             }
+            if (Game.rooms[r].memory.masterSpawn != undefined && Game.getObjectById(Game.rooms[r].memory.masterSpawn) == null) {
+                delete Game.rooms[r].memory.masterSpawn;
+            }
+
             if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArraySpawns != undefined) {
                 if (Game.rooms[r].memory.roomArraySpawns.length == 1) {
                     Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[0];
@@ -363,65 +424,67 @@ module.exports.loop = function() {
                 }
             }
 
-            //Flag code
+            //Panic flag code
             //TODO Energyhaul sites must be included in one step
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
-            var remoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'remoteSource'}});
+            if (Game.time % 3 == 0) {
+                var remoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'remoteSource'}});
 
-            for (var f in remoteHarvestingFlags) {
-                var flag = remoteHarvestingFlags[f];
-                if (flag.room != undefined) {
-                    // We have visibility in room
-                    if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
-                        //Hostiles present in room with remote harvesters
-                        var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
-                        flag.room.memory.panicFlag = panicFlag;
-                        panicFlag = _.filter(Game.flags,{ name: panicFlag})[0];
-                        panicFlag.memory.function = "protector";
-                        panicFlag.memory.volume = flag.room.memory.hostiles;
-                        panicFlag.memory.spawn = flag.memory.spawn;
+                for (var f in remoteHarvestingFlags) {
+                    var flag = remoteHarvestingFlags[f];
+                    if (flag.room != undefined) {
+                        // We have visibility in room
+                        if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
+                            //Hostiles present in room with remote harvesters
+                            var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
+                            flag.room.memory.panicFlag = panicFlag;
+                            panicFlag = _.filter(Game.flags, {name: panicFlag})[0];
+                            panicFlag.memory.function = "protector";
+                            panicFlag.memory.volume = flag.room.memory.hostiles;
+                            panicFlag.memory.spawn = flag.memory.spawn;
 
-                        console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
-                    }
-                    else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
-                        // No hostiles present in room with remote harvesters
-                        var tempFlag = _.filter(Game.flags,{ name: flag.room.memory.panicFlag})[0];
-                        tempFlag.remove();
-                        delete flag.room.memory.panicFlag;
+                            console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
+                        }
+                        else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
+                            // No hostiles present in room with remote harvesters
+                            var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
+                            tempFlag.remove();
+                            delete flag.room.memory.panicFlag;
+                        }
                     }
                 }
-            }
 
-            var stationaryRemoteHarvestingFlags = _.filter(Game.flags,{ memory: { function: 'haulEnergy'}});
+                var stationaryRemoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'haulEnergy'}});
 
-            for (var f in stationaryRemoteHarvestingFlags) {
-                var flag = stationaryRemoteHarvestingFlags[f];
-                if (flag.room != undefined) {
-                    // We have visibility in room
-                    if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
-                        //Hostiles present in room with remote harvesters
-                        var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
-                        flag.room.memory.panicFlag = panicFlag;
-                        panicFlag = _.filter(Game.flags,{ name: panicFlag})[0];
-                        panicFlag.memory.function = "protector";
-                        panicFlag.memory.volume = flag.room.memory.hostiles;
-                        panicFlag.memory.spawn = flag.memory.spawn;
+                for (var f in stationaryRemoteHarvestingFlags) {
+                    var flag = stationaryRemoteHarvestingFlags[f];
+                    if (flag.room != undefined) {
+                        // We have visibility in room
+                        if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
+                            //Hostiles present in room with remote harvesters
+                            var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
+                            flag.room.memory.panicFlag = panicFlag;
+                            panicFlag = _.filter(Game.flags, {name: panicFlag})[0];
+                            panicFlag.memory.function = "protector";
+                            panicFlag.memory.volume = flag.room.memory.hostiles;
+                            panicFlag.memory.spawn = flag.memory.spawn;
 
-                        console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
-                    }
-                    else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
-                        // No hostiles present in room with remote harvesters
-                        var tempFlag = _.filter(Game.flags,{ name: flag.room.memory.panicFlag})[0];
-                        tempFlag.remove();
-                        delete flag.room.memory.panicFlag;
+                            console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
+                        }
+                        else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
+                            // No hostiles present in room with remote harvesters
+                            var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
+                            tempFlag.remove();
+                            delete flag.room.memory.panicFlag;
+                        }
                     }
                 }
             }
 
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
             // Spawn code
-            if (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0) {
-                //room has no spawner yet
+            if (Game.time % 13 == 0 && (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0)) {
+                //room has no spawn yet
                 if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                     //room is owned and should be updated
                     var claimFlags = Game.rooms[r].find(FIND_FLAGS, { filter: (s) => s.pos.roomName == Game.rooms[r].name && s.memory.function == "remoteController"});
@@ -489,7 +552,7 @@ module.exports.loop = function() {
 
                 }
             }
-            else if (Game.time % 13 == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
+            else if (Game.time % 11 == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                 moduleSpawnCreeps.run(Game.rooms[r], allies);
             }
 
@@ -563,7 +626,7 @@ module.exports.loop = function() {
             }
 
             // Link code
-            if (Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
+            if (Game.time % 3 == 0 && Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
                 var fillLinks = [];
                 var emptyLinks = [];
                 var targetLevel = 0;
@@ -686,18 +749,23 @@ module.exports.loop = function() {
                             // Market Order
                             var orderID = targetRoom;
                             var order = Game.market.getOrderById(orderID);
-
+                            if (amount > 500) {
+                                amount = 500;
+                            }
                             energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, order.roomName);
                             Game.rooms[r].memory.terminalEnergyCost = energyCost;
                             if (Game.rooms[r].terminal.store[resource] >= amount) {
-                                console.log("test");
                                 if (resource == RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= amount + energyCost ||
                                     resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
                                     //Do the deal!
-
-                                    if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
+                                    if (parseInt(info[1]) <= 500 && Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
                                         console.log("<font color=#33ffff type='highlight'>" + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
                                         delete Game.rooms[r].memory.terminalTransfer;
+                                    }
+                                    else if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
+                                        console.log("<font color=#33ffff type='highlight'>" + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                        info[1] -= amount;
+                                        Game.rooms[r].memory.terminalTransfer = info.join(":");
                                     }
                                 }
                             }
@@ -709,31 +777,38 @@ module.exports.loop = function() {
                 }
             }
             // Production Code
-            if (3 == 5 && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]") {
+            if (Game.time % 17 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]"
+            && Game.rooms[r].memory.labOrder == undefined && Game.rooms[r].memory.labTarget == undefined) {
                 for (let res in RESOURCES_ALL) {
-                    var storageLevel;
-                    if (Game.rooms[r].storage.store[RESOURCES_ALL[res]] == undefined) {
-                        storageLevel = 0;
-                    }
-                    else {
-                        storageLevel = Game.rooms[r].storage.store[RESOURCES_ALL[res]];
-                    }
+                    if (RESOURCES_ALL[res] != RESOURCE_ENERGY && RESOURCES_ALL[res] != RESOURCE_POWER && mineralDescriptions[RESOURCES_ALL[res]].tier > 0) {
+                        var storageLevel;
+                        if (Game.rooms[r].storage.store[RESOURCES_ALL[res]] == undefined) {
+                            storageLevel = 0;
+                        }
+                        else {
+                            storageLevel = Game.rooms[r].storage.store[RESOURCES_ALL[res]];
+                        }
 
-                    if (storageLevel < Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
-                        //Try to produce resource
-                        let delta = Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction - storageLevel;
-                        let resource = RESOURCES_ALL[res];
-                        if (mineralDescriptions[resource].tier > 0) {
+                        if (storageLevel < Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
+                            //Try to produce resource
+                            let delta = Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction - storageLevel;
+                            let resource = RESOURCES_ALL[res];
                             var productionTarget = whatIsLackingFor(Game.rooms[r], delta, resource);
-                            if (productionTarget.amount == 0) {
-                                productionTarget.amount = delta;
-                            }
                             if (mineralDescriptions[productionTarget.resource].tier > 0) {
-                                if (Game.rooms[r].storage.store[mineralDescriptions[resource].component1] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction &&
-                                Game.rooms[r].storage.store[mineralDescriptions[resource].component2] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
-                                    //All components ready, start production
-                                    console.log(productionTarget.amount)
+                                if (productionTarget.amount == 0) {
+                                    productionTarget.amount = delta;
                                 }
+                                if (mineralDescriptions[productionTarget.resource].tier > 0) {
+                                    if (Game.rooms[r].storage.store[mineralDescriptions[resource].component1] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction &&
+                                        Game.rooms[r].storage.store[mineralDescriptions[resource].component2] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
+                                        //All components ready, start production
+                                        Game.rooms[r].memory.labTarget = productionTarget.amount + ":" + productionTarget.resource;
+                                    }
+                                }
+                            }
+                            else {
+                                //Tier 0 resource missing
+                                Game.rooms[r].memory.lastMissingComponent = productionTarget.resource;
                             }
                         }
                     }
@@ -742,7 +817,7 @@ module.exports.loop = function() {
 
 
             // Lab code
-            if (Game.time % 13 == 0 && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
+            if (Game.time % 13 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
                 // Lab Queueing Code
                 var labString = Game.rooms[r].memory.labTarget.split(":");
                 var origAmount = labString[0];
@@ -798,69 +873,70 @@ module.exports.loop = function() {
             }
 
             // Lab Production Code
-            if (Game.rooms[r].memory.innerLabs == undefined) {
-                // Prepare link roles
-                var emptyArray = {};
-                var innerLabs = [];
-                emptyArray["labID"] = "[LAB_ID]";
-                emptyArray["resource"] = "[RESOURCE]";
-                innerLabs.push(emptyArray);
-                innerLabs.push(emptyArray);
-                Game.rooms[r].memory.innerLabs = innerLabs;
-            }
-            if (Game.rooms[r].memory.labOrder != undefined) { //FORMAT: 500:H:Z:[prepare/running/done]
-                var innerLabs = [];
+            if (Game.time % 10 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
                 if (Game.rooms[r].memory.innerLabs == undefined) {
                     // Prepare link roles
                     var emptyArray = {};
+                    var innerLabs = [];
                     emptyArray["labID"] = "[LAB_ID]";
                     emptyArray["resource"] = "[RESOURCE]";
                     innerLabs.push(emptyArray);
+                    innerLabs.push(emptyArray);
                     Game.rooms[r].memory.innerLabs = innerLabs;
                 }
-                else if (Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]") {
-                    innerLabs = Game.rooms[r].memory.innerLabs;
-                    var labOrder = Game.rooms[r].memory.labOrder.split(":");
-                    if (innerLabs.length == 2) {
-                        //There are two innerLabs defined
-                        if (innerLabs[0].resource != labOrder[1] || innerLabs[1].resource != labOrder[2]) {
-                            //Set inner lab resource to ingredients
-                            innerLabs[0].resource = labOrder[1];
-                            innerLabs[1].resource = labOrder[2];
-                            Game.rooms[r].memory.innerLabs = innerLabs;
-                        }
-                        var rawAmount = labOrder[0];
-                        if (rawAmount > Game.getObjectById(innerLabs[0].labID).mineralCapacity) {
-                            rawAmount = Game.getObjectById(innerLabs[0].labID).mineralCapacity;
-                        }
-                        if (labOrder[3] == "prepare" && Game.getObjectById(innerLabs[0].labID).mineralType == innerLabs[0].resource && Game.getObjectById(innerLabs[0].labID).mineralAmount >= rawAmount
-                         && Game.getObjectById(innerLabs[1].labID).mineralType == innerLabs[1].resource && Game.getObjectById(innerLabs[1].labID).mineralAmount >= rawAmount) {
-                            labOrder[3] = "running";
-
-                            Game.rooms[r].memory.labOrder = labOrder.join(":");
-                        }
-                        if (labOrder[3] == "running") {
-                            // Reaction can be started
-                            for (var lab in Game.rooms[r].memory.roomArrayLabs) {
-                                if (Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
-                                    if (Game.getObjectById(innerLabs[0].labID).mineralAmount > 0 && Game.getObjectById(innerLabs[1].labID).mineralAmount > 0) {
-                                        //Still enough material to do a reaction
-                                        var currentLab = Game.getObjectById(Game.rooms[r].memory.roomArrayLabs[lab]);
-                                        if (currentLab.cooldown == 0) {
-                                            currentLab.runReaction(Game.getObjectById(innerLabs[0].labID), Game.getObjectById(innerLabs[1].labID));
+                if (Game.rooms[r].memory.labOrder != undefined) { //FORMAT: 500:H:Z:[prepare/running/done]
+                    var innerLabs = [];
+                    if (Game.rooms[r].memory.innerLabs == undefined) {
+                        // Prepare link roles
+                        var emptyArray = {};
+                        emptyArray["labID"] = "[LAB_ID]";
+                        emptyArray["resource"] = "[RESOURCE]";
+                        innerLabs.push(emptyArray);
+                        Game.rooms[r].memory.innerLabs = innerLabs;
+                    }
+                    else if (Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]") {
+                        innerLabs = Game.rooms[r].memory.innerLabs;
+                        var labOrder = Game.rooms[r].memory.labOrder.split(":");
+                        if (innerLabs.length == 2) {
+                            //There are two innerLabs defined
+                            if (innerLabs[0].resource != labOrder[1] || innerLabs[1].resource != labOrder[2]) {
+                                //Set inner lab resource to ingredients
+                                innerLabs[0].resource = labOrder[1];
+                                innerLabs[1].resource = labOrder[2];
+                                Game.rooms[r].memory.innerLabs = innerLabs;
+                            }
+                            var rawAmount = labOrder[0];
+                            if (rawAmount > Game.getObjectById(innerLabs[0].labID).mineralCapacity) {
+                                rawAmount = Game.getObjectById(innerLabs[0].labID).mineralCapacity;
+                            }
+                            if (labOrder[3] == "prepare" && Game.getObjectById(innerLabs[0].labID).mineralType == innerLabs[0].resource && Game.getObjectById(innerLabs[0].labID).mineralAmount >= rawAmount
+                                && Game.getObjectById(innerLabs[1].labID).mineralType == innerLabs[1].resource && Game.getObjectById(innerLabs[1].labID).mineralAmount >= rawAmount) {
+                                labOrder[3] = "running";
+                                Game.rooms[r].memory.labOrder = labOrder.join(":");
+                            }
+                            if (labOrder[3] == "running") {
+                                // Reaction can be started
+                                for (var lab in Game.rooms[r].memory.roomArrayLabs) {
+                                    if (Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
+                                        if (Game.getObjectById(innerLabs[0].labID).mineralAmount > 0 && Game.getObjectById(innerLabs[1].labID).mineralAmount > 0) {
+                                            //Still enough material to do a reaction
+                                            var currentLab = Game.getObjectById(Game.rooms[r].memory.roomArrayLabs[lab]);
+                                            if (currentLab.cooldown == 0) {
+                                                currentLab.runReaction(Game.getObjectById(innerLabs[0].labID), Game.getObjectById(innerLabs[1].labID));
+                                            }
                                         }
-                                    }
-                                    else {
-                                        labOrder[3] = "done";
-                                        Game.rooms[r].memory.labOrder = labOrder.join(":");
+                                        else {
+                                            labOrder[3] = "done";
+                                            Game.rooms[r].memory.labOrder = labOrder.join(":");
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                else {
-                    console.log("Inner links not defined in room " + Game.rooms[r].name);
+                    else {
+                        console.log("Inner links not defined in room " + Game.rooms[r].name);
+                    }
                 }
             }
         }
@@ -924,7 +1000,7 @@ module.exports.loop = function() {
                         roleClaimer.run(creep);
                     }
                     else if (creep.memory.role == 'bigClaimer') {
-                        roleClaimer.run(creep);
+                        roleBigClaimer.run(creep);
                     }
                     else if (creep.memory.role == 'stationaryHarvester') {
                         roleStationaryHarvester.run(creep);
@@ -947,11 +1023,8 @@ module.exports.loop = function() {
                     else if (creep.memory.role == 'remoteStationaryHarvester') {
                         roleRemoteStationaryHarvester.run(creep);
                     }
-                    else if (creep.memory.role == 'attacker') {
-                        roleAttacker.run(creep);
-                    }
-                    else if (creep.memory.role == 'einarr') {
-                        roleEinarr.run(creep);
+                    else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer') {
+                        roleUnit.run(creep);
                     }
                     else if (creep.memory.role == 'scientist') {
                         roleScientist.run(creep);
