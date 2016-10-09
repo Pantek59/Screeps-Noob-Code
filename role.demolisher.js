@@ -53,8 +53,15 @@ module.exports = {
             }
             else {
                 // back in spawn room
-                var structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK, STRUCTURE_TOWER, STRUCTURE_STORAGE, STRUCTURE_SPAWN);
-                // if we found one
+                let structure;
+                if (demolishFlag.pos.roomName == creep.memory.homeroom) {
+                    //Demolisher flag is in creep's home room -> energy will only be stored in containers and in the storage
+                    structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE) && s.storeCapacity > _.sum(s.store) && s.pos.isEqualTo(demolishFlag.pos) == false});
+                }
+                else {
+                    structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK, STRUCTURE_TOWER, STRUCTURE_STORAGE, STRUCTURE_SPAWN);
+                }
+
                 if (structure != null) {
                     // try to transfer energy, if it is not in range
                     if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

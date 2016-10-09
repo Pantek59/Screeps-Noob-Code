@@ -86,7 +86,8 @@ module.exports = {
         // Check for active flag "remoteController"
         var remoteController = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in remoteController) {
-            if (remoteController[t].room != undefined && remoteController[t].room != undefined && remoteController[t].room.controller.owner != undefined && remoteController[t].room.controller.owner.username == spawnRoom.controller.owner.username) {
+            let tempRoom = Game.rooms[remoteController[t].pos.roomName];
+            if (tempRoom != undefined && tempRoom.controller != undefined && tempRoom.controller.owner != undefined && tempRoom.controller.owner.username == playerUsername) {
                 //Target room already claimed
             }
             else if (remoteController[t].room == undefined || remoteController[t].room.controller.reservation == undefined || remoteController[t].room.controller.reservation.ticksToEnd < 3000) {
