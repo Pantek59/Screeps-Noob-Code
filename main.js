@@ -833,10 +833,11 @@ module.exports.loop = function() {
                 }
             }
 
-
             // Lab code
             if (Game.time % 13 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
                 // Lab Queueing Code
+                console.log("test");
+
                 var labString = Game.rooms[r].memory.labTarget.split(":");
                 var origAmount = labString[0];
                 var origResource = labString[1];

@@ -67,7 +67,8 @@ module.exports = {
                 }
             }
         }
-        else if (creep.checkTerminalLimits(RESOURCE_GHODIUM).amount == 0 && creep.room.memory.terminalTransfer == undefined && creep.room.memory.roomArrayNukers != undefined && creep.room.memory.roomArrayNukers[0] != undefined && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= creep.carryCapacity || nuker.ghodium + creep.room.storage.store[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity || nuker.ghodium + creep.carry[RESOURCE_GHODIUM] >= nuker.ghodiumCapacity)) {
+        else if (creep.checkTerminalLimits(RESOURCE_GHODIUM).amount == 0 && creep.room.memory.terminalTransfer == undefined && nuker != undefined
+            && nuker.ghodium < nuker.ghodiumCapacity && (creep.room.storage.store[RESOURCE_GHODIUM] >= 0 || creep.carry.store[RESOURCE_GHODIUM] >= 0)) {
             //Nuker in need of Ghodium and storage has enough of it
             if (creep.storeAllBut(RESOURCE_GHODIUM) == true) {
                 if (_.sum(creep.carry) < creep.carryCapacity && creep.room.storage.store[RESOURCE_GHODIUM] > 0) {

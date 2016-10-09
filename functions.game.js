@@ -512,3 +512,7 @@ global.sellOrder = function (amount, resource, roomName, price) {
     }
 };
 
+global.produce = function (roomName, amount, resource) {
+    Game.rooms[roomName].memory.labTarget = amount + ":" + resource;
+    return "OK";
+}
