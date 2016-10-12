@@ -26,7 +26,6 @@ module.exports = {
                 // switch state
                 creep.memory.working = true;
             }
-
             // if creep is supposed to complete a constructionSite
             if (creep.memory.working == true) {
                 if (creep.room.memory.hostiles > 0) {
@@ -41,7 +40,6 @@ module.exports = {
                     if (constructionSite == null) {
                         constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, {filter: (s) => s.structureType != STRUCTURE_RAMPART});
                     }
-
                     // if one is found
                     if (constructionSite != undefined) {
                         // try to build, if the constructionSite is not in range

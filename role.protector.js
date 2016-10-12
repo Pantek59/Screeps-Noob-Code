@@ -43,7 +43,7 @@ module.exports = {
             //Move to flag if not there
             var range = creep.pos.getRangeTo(protectorFlag);
             if (range > 5) {
-                creep.moveTo(protectorFlag, {ignoreCreeps: false});
+                creep.moveTo(protectorFlag, {ignoreCreeps: false, reusePath: 8});
             }
         }
         else {

@@ -46,6 +46,15 @@ module.exports = {
         minimumSpawnOf["healer"] = 0;
         minimumSpawnOf["einarr"] = 0;
         minimumSpawnOf["scientist"] = 0;
+        minimumSpawnOf["transporter"] = 0;
+        minimumSpawnOf["bigUpgrader"] = 0;
+
+        // Check for transporter flags
+        var transporterFlags = _.filter(Game.flags,{ memory: { function: 'transporter', spawn: spawnRoom.memory.masterSpawn}});
+        for (var p in transporterFlags) {
+            //Iterate through demolisher flags of this spawn
+            minimumSpawnOf.transporter += transporterFlags[p].memory.volume;
+        }
 
         // Check for demolisher flags
         var demolisherFlags = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: spawnRoom.memory.masterSpawn}});
@@ -145,7 +154,10 @@ module.exports = {
 
         // Upgrader
         if (spawnRoom.controller.level == 8) {
-            minimumSpawnOf["upgrader"] = 0;
+            minimumSpawnOf.upgrader = 0;
+            if (spawnRoom.storage.store[RESOURCE_ENERGY] > 200000) {
+                minimumSpawnOf.bigUpgrader = 1;
+            }
         }
         else {
             minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
@@ -227,6 +239,7 @@ module.exports = {
         numberOf["distributor"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "distributor")}).length;
         numberOf["energyTransporter"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
         numberOf["scientist"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "scientist")}).length;
+        numberOf["bigUpgrader"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "bigUpgrader")}).length;
 
         //Creeps leaving room
         numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
@@ -239,6 +252,7 @@ module.exports = {
         numberOf["attacker"] = _.filter(Game.creeps,{ memory: { role: 'attacker', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["healer"] = _.filter(Game.creeps,{ memory: { role: 'healer', spawn: spawnRoom.memory.masterSpawn}}).length;
         numberOf["einarr"] = _.filter(Game.creeps,{ memory: { role: 'einarr', spawn: spawnRoom.memory.masterSpawn}}).length;
+        numberOf["transporter"] = _.filter(Game.creeps,{ memory: { role: 'transporter', spawn: spawnRoom.memory.masterSpawn}}).length;
 
         // Addition of creeps being spawned
         for (s in spawnRoom.memory.roomArraySpawns) {
@@ -331,6 +345,12 @@ module.exports = {
         }
         else if (numberOf.demolisher < minimumSpawnOf.demolisher) {
             var rolename = 'demolisher';
+        }
+        else if (numberOf.transporter < minimumSpawnOf.transporter) {
+            var rolename = 'transporter';
+        }
+        else if (numberOf.bigUpgrader < minimumSpawnOf.bigUpgrader) {
+            var rolename = 'bigUpgrader';
         }
         else {
             // Surplus spawning

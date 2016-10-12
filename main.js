@@ -26,6 +26,7 @@ var roleRemoteStationaryHarvester = require('role.remoteStationaryHarvester');
 var roleUnit = require('role.unit');
 var roleScientist = require('role.scientist');
 var roleBigClaimer = require('role.bigClaimer')
+var roleTransporter = require('role.transporter')
 
 var CPUdebugString = "CPU Debug<br><br>";
 
@@ -62,7 +63,7 @@ module.exports.loop = function() {
         // check for memory entries of died creeps by iterating over Memory.creeps
         memCleanCreeps();
         // same for flags
-        memCleanFlags();
+        //memCleanFlags(); //Flags do not count as memory (yet), therefore not necessary (yet)
     
         var senex = _.filter(Game.creeps,{ ticksToLive: 1});
         for (var ind in senex) {
@@ -73,6 +74,54 @@ module.exports.loop = function() {
         //TODO: Scan rooms in 10 rooms distance for room info and save it in an object
         var observerRooms = _.filter(Game.rooms, function(room) {return room.memory.roomArrayObservers != undefined && room.memory.roomArrayObservers.length > 0;});
         */
+
+        // Flag colors
+        if (Game.time % 37 == 0) {
+            //only flags for unit group should have only one color
+            for (let f in Game.flags) {
+                switch (Game.flags[f].memory.function) {
+                    case "narrowSource":
+                        //stationaryHarvester
+                        Game.flags[f].setColor(COLOR_BROWN, COLOR_YELLOW);
+                        break;
+
+                    case "remoteController":
+                        //claimer
+                        Game.flags[f].setColor(COLOR_CYAN, COLOR_PURPLE);
+                        break;
+
+                    case "attackController":
+                        //bigClaimer
+                        Game.flags[f].setColor(COLOR_CYAN, COLOR_RED);
+                        break;
+
+                    case "remoteSource":
+                        //remoteHarvester
+                        Game.flags[f].setColor(COLOR_GREEN, COLOR_YELLOW);
+                        break;
+
+                    case "haulEnergy":
+                        //remoteStationaryHarvester & energyHauler
+                        Game.flags[f].setColor(COLOR_BLUE, COLOR_YELLOW);
+                        break;
+
+                    case "protector":
+                        //protector
+                        Game.flags[f].setColor(COLOR_RED, COLOR_BROWN);
+                        break;
+
+                    case "demolish":
+                        //demolisher
+                        Game.flags[f].setColor(COLOR_BLUE, COLOR_RED);
+                        break;
+
+                    case "transporter":
+                        //transporter
+                        Game.flags[f].setColor(COLOR_BLUE, COLOR_BROWN);
+                        break;
+                }
+            }
+        }
 
         // Single Market Orders
         if (Memory.buyOrder != undefined) {
@@ -255,18 +304,15 @@ module.exports.loop = function() {
                     Game.rooms[r].memory.hostiles++;
                 }
             }
-
-            if (Game.rooms[r].memory.terminalEnergyCost == undefined) {
-                Game.rooms[r].memory.terminalEnergyCost = 0;
+            if (Game.rooms[r].storage != undefined && Game.rooms[r].controller.level >= 6) {
+                let statusFlag = Game.rooms[r].storage;
+                if (Game.rooms[r].memory.terminalEnergyCost == undefined) {
+                    Game.rooms[r].memory.terminalEnergyCost = 0;
+                }
             }
 
             if (Game.rooms[r].memory.resourceLimits == undefined && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                 //Set default resource limits:
-                //minTerminal = Minimal amount of this resource in terminal  OK
-                //maxStorage = Maximal amount in storage before resource is shared with other rooms via terminal transfer
-                //minMarket = Minimal amount in storage before market is searched for buying orders OK
-                //maxProduction = Amount until the resource is attempted to be produced in room
-
                 var roomLimits = {};
                 var limit;
                 for (var res in RESOURCES_ALL) {
@@ -595,7 +641,9 @@ module.exports.loop = function() {
                     }
                     var username = hostiles[0].owner.username;
                     if (allies.indexOf(username) == -1) {
-                        console.log("Hostile creep " + username + " spotted in room " + Game.rooms[r].name + "!");
+                        if (Game % 3 == 0) {
+                            console.log("Hostile creep " + username + " spotted in room " + Game.rooms[r].name + "!");
+                        }
                         towers.forEach(tower => tower.attack(hostiles[0]));
                     }
                 }
@@ -701,7 +749,7 @@ module.exports.loop = function() {
 
             // Terminal code
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
-            if (Game.rooms[r].memory.terminalTransfer != undefined && Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.owner.username == playerUsername) {
+            if (Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.terminalTransfer != undefined && Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.owner.username == playerUsername) {
                 var terminal = Game.rooms[r].terminal;
                 if (terminal != undefined && terminal.owner.username == playerUsername && Game.rooms[r].memory.terminalTransfer != undefined) {
                     //Terminal exists
@@ -789,7 +837,7 @@ module.exports.loop = function() {
                 }
             }
             // Production Code
-            if (Game.time % 17 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]"
+            if (Game.cpu.bucket > CPU_THRESHOLD && Game.time % 17 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]"
             && Game.rooms[r].memory.labOrder == undefined && Game.rooms[r].memory.labTarget == undefined) {
                 for (let res in RESOURCES_ALL) {
                     if (RESOURCES_ALL[res] != RESOURCE_ENERGY && RESOURCES_ALL[res] != RESOURCE_POWER && mineralDescriptions[RESOURCES_ALL[res]].tier > 0) {
@@ -929,7 +977,7 @@ module.exports.loop = function() {
                             if (labOrder[3] == "running") {
                                 // Reaction can be started
                                 for (var lab in Game.rooms[r].memory.roomArrayLabs) {
-                                    if (Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
+                                    if (Game.rooms[r].memory.boostLabs.indexOf(Game.rooms[r].memory.roomArrayLabs[lab]) == -1 && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
                                         if (Game.getObjectById(innerLabs[0].labID).mineralAmount > 0 && Game.getObjectById(innerLabs[1].labID).mineralAmount > 0) {
                                             //Still enough material to do a reaction
                                             var currentLab = Game.getObjectById(Game.rooms[r].memory.roomArrayLabs[lab]);
@@ -955,28 +1003,74 @@ module.exports.loop = function() {
 
         //Cycle through creeps
         if (CPUdebug == true) { CPUdebugString = CPUdebugString.concat("<br>Starting creeps: " + Game.cpu.getUsed()) }
-        // for every creep name in Game.creeps
         for (let name in Game.creeps) {
             // get the creep object
             var creep = Game.creeps[name];
 
-            //Check for job queues
-            if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
+            //Check for boosts
+            if (creep.ticksToLive > 1300 && creep.memory.boost != undefined && creep.memory.boost != "") {
+                var boostLabs = creep.room.memory.boostLabs;
+                if (boostLabs.length > 0) {
+                    let bodyPart = mineralDescriptions[creep.memory.boost].bodyPart;
+                    let numberofParts = creep.getActiveBodyparts(bodyPart);
+                    let mineralNeed = 30 * numberofParts;
+                    let energyNeed = 20 * numberofParts;
+
+                    for (let l in boostLabs) {
+                        let boostLab = Game.getObjectById(boostLabs[l])
+                        if (boostLab.mineralType == creep.memory.boost && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
+                            // Lab ready for boost
+                            let returnCode = boostLab.boostCreep(creep);
+                            if (returnCode == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(boostLab, {reusePath: 5});
+                            }
+                            else if (returnCode == OK) {
+                                delete creep.memory.boost;
+                            }
+                            break;
+                        }
+                        else if (boostLab.mineralAmount >= mineralNeed) {
+                            //Lab needs minerals
+                            if (creep.storeAllBut(creep.memory.boost) == true) {
+                                if (_.sum(creep.carry) == 0) {
+                                    //Get minerals from storage
+                                    let amount = mineralNeed - boostLab.mineralAmount;
+                                    if (amount > creep.carryCapacity) {
+                                        amount = creep.carryCapacity;
+                                    }
+                                    if (creep.withdraw(creep.room.storage, creep.memory.boost, amount) == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(creep.room.storage, {reusePath: 5})
+                                        break;
+                                    }
+                                }
+                                else {
+                                    //Bring minerals to lab
+                                    if (creep.transfer(boostLab, creep.memory.boost) == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(boostLab, {reusePath: 5})
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
                 //Job queue pending
                 switch (creep.memory.jobQueueTask) {
                     case "pickUpEnergy": //Dropped energy to be picked up
                         roleJobber.run(creep,"droppedEnergy");
                         break;
 
-                    case "distributor": //Small amount distribution job pending
-                        roleJobber.run(creep,"distributor");
+                    case "prepareBoost": //Small amount distribution job pending
+                        roleJobber.run(creep,"prepareBoost");
                         break;
                 }
             creep.memory.jobQueueTask = undefined;
             }
             else if (creep.spawning == false) {
                 if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
-                if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
+                if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
                     // Minerals found in creep
                     creep.getRidOfMinerals();
                 }
@@ -1040,6 +1134,12 @@ module.exports.loop = function() {
                     }
                     else if (creep.memory.role == 'scientist') {
                         roleScientist.run(creep);
+                    }
+                    else if (creep.memory.role == 'transporter') {
+                        roleTransporter.run(creep);
+                    }
+                    else if (creep.memory.role == 'bigUpgrader') {
+                        roleUpgrader.run(creep);
                     }
                 }
             }

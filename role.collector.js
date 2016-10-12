@@ -1,7 +1,6 @@
 require ("globals");
 
 module.exports = {
-    // a function to run the logic for this role
     run: function(creep) {
 		// check for picked up minerals
         if (creep.memory.sleep != undefined) {

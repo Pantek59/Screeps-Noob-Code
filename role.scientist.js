@@ -84,7 +84,7 @@ module.exports = {
                             var lab;
                             for (var c in creep.room.memory.roomArrayLabs) {
                                 lab = Game.getObjectById(creep.room.memory.roomArrayLabs[c]);
-                                if (lab.mineralAmount > 0 && lab.id != innerLabs[0].labID && lab.id != innerLabs[1].labID) {
+                                if (creep.room.memory.boostLabs.indexOf(lab.id) == -1 && lab.mineralAmount > 0 && lab.id != innerLabs[0].labID && lab.id != innerLabs[1].labID) {
                                     {
                                         if (_.sum(creep.carry) < creep.carryCapacity) {
                                             if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
@@ -94,6 +94,17 @@ module.exports = {
                                         else {
                                             creep.storeAllBut();
                                         }
+                                    }
+                                }
+                                else if (creep.room.memory.boostLabs.indexOf(lab.id) == -1 && lab.energy > 0)
+                                {
+                                    if (_.sum(creep.carry) < creep.carryCapacity) {
+                                        if (creep.withdraw(lab, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                            creep.moveTo(lab, {reusePath: 5});
+                                        }
+                                    }
+                                    else {
+                                        creep.storeAllBut();
                                     }
                                 }
                                 else {

@@ -4,7 +4,7 @@ delayRoomScanning = 50;
 RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 RBS_PACKETSIZE = 2000;
-CPU_THRESHOLD = 1000;
+CPU_THRESHOLD = 3500;
 
 playerUsername = "Pantek59";
 allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima"];

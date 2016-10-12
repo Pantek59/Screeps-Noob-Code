@@ -499,11 +499,11 @@ global.sell = function (orderID, amount, roomName) {
 
 global.sellOrder = function (amount, resource, roomName, price) {
     if (arguments.length == 0) {
-        return "sell (amount, resource, roomName, price)";
+        return "sellOrder (amount, resource, roomName, price)";
     }
 
     if (Game.rooms[roomName].storage != undefined && Game.rooms[roomName].storage.store[resource] >= amount) {
-        if (Game.market.createSellOrder(resource, price, amount, roomName) == OK) {
+        if (Game.market.createOrder(ORDER_SELL, resource, price, amount, roomName) == OK) {
             return "Sell order created!";
         }
     }
@@ -512,11 +512,116 @@ global.sellOrder = function (amount, resource, roomName, price) {
     }
 };
 
+global.buyOrder = function (amount, resource, roomName, price) {
+    if (arguments.length == 0) {
+        return "buyOrder (amount, resource, roomName, price)";
+    }
+    if (Game.market.createOrder(ORDER_BUY, resource, price, amount, roomName) == OK) {
+        return "Buy order created!";
+    }
+};
 global.produce = function (roomName, amount, resource) {
+    if (arguments.length == 0) {
+        return "produce (roomName, amount, resource)";
+    }
     Game.rooms[roomName].memory.labTarget = amount + ":" + resource;
     return "OK";
 };
 
-global.addBoost = function (roomName, role, mineralType) {
+global.addBoostLab = function (roomName, labID) {
+    if (arguments.length == 0) {
+        return "addBoostLab (roomName, labID)";
+    }
+    var lab = Game.getObjectById(labID);
+    if (lab != null) {
 
-}
+        var boostLabList;
+        var room = Game.rooms[roomName];
+        if (room.memory.boostLabs == undefined) {
+            boostLabList = [];
+        }
+        else {
+            boostLabList = room.memory.boostLabs;
+        }
+        boostLabList.push(labID);
+        room.memory.boostLabs = boostLabList;
+        return "Lab added as boost lab.";
+    }
+};
+
+global.listBoostLabs = function () {
+    var returnstring = "<table><tr><th>Room  </th><th>Entry  </th><th>Lab ID (position)  </th></tr>";
+
+    for (let r in myRooms) {
+        returnstring = returnstring.concat("<tr><td>" + myRooms[r].name + "  </td>");
+        for (let l in myRooms[r].memory.boostLabs) {
+            let lab = Game.getObjectById(myRooms[r].memory.boostLabs[l]);
+            returnstring = returnstring.concat("<td> " + l + " </td><td>" + lab.id + " (x=" + lab.pos.x + "/y=" + lab.pos.y + ")" + "  </td>");
+        }
+        returnstring = returnstring.concat("</tr>");
+    }
+    returnstring = returnstring.concat("</table>");
+    return returnstring;
+};
+
+global.delBoostLab = function (roomName, entryNr) {
+    if (arguments.length == 0) {
+        return "delBoostLab (roomName, entryNr)";
+    }
+    Game.rooms[roomName].memory.boostLabs.splice(entryNr, 1);
+    return "Boost Lab removed.";
+};
+
+global.addBoost = function (roomName, role, mineralType, volume) {
+    if (arguments.length == 0) {
+        return "addBoost (roomName, role, mineralType, volume)";
+    }
+
+    var boostList;
+    var room = Game.rooms[roomName];
+    if (room.memory.boostList == undefined) {
+        boostList = [];
+    }
+    else {
+        boostList = room.memory.boostList;
+    }
+
+    var boostEntry = {};
+    boostEntry.role = role;
+    boostEntry.mineralType = mineralType;
+    boostEntry.volume = volume;
+
+    boostList.push(boostEntry);
+    room.memory.boostList = boostList;
+    return "Boost entry added.";
+};
+global.delBoost = function (roomName, entryNr) {
+    if (arguments.length == 0) {
+        return "delBoost (roomName, entryNr)";
+    }
+    Game.rooms[roomName].memory.boostList.splice(entryNr, 1);
+    return "Boost entry removed.";
+};
+
+global.listBoost = function (roomName) {
+    var roles = [];
+    var boostMinerals = [];
+    var volumes = [];
+    for (let e in Game.rooms[roomName].memory.boostList) {
+        if (roles.indexOf(Game.rooms[roomName].memory.boostList[e].role) == -1) {
+            roles.push(Game.rooms[roomName].memory.boostList[e].role);
+            boostMinerals.push(Game.rooms[roomName].memory.boostList[e].mineralType);
+            volumes.push(Game.rooms[roomName].memory.boostList[e].volume);
+
+        }
+    }
+
+    var returnstring = "<table><tr><th>Entry  </th><th>Role  </th><th>Boost  </th><th>Volume  </th></tr>";
+    for (let r in roles) {
+        returnstring = returnstring.concat("<tr><td>" + r + ":  </td>");
+        returnstring = returnstring.concat("<td>" + roles[r] + "  </td><td>" + boostMinerals[r] + "  </td><td>" + volumes[r] + "  </td>");
+        returnstring = returnstring.concat("</tr>");
+    }
+    returnstring = returnstring.concat("</table>");
+    return returnstring;
+};

@@ -46,15 +46,23 @@ module.exports = function() {
                             else {return this.memory.currentFlag;}
                         }
                     }
-
-                    if (flagFunction == "unitGroup") {
-                        var peers = _.filter(flagCreeps, {memory: {role: this.memory.role,currentFlag: this.memory.currentFlag}});
+                    else if (flagFunction == "unitGroup") {
+                        let peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
                         if (peers.length > flag.memory[this.memory.role]) {
                             //Too many creeps for this flag
                             delete this.memory.currentFlag;
                         }
                         else {return this.memory.currentFlag;}
                     }
+                    else { //Only volume check
+                        let peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
+                        if (peers.length > flag.memory.volume) {
+                            //Too many creeps for this flag
+                            delete this.memory.currentFlag;
+                        }
+                        else {return this.memory.currentFlag;}
+                    }
+
                     //creep still needed at this flag -> OK
                     if (this.memory.currentFlag != undefined) {
                         return this.memory.currentFlag;

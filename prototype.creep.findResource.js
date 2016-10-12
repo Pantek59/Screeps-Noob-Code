@@ -33,8 +33,8 @@ module.exports = function() {
             return Game.getObjectById(this.memory.targetBuffer);
         }
         else {
-            var IDBasket = new Array();
-            var tempArray = new Array();
+            var IDBasket = [];
+            var tempArray = [];
 
             for (var argcounter = 1; argcounter < arguments.length; argcounter++) {
                 // Go through requested sourceTypes

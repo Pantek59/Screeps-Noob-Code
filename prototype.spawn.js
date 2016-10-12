@@ -65,7 +65,13 @@ module.exports = function() {
 					size=300;
 					sizelimit = 6;
 					break;
-				
+
+				case "bigUpgrader":
+					body = [MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY];
+					size=3250;
+					sizelimit = 1;
+					break;
+
 				case "repairer":
 					body.push(WORK); //100
 					body.push(CARRY); //50
@@ -206,7 +212,6 @@ module.exports = function() {
                     body.push(ATTACK); //80
                     size = 130;
                     sizelimit = 25;
-                    //sizelimit = 1;
                     break;
 
                 case "healer":
@@ -214,7 +219,6 @@ module.exports = function() {
                     body.push(HEAL); //250
                     size = 300;
                     sizelimit = 25;
-                    //sizelimit = 1;
                     break;
 
                 case "einarr":
@@ -228,7 +232,13 @@ module.exports = function() {
                     body.push(ATTACK); //80
                     size = 1030;
                     sizelimit = 6;
-                    //sizelimit = 1;
+                    break;
+
+                case "transporter":
+                    body.push(MOVE); //50
+                    body.push(CARRY); //50
+                    size = 100;
+                    sizelimit = 25;
                     break;
 
 				default:
@@ -254,6 +264,26 @@ module.exports = function() {
 			}
 		}
 
+		//Check for boost
+        var boost = undefined;
+        for (let l in this.room.memory.boostList) {
+            if (this.room.memory.boostList[l].role == roleName) {
+                //Creep should get boost entry
+                let boostEntry = this.room.memory.boostList[l];
+                boost = boostEntry.mineralType;
+                if (boostEntry.volume >= 0) {
+                    boostEntry.volume--;
+                    if (boostEntry.volume == 0) {
+                        delBoost(this.room.name, l);
+                    }
+                    else {
+                        this.room.memory.boostList[l] = boostEntry;
+                    }
+                }
+            }
+        }
+
+
 		// create creep with the created body and the given role
         if (this.room.memory.boostList == undefined || 3 == 3) {
             return this.createCreep(finalBody, undefined, {
@@ -261,7 +291,8 @@ module.exports = function() {
                 working: false,
                 spawn: spawnID,
                 jobQueueTask: undefined,
-                homeroom: this.room.name
+                homeroom: this.room.name,
+                boost: boost
             });
         }
 	}

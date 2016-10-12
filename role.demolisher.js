@@ -50,8 +50,8 @@ module.exports = {
                     creep.memory.path = creep.pos.findPathTo(spawn);
                     creep.moveByPath(creep.memory.path);
                 }
-            }
-            else {
+            } //TODO: Check demolishFlag.pos
+            else if (demolishFlag.pos != undefined) {
                 // back in spawn room
                 let structure;
                 if (demolishFlag.pos.roomName == creep.memory.homeroom) {
