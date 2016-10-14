@@ -1,7 +1,10 @@
 module.exports = function() {
 
 
-    // find unoccupied flag and return flag name
+    Creep.prototype.MoveToRemoteFlag = function(flagName) {
+
+    };
+
     Creep.prototype.towerEmergencyFill = function() {
         var tower = this.pos.findClosestByPath(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_TOWER && s.energy < s.energyCapacity});
         if (tower != null) {

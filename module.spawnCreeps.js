@@ -271,6 +271,7 @@ module.exports = {
         var energy = spawnRoom.energyCapacityAvailable;
         var name = undefined;
         var hostiles = spawnRoom.memory.hostiles;
+        var rcl = spawnRoom.controller.level;
 
         // if not enough harvesters
         if (numberOf.harvester + numberOf.energyTransporter < minimumSpawnOf.harvester) {
@@ -285,67 +286,67 @@ module.exports = {
                 var rolename = "energyTransporter";
             }
         }
-        else if (numberOf.protector < minimumSpawnOf.protector) {
+        else if (numberOf.protector < minimumSpawnOf.protector && (buildingPlans.protector[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.protector[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'protector';
         }
-        else if (numberOf.claimer < minimumSpawnOf.claimer) {
+        else if (numberOf.claimer < minimumSpawnOf.claimer && (buildingPlans.claimer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.claimer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'claimer';
         }
-        else if (numberOf.einarr < minimumSpawnOf.einarr) {
+        else if (numberOf.einarr < minimumSpawnOf.einarr && (buildingPlans.einarr[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.einarr[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'einarr';
         }
-        else if (numberOf.bigClaimer < minimumSpawnOf.bigClaimer) {
+        else if (numberOf.bigClaimer < minimumSpawnOf.bigClaimer && (buildingPlans.bigClaimer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.bigClaimer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'bigClaimer';
         }
-        else if (numberOf.attacker < minimumSpawnOf.attacker) {
+        else if (numberOf.attacker < minimumSpawnOf.attacker && (buildingPlans.attacker[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.attacker[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'attacker';
         }
-        else if (numberOf.healer < minimumSpawnOf.healer) {
+        else if (numberOf.healer < minimumSpawnOf.healer && (buildingPlans.healer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.healer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'healer';
         }
-        else if (numberOf.stationaryHarvester < minimumSpawnOf.stationaryHarvester) {
+        else if (numberOf.stationaryHarvester < minimumSpawnOf.stationaryHarvester && (buildingPlans.stationaryHarvester[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.stationaryHarvester[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'stationaryHarvester';
         }
-        else if (numberOf.remoteStationaryHarvester < minimumSpawnOf.remoteStationaryHarvester) {
+        else if (numberOf.remoteStationaryHarvester < minimumSpawnOf.remoteStationaryHarvester && (buildingPlans.remoteStationaryHarvester[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.remoteStationaryHarvester[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'remoteStationaryHarvester';
         }
-        else if (numberOf.energyHauler < minimumSpawnOf.energyHauler) {
+        else if (numberOf.energyHauler < minimumSpawnOf.energyHauler && (buildingPlans.energyHauler[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.energyHauler[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'energyHauler';
         }
-        else if (numberOf.remoteHarvester < Math.floor(minimumSpawnOf.remoteHarvester / 2)) {
+        else if (numberOf.remoteHarvester < Math.floor(minimumSpawnOf.remoteHarvester / 2) && (buildingPlans.remoteHarvester[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.remoteHarvester[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'remoteHarvester';
         }
-        else if (numberOf.distributor < minimumSpawnOf.distributor) {
+        else if (numberOf.distributor < minimumSpawnOf.distributor && (buildingPlans.distributor[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.distributor[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'distributor';
         }
-        else if (numberOf.upgrader < minimumSpawnOf.upgrader) {
+        else if (numberOf.upgrader < minimumSpawnOf.upgrader && (buildingPlans.upgrader[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.upgrader[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'upgrader';
         }
-        else if (numberOf.repairer < minimumSpawnOf.repairer) {
+        else if (numberOf.repairer < minimumSpawnOf.repairer && (buildingPlans.repairer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.repairer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'repairer';
         }
-        else if (numberOf.miner < minimumSpawnOf.miner) {
+        else if (numberOf.miner < minimumSpawnOf.miner && (buildingPlans.miner[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.miner[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'miner';
         }
-        else if (numberOf.builder < Math.floor(minimumSpawnOf.builder / 2)) {
+        else if (numberOf.builder < Math.floor(minimumSpawnOf.builder / 2) && (buildingPlans.builder[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.builder[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'builder';
         }
-        else if (numberOf.remoteHarvester < minimumSpawnOf.remoteHarvester) {
+        else if (numberOf.remoteHarvester < minimumSpawnOf.remoteHarvester && (buildingPlans.remoteHarvester[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.remoteHarvester[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'remoteHarvester';
         }
-        else if (numberOf.builder < minimumSpawnOf.builder) {
+        else if (numberOf.builder < minimumSpawnOf.builder && (buildingPlans.builder[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.builder[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'builder';
         }
-        else if (numberOf.wallRepairer < minimumSpawnOf.wallRepairer) {
+        else if (numberOf.wallRepairer < minimumSpawnOf.wallRepairer && (buildingPlans.wallRepairer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.wallRepairer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'wallRepairer';
         }
-        else if (numberOf.scientist < minimumSpawnOf.scientist) {
+        else if (numberOf.scientist < minimumSpawnOf.scientist && (buildingPlans.scientist[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.scientist[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'scientist';
         }
-        else if (numberOf.demolisher < minimumSpawnOf.demolisher) {
+        else if (numberOf.demolisher < minimumSpawnOf.demolisher && (buildingPlans.demolisher[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.demolisher[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'demolisher';
         }
-        else if (numberOf.transporter < minimumSpawnOf.transporter) {
+        else if (numberOf.transporter < minimumSpawnOf.transporter && (buildingPlans.transporter[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.transporter[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'transporter';
         }
         else {
