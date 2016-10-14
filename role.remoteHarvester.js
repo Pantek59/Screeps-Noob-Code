@@ -36,7 +36,6 @@ module.exports = {
                 }
                 else {
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
-                    var constructionSite = creep.pos.lookFor(LOOK_CONSTRUCTION_SITES);
 
                     if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
@@ -125,6 +124,7 @@ module.exports = {
             else {
                 // Creep is harvesting, try to keep harvesting
                 if (creep.harvest(Game.getObjectById(creep.memory.statusHarvesting)) != OK) {
+                    console.log(creep.harvest(Game.getObjectById(creep.memory.statusHarvesting)));
                     delete creep.memory.statusHarvesting;
                 }
             }

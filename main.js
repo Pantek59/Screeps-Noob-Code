@@ -1,6 +1,6 @@
 const CPUdebug = false;
 require("globals");
-require('prototype.spawn')();
+require('prototype.spawn2')();
 require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
 require('functions.creeps')();

@@ -47,7 +47,6 @@ module.exports = {
         minimumSpawnOf["einarr"] = 0;
         minimumSpawnOf["scientist"] = 0;
         minimumSpawnOf["transporter"] = 0;
-        minimumSpawnOf["bigUpgrader"] = 0;
 
         // Check for transporter flags
         var transporterFlags = _.filter(Game.flags,{ memory: { function: 'transporter', spawn: spawnRoom.memory.masterSpawn}});
@@ -156,7 +155,7 @@ module.exports = {
         if (spawnRoom.controller.level == 8) {
             minimumSpawnOf.upgrader = 0;
             if (spawnRoom.storage.store[RESOURCE_ENERGY] > 200000) {
-                minimumSpawnOf.bigUpgrader = 1;
+                minimumSpawnOf.upgrader = 1;
             }
         }
         else {
@@ -225,7 +224,8 @@ module.exports = {
                 break;
             }
         }
-        //console.log(minimumSpawnOf.einarr);
+        //console.log(spawnRoom.name + ": " + minimumSpawnOf.upgrader);
+
         // Measuring number of active creeps
         var numberOf = new Array();
         // Creeps not leaving room
@@ -239,7 +239,6 @@ module.exports = {
         numberOf["distributor"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "distributor")}).length;
         numberOf["energyTransporter"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
         numberOf["scientist"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "scientist")}).length;
-        numberOf["bigUpgrader"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "bigUpgrader")}).length;
 
         //Creeps leaving room
         numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
@@ -348,9 +347,6 @@ module.exports = {
         }
         else if (numberOf.transporter < minimumSpawnOf.transporter) {
             var rolename = 'transporter';
-        }
-        else if (numberOf.bigUpgrader < minimumSpawnOf.bigUpgrader) {
-            var rolename = 'bigUpgrader';
         }
         else {
             // Surplus spawning

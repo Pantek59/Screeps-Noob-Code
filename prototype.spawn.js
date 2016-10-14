@@ -285,8 +285,7 @@ module.exports = function() {
 
 
 		// create creep with the created body and the given role
-        if (this.room.memory.boostList == undefined || 3 == 3) {
-            return this.createCreep(finalBody, undefined, {
+        return this.createCreep(finalBody, undefined, {
                 role: roleName,
                 working: false,
                 spawn: spawnID,
@@ -295,5 +294,4 @@ module.exports = function() {
                 boost: boost
             });
         }
-	}
 };
