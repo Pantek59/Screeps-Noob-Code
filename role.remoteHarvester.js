@@ -72,7 +72,7 @@ module.exports = {
                                 // try to transfer energy, if it is not in range
                                 if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                     // move towards it
-                                    creep.moveTo(structure, {reusePath: 5, ignoreCreeps: false});
+                                    creep.moveTo(structure, {reusePath: DELAYPATHFINDING, ignoreCreeps: false});
                                 }
                             }
                             else {
@@ -105,17 +105,17 @@ module.exports = {
                         if (creep.room.memory.hostiles == 0) {
                             //No enemy creeps
                             if (roleCollector.run(creep) != OK) {
-                                creep.moveTo(remoteSource, {reusePath: 5});
+                                creep.moveTo(remoteSource, {reusePath: DELAYPATHFINDING});
                             }
                         }
                         else {
                             //Hostiles creeps in new room
                             var homespawn = Game.getObjectById(creep.memory.spawn);
                             if (creep.room.name != creep.memory.homeroom) {
-                                creep.moveTo(homespawn), {reusePath: 5};
+                                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                             }
                             else if (creep.pos.getRangeTo(homespawn) > 5) {
-                                creep.moveTo(homespawn), {reusePath: 5};
+                                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                             }
                         }
                     }

@@ -8,7 +8,7 @@ module.exports = {
         if (creep.room.name != creep.memory.homeroom) {
             //return to home room
             var hometarget = Game.getObjectById(creep.memory.spawn);
-            creep.moveTo(hometarget, {reusePath: 10});
+            creep.moveTo(hometarget, {reusePath: DELAYPATHFINDING});
         }
         else {
             // if creep is trying to repair something but has no energy left
@@ -34,7 +34,7 @@ module.exports = {
                         var buildResult = creep.build(constructionSite)
                         if (buildResult == ERR_NOT_IN_RANGE) {
                             // move towards the constructionSite
-                            creep.moveTo(constructionSite, {reusePath: 5});
+                            creep.moveTo(constructionSite, {reusePath: DELAYPATHFINDING});
                         }
                         else if (buildResult == OK) {
                             var builtObject = position.lookFor(LOOK_STRUCTURES);
@@ -61,7 +61,7 @@ module.exports = {
                             var result = creep.repair(target);
                             if (result == ERR_NOT_IN_RANGE) {
                                 // move towards it
-                                creep.moveTo(target, {reusePath: 5});
+                                creep.moveTo(target, {reusePath: DELAYPATHFINDING});
                                 creep.memory.statusRepairing = target.id;
                             }
                             else if (result == OK) {
@@ -80,7 +80,7 @@ module.exports = {
                 }
                 else {
                     if (creep.repair(Game.getObjectById(creep.memory.statusRepairing)) != OK) {
-                        if (creep.moveTo(Game.getObjectById(creep.memory.statusRepairing), {reusePath: 5}) != OK) {
+                        if (creep.moveTo(Game.getObjectById(creep.memory.statusRepairing), {reusePath: DELAYPATHFINDING}) != OK) {
                             delete creep.memory.statusRepairing;
                         }
                     }

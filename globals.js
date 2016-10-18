@@ -1,6 +1,20 @@
-//blacklotus: W24S52, W26S51
-delayPathfinding = 4;
-delayRoomScanning = 50;
+moveReusePath = function() {
+    let minTicks = 10, maxTicks = 60;
+    let range = maxTicks - minTicks;
+
+    return minTicks + Math.floor((1 - (Game.cpu.bucket / 10000)) * range);
+};
+
+DELAYPATHFINDING = moveReusePath();
+DELAYMARKETAUTOSELL = 31;
+DELAYMARKETBUY = 23;
+DELAYFLAGCOLORS = 31;
+DELAYRESOURCEBALANCING = 27;
+DELAYROOMSCANNING = 50;
+DELAYPANICFLAG = 5;
+DELAYSPAWNING = 13;
+DELAYLINK = 3;
+DELAYPRODUCTION = 11;
 RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 RBS_PACKETSIZE = 2000;
@@ -8,7 +22,11 @@ CPU_THRESHOLD = 3500;
 
 playerUsername = "Pantek59";
 allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima"];
-myRooms = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
+myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
+myRooms = {};
+for (let m in myroomlist) {
+    myRooms[myroomlist[m].name] = myroomlist[m];
+}
 
 mineralDescriptions = {};
 mineralDescriptions.H = {tier: 0, component1: false, component2: false };

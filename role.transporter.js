@@ -23,7 +23,7 @@ module.exports = {
                     //Transporter at home
                     var originContainer = creep.findResource(resource, STRUCTURE_STORAGE, STRUCTURE_CONTAINER, STRUCTURE_LINK);
                     if (originContainer != null && creep.withdraw(originContainer, resource) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(originContainer, {reusePath: 8});
+                        creep.moveTo(originContainer, {reusePath: DELAYPATHFINDING});
                     }
                 }
             }
@@ -40,11 +40,11 @@ module.exports = {
                     }
 
                     if (targetContainer != null && creep.transfer(targetContainer, resource) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(targetContainer, {reusePath: 8});
+                        creep.moveTo(targetContainer, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else {
-                    creep.moveTo(destinationFlag, {reusePath: 8})
+                    creep.moveTo(destinationFlag, {reusePath: DELAYPATHFINDING})
                 }
             }
         }

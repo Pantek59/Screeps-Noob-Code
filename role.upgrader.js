@@ -23,7 +23,7 @@ module.exports = {
                 }
                 else if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
                     // try to upgrade the controller, if not in range, move towards the controller
-                    creep.moveTo(creep.room.controller, {reusePath: 10});
+                    creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
                 }
             }
             // if creep is supposed to harvest energy from source

@@ -17,7 +17,7 @@ module.exports = function() {
         else {
             return buildingPlans[roleName][rcl - 1].body;
         }
-    },
+    }
 
     StructureSpawn.prototype.createCustomCreep = function (energyCapacity, roleName, spawnID) {
         //Check for boost
@@ -38,9 +38,12 @@ module.exports = function() {
                 }
             }
         }
+        if (roleName == "miniharvester") {
+            roleName = "harvester";
+        }
 
         let body = this.getBodyInfo(roleName, this.room.energyAvailable);
-        if (body != null) {
+        if (body != null && this.canCreateCreep(body) == OK) {
             return this.createCreep(body, undefined, {
                 role: roleName,
                 working: false,
@@ -50,5 +53,5 @@ module.exports = function() {
                 boost: boost
             });
         }
-    }
+    };
 };

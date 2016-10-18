@@ -5,7 +5,6 @@ require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
 require('functions.creeps')();
 require('functions.game');
-
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
@@ -25,8 +24,9 @@ var roleEnergyHauler = require("role.energyHauler");
 var roleRemoteStationaryHarvester = require('role.remoteStationaryHarvester');
 var roleUnit = require('role.unit');
 var roleScientist = require('role.scientist');
-var roleBigClaimer = require('role.bigClaimer')
-var roleTransporter = require('role.transporter')
+var roleBigClaimer = require('role.bigClaimer');
+var roleTransporter = require('role.transporter');
+//var roleTest = require('role.test');
 
 var CPUdebugString = "CPU Debug<br><br>";
 
@@ -76,7 +76,7 @@ module.exports.loop = function() {
         */
 
         // Flag colors
-        if (Game.time % 37 == 0) {
+        if (Game.time % DELAYFLAGCOLORS == 0) {
             //only flags for unit group should have only one color
             for (let f in Game.flags) {
                 switch (Game.flags[f].memory.function) {
@@ -119,12 +119,17 @@ module.exports.loop = function() {
                         //transporter
                         Game.flags[f].setColor(COLOR_BLUE, COLOR_BROWN);
                         break;
+
+                    case "realmExit":
+                        //Flag marking the edge of civilization
+                        Game.flags[f].setColor(COLOR_WHITE, COLOR_BROWN);
+                        break;
                 }
             }
         }
 
-        // Single Market Orders
-        if (Memory.buyOrder != undefined) {
+        // Single Market Buy Orders
+        if (Game.time % DELAYMARKETBUY == 0 && Game.cpu.bucket > CPU_THRESHOLD && Memory.buyOrder != undefined) {
             let info = Memory.buyOrder.split(":"); //Format: [AMOUNT]:[ORDERID]
             var left = info[0];
             var order =Game.market.getOrderById(info[1]);
@@ -172,11 +177,11 @@ module.exports.loop = function() {
         }
     // Market Auto Selling Code
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Market Code: " + Game.cpu.getUsed())}
-        if (Game.time % 13 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
+        if (Game.time % DELAYMARKETAUTOSELL == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
             //Look for surplus materials
             var surplusMinerals;
 
-            for (var r in Game.rooms) {
+            for (var r in myRooms) {
                 if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
                     for (var resource in Game.rooms[r].memory.resourceLimits) {
                         if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket && Game.rooms[r].memory.resourceLimits[resource] != undefined) {
@@ -186,9 +191,17 @@ module.exports.loop = function() {
                                 if (surplusMinerals >= 10000) {
                                     surplusMinerals = 10000;
                                     var orders = [];
-                                    orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
-                                    orders = _.sortBy(orders, "price");
-                                    orders.reverse();
+                                    if (Market.marketBuffer == undefined || Game.time % (2 * DELAYMARKETAUTOSELL) == 0) {
+                                        orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
+                                        orders = _.sortBy(orders, "price");
+                                        orders.reverse();
+                                        Market.marketBuffer = orders;
+                                    }
+                                    else {
+                                        orders = Market.marketBuffer
+                                    }
+
+
 
                                     for (var o = 0; o < orders.length; o++) {
                                         var orderResource = orders[o].resourceType;
@@ -214,9 +227,9 @@ module.exports.loop = function() {
             }
         }
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Resource Balancing: " + Game.cpu.getUsed())}
-    if (Game.time % 27 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
+    if (Game.time % DELAYRESOURCEBALANCING == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
         // Inter-room resource balancing
-        for (let r in Game.rooms) {
+        for (let r in myRooms) {
             if (Game.rooms[r].terminal != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername
                 && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 5000 && Game.rooms[r].memory.terminalTransfer == undefined) {
                 var combinedResources = [];
@@ -248,7 +261,7 @@ module.exports.loop = function() {
                             checkedResources.push(res);
                             let recipientRooms = [];
                             let fullRooms = [];
-                            for (var ru in Game.rooms) {
+                            for (var ru in myRooms) {
                                 if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && checkStorageLimits(Game.rooms[ru], combinedResources[res]) < 0) {
                                     recipientRooms.push(Game.rooms[ru]);
                                 }
@@ -342,7 +355,7 @@ module.exports.loop = function() {
 
             //  Refresher (will be executed every few ticks)
             var searchResult;
-            if (Game.time % delayRoomScanning == 0) {
+            if (Game.time % DELAYROOMSCANNING == 0) {
                 // Preloading room structure
                 var defenseObjects = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                 defenseObjects = _.sortBy(defenseObjects,"hits");
@@ -459,6 +472,8 @@ module.exports.loop = function() {
                     Game.rooms[r].memory.roomArrayConstructionSites = constructionIDs;
                 }
             }
+
+            //Check master spawn
             if (Game.rooms[r].memory.masterSpawn != undefined && Game.getObjectById(Game.rooms[r].memory.masterSpawn) == null) {
                 delete Game.rooms[r].memory.masterSpawn;
             }
@@ -480,9 +495,17 @@ module.exports.loop = function() {
             //Panic flag code
             //TODO Energyhaul sites must be included in one step
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
-            if (Game.time % 3 == 0) {
-                var remoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'remoteSource'}});
+            if (Game.time % DELAYPANICFLAG == 0) {
+                // Check existing flags
+                let panicFlags = Game.rooms[r].find(FIND_FLAGS,{filter: (f) => f.memory.function == "protector" && f.memory.panic == true});
+                if (panicFlags.length > 0 && Game.rooms[r].memory.hostiles == 0) {
+                    for (let f in panicFlags) {
+                        Game.flags[panicFlags[f].name].remove();
+                    }
+                }
 
+                //Set new flags
+                var remoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'remoteSource'}});
                 for (var f in remoteHarvestingFlags) {
                     var flag = remoteHarvestingFlags[f];
                     if (flag.room != undefined) {
@@ -495,6 +518,7 @@ module.exports.loop = function() {
                             panicFlag.memory.function = "protector";
                             panicFlag.memory.volume = flag.room.memory.hostiles;
                             panicFlag.memory.spawn = flag.memory.spawn;
+                            panicFlag.memory.panic = true;
 
                             console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
                         }
@@ -521,14 +545,18 @@ module.exports.loop = function() {
                             panicFlag.memory.function = "protector";
                             panicFlag.memory.volume = flag.room.memory.hostiles;
                             panicFlag.memory.spawn = flag.memory.spawn;
+                            panicFlag.memory.panic = true;
 
                             console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
                         }
                         else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
                             // No hostiles present in room with remote harvesters
                             var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
-                            tempFlag.remove();
-                            delete flag.room.memory.panicFlag;
+                            if (tempFlag != undefined) {
+                                tempFlag.remove();
+                                delete flag.room.memory.panicFlag;
+                            }
+
                         }
                     }
                 }
@@ -553,7 +581,7 @@ module.exports.loop = function() {
                             }
                         }
                         else {
-                            for (var x in Game.rooms) {
+                            for (var x in myRooms) {
                                 if(Game.rooms[x] != undefined && Game.rooms[x] != Game.rooms[r]){
                                     var newUpgraders = Game.rooms[x].find(FIND_MY_CREEPS, {filter: (s) => s.memory.role == "upgrader" && s.carry.energy == 0});
                                     if (newUpgraders.length > 0) {
@@ -586,7 +614,7 @@ module.exports.loop = function() {
                             }
                         }
                         else {
-                            for (var x in Game.rooms) {
+                            for (var x in myRooms) {
                                 if(Game.rooms[x] != undefined && Game.rooms[x] != Game.rooms[r]){
                                     var newBuilders = Game.rooms[x].find(FIND_MY_CREEPS, {filter: (s) => s.memory.role == "repairer" && s.carry.energy == 0});
                                     if (newBuilders.length > 0) {
@@ -605,7 +633,7 @@ module.exports.loop = function() {
 
                 }
             }
-            else if (Game.time % 11 == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
+            else if (Game.time % DELAYSPAWNING == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                 moduleSpawnCreeps.run(Game.rooms[r], allies);
             }
 
@@ -658,7 +686,7 @@ module.exports.loop = function() {
 
             // Search for dropped energy
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
-            var energies=Game.rooms[r].find(FIND_DROPPED_ENERGY);
+            var energies = Game.rooms[r].find(FIND_DROPPED_ENERGY);
             for (var energy in energies) {
                 var energyID = energies[energy].id;
                 var energyAmount = energies[energy].amount;
@@ -681,7 +709,7 @@ module.exports.loop = function() {
             }
 
             // Link code
-            if (Game.time % 3 == 0 && Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
+            if (Game.time % DELAYLINK == 0 && Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
                 var fillLinks = [];
                 var emptyLinks = [];
                 var targetLevel = 0;
@@ -837,7 +865,7 @@ module.exports.loop = function() {
                 }
             }
             // Production Code
-            if (Game.cpu.bucket > CPU_THRESHOLD && Game.time % 17 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]"
+            if (Game.cpu.bucket > CPU_THRESHOLD && Game.time % DELAYPRODUCTION == 0 && Game.rooms[r].memory.innerLabs != undefined && Game.rooms[r].memory.innerLabs[0].labID != "[LAB_ID]" && Game.rooms[r].memory.innerLabs[1].labID != "[LAB_ID]"
             && Game.rooms[r].memory.labOrder == undefined && Game.rooms[r].memory.labTarget == undefined) {
                 for (let res in RESOURCES_ALL) {
                     if (RESOURCES_ALL[res] != RESOURCE_ENERGY && RESOURCES_ALL[res] != RESOURCE_POWER && mineralDescriptions[RESOURCES_ALL[res]].tier > 0) {
@@ -849,26 +877,44 @@ module.exports.loop = function() {
                             storageLevel = Game.rooms[r].storage.store[RESOURCES_ALL[res]];
                         }
 
-                        if (storageLevel < Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
+                        if ((storageLevel) < Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
                             //Try to produce resource
-                            let delta = Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction - storageLevel;
                             let resource = RESOURCES_ALL[res];
-                            var productionTarget = whatIsLackingFor(Game.rooms[r], delta, resource);
-                            if (mineralDescriptions[productionTarget.resource].tier > 0) {
-                                if (productionTarget.amount == 0) {
-                                    productionTarget.amount = delta;
-                                }
-                                if (mineralDescriptions[productionTarget.resource].tier > 0) {
-                                    if (Game.rooms[r].storage.store[mineralDescriptions[resource].component1] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction &&
-                                        Game.rooms[r].storage.store[mineralDescriptions[resource].component2] >= Game.rooms[r].memory.resourceLimits[RESOURCES_ALL[res]].minProduction) {
-                                        //All components ready, start production
-                                        Game.rooms[r].memory.labTarget = productionTarget.amount + ":" + productionTarget.resource;
+
+                            let delta = Math.ceil((Game.rooms[r].memory.resourceLimits[resource].minProduction - storageLevel)/10)*10;
+
+                            if (delta >= 10) {
+                                let genuineDelta = delta;
+                                var productionTarget = whatIsLackingFor(Game.rooms[r], delta, resource);
+                                let minProductionPacketSize = 100;
+
+                                while (mineralDescriptions[productionTarget.resource].tier > 0 && Game.rooms[r].memory.labTarget == undefined && Game.cpu.getUsed() < 250) {
+                                    if (productionTarget.amount == 0) {
+                                        productionTarget.amount = genuineDelta;
                                     }
+                                    if (Game.rooms[r].storage.store[mineralDescriptions[productionTarget.resource].component1] >= minProductionPacketSize &&
+                                        Game.rooms[r].storage.store[mineralDescriptions[productionTarget.resource].component2] >= minProductionPacketSize) {
+                                        //All components ready, start production
+                                        let reactionAmount = Math.min(Game.rooms[r].storage.store[mineralDescriptions[productionTarget.resource].component1], Game.rooms[r].storage.store[mineralDescriptions[productionTarget.resource].component2]);
+                                        if (reactionAmount > genuineDelta) {
+                                            reactionAmount = genuineDelta;
+                                        }
+                                        Game.rooms[r].memory.labTarget = reactionAmount + ":" + productionTarget.resource;
+                                        console.log("<font color=#ffca33 type='highlight'>Room " + Game.rooms[r].name + " started auto production of " + reactionAmount + " " + productionTarget.resource + ".</font>");
+                                    }
+                                    else if (Game.rooms[r].storage.store[mineralDescriptions[productionTarget].component1] < minProductionPacketSize) {
+                                        resource = mineralDescriptions[productionTarget].component1;
+                                    }
+                                    else if (Game.rooms[r].storage.store[mineralDescriptions[productionTarget].component2] < minProductionPacketSize) {
+                                        resource = mineralDescriptions[productionTarget].component2;
+                                    }
+                                    productionTarget = whatIsLackingFor(Game.rooms[r], genuineDelta, resource);
                                 }
-                            }
-                            else {
-                                //Tier 0 resource missing
-                                Game.rooms[r].memory.lastMissingComponent = productionTarget.resource;
+
+                                if (mineralDescriptions[productionTarget.resource].tier == 0) {
+                                    //Tier 0 resource missing
+                                    Game.rooms[r].memory.lastMissingComponent = productionTarget.resource;
+                                }
                             }
                         }
                     }
@@ -876,7 +922,7 @@ module.exports.loop = function() {
             }
 
             // Lab code
-            if (Game.time % 13 == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
+            if (Game.time % DELAYPRODUCTION == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
                 // Lab Queueing Code
 
                 var labString = Game.rooms[r].memory.labTarget.split(":");
@@ -933,7 +979,7 @@ module.exports.loop = function() {
             }
 
             // Lab Production Code
-            if (Game.time % 10 == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
+            if (Game.time % DELAYPRODUCTION == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
                 if (Game.rooms[r].memory.innerLabs == undefined) {
                     // Prepare link roles
                     var emptyArray = {};
@@ -977,8 +1023,8 @@ module.exports.loop = function() {
                             if (labOrder[3] == "running") {
                                 // Reaction can be started
                                 for (var lab in Game.rooms[r].memory.roomArrayLabs) {
-                                    if (Game.rooms[r].memory.boostLabs.indexOf(Game.rooms[r].memory.roomArrayLabs[lab]) == -1 && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
-                                        if (Game.getObjectById(innerLabs[0].labID).mineralAmount > 0 && Game.getObjectById(innerLabs[1].labID).mineralAmount > 0) {
+                                    if ((Game.rooms[r].memory.boostLabs == undefined || Game.rooms[r].memory.boostLabs.indexOf(Game.rooms[r].memory.roomArrayLabs[lab]) == -1) && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
+                                        if (Game.getObjectById(innerLabs[0].labID).mineralAmount > 9 && Game.getObjectById(innerLabs[1].labID).mineralAmount > 9) {
                                             //Still enough material to do a reaction
                                             var currentLab = Game.getObjectById(Game.rooms[r].memory.roomArrayLabs[lab]);
                                             if (currentLab.cooldown == 0) {
@@ -1007,139 +1053,181 @@ module.exports.loop = function() {
             // get the creep object
             var creep = Game.creeps[name];
 
-            //Check for boosts
-            if (creep.ticksToLive > 1300 && creep.memory.boost != undefined && creep.memory.boost != "") {
-                var boostLabs = creep.room.memory.boostLabs;
-                if (boostLabs.length > 0) {
-                    let bodyPart = mineralDescriptions[creep.memory.boost].bodyPart;
-                    let numberofParts = creep.getActiveBodyparts(bodyPart);
-                    let mineralNeed = 30 * numberofParts;
-                    let energyNeed = 20 * numberofParts;
+            //Check for miniharvester
+            if (creep.memory.role == "miniharvester") {
+                creep.memory.role = "harvester";
+            }
 
-                    for (let l in boostLabs) {
-                        let boostLab = Game.getObjectById(boostLabs[l])
-                        if (boostLab.mineralType == creep.memory.boost && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
-                            // Lab ready for boost
-                            let returnCode = boostLab.boostCreep(creep);
-                            if (returnCode == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(boostLab, {reusePath: 5});
-                            }
-                            else if (returnCode == OK) {
-                                delete creep.memory.boost;
-                            }
-                            break;
-                        }
-                        else if (boostLab.mineralAmount >= mineralNeed) {
-                            //Lab needs minerals
-                            if (creep.storeAllBut(creep.memory.boost) == true) {
-                                if (_.sum(creep.carry) == 0) {
-                                    //Get minerals from storage
-                                    let amount = mineralNeed - boostLab.mineralAmount;
-                                    if (amount > creep.carryCapacity) {
-                                        amount = creep.carryCapacity;
-                                    }
-                                    if (creep.withdraw(creep.room.storage, creep.memory.boost, amount) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(creep.room.storage, {reusePath: 5})
-                                        break;
-                                    }
-                                }
-                                else {
-                                    //Bring minerals to lab
-                                    if (creep.transfer(boostLab, creep.memory.boost) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(boostLab, {reusePath: 5})
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+            //Check for fleeing creeps
+            if (creep.room.memory.hostiles == 0 && creep.memory.fleeing == true) {
+                //Get away from the exit
+                if ((creep.pos.x < 5 || creep.pos.x > 45) || (creep.pos.y < 5 || creep.pos.y > 45)) {
+                    var area = creep.room.lookForAtArea(20, 20, 40, 40, true);
+                    area = _.filter(area, function (a) { return (a.terrain != "wall")});
+
+                    console.log(Game.rooms[r].name + ": Fleeing creep. Areas found: " + area.length);
+
+                    if (area.length > 0) {
+                        creep.moveTo(area[0].x, area[0].y, {reusePath: DELAYPATHFINDING});
                     }
-                }
-            }
-            else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
-                //Job queue pending
-                switch (creep.memory.jobQueueTask) {
-                    case "pickUpEnergy": //Dropped energy to be picked up
-                        roleJobber.run(creep,"droppedEnergy");
-                        break;
-
-                    case "prepareBoost": //Small amount distribution job pending
-                        roleJobber.run(creep,"prepareBoost");
-                        break;
-                }
-            creep.memory.jobQueueTask = undefined;
-            }
-            else if (creep.spawning == false) {
-                if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name +"( "+ creep.memory.role + "): " + Game.cpu.getUsed())}
-                if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
-                    // Minerals found in creep
-                    creep.getRidOfMinerals();
+                    else {
+                        console.log("No safe area found in room " + Game.rooms[r].name + ".");
+                    }
                 }
                 else {
-                    // if creep is harvester, call harvester script
-                    if (creep.memory.role == 'harvester') {
-                        roleHarvester.run(creep);
+                    //Creep has distance to any room exit
+                    creep.memory.sleep = 30;
+                    delete creep.memory.fleeing;
+                }
+            }
+
+            // Check for sleeping creeps
+            if (creep.memory.sleep != undefined) {
+                creep.memory.sleep--;
+                if (creep.memory.sleep < 1) {
+                    delete creep.memory.sleep;
+                }
+            }
+            else {
+                if (creep.ticksToLive > 1300 && creep.memory.boost != undefined && creep.memory.boost != "") {
+                    //Check for boosts
+                    var boostLabs = creep.room.memory.boostLabs;
+                    if (boostLabs.length > 0) {
+                        let bodyPart = mineralDescriptions[creep.memory.boost].bodyPart;
+                        let numberofParts = creep.getActiveBodyparts(bodyPart);
+                        let mineralNeed = 30 * numberofParts;
+                        let energyNeed = 20 * numberofParts;
+
+                        for (let l in boostLabs) {
+                            let boostLab = Game.getObjectById(boostLabs[l])
+                            if (boostLab.mineralType == creep.memory.boost && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
+                                // Lab ready for boost
+                                let returnCode = boostLab.boostCreep(creep);
+                                if (returnCode == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING});
+                                }
+                                else if (returnCode == OK) {
+                                    delete creep.memory.boost;
+                                }
+                                break;
+                            }
+                            else if (boostLab.mineralAmount >= mineralNeed) {
+                                //Lab needs minerals
+                                if (creep.storeAllBut(creep.memory.boost) == true) {
+                                    if (_.sum(creep.carry) == 0) {
+                                        //Get minerals from storage
+                                        let amount = mineralNeed - boostLab.mineralAmount;
+                                        if (amount > creep.carryCapacity) {
+                                            amount = creep.carryCapacity;
+                                        }
+                                        if (creep.withdraw(creep.room.storage, creep.memory.boost, amount) == ERR_NOT_IN_RANGE) {
+                                            creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING})
+                                            break;
+                                        }
+                                    }
+                                    else {
+                                        //Bring minerals to lab
+                                        if (creep.transfer(boostLab, creep.memory.boost) == ERR_NOT_IN_RANGE) {
+                                            creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING})
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                    // if creep is upgrader, call upgrader script
-                    else if (creep.memory.role == 'upgrader') {
-                        roleUpgrader.run(creep);
+                }
+                else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
+                    //Job queue pending
+                    switch (creep.memory.jobQueueTask) {
+                        case "pickUpEnergy": //Dropped energy to be picked up
+                            roleJobber.run(creep, "droppedEnergy");
+                            break;
+
+                        case "prepareBoost": //Small amount distribution job pending
+                            roleJobber.run(creep, "prepareBoost");
+                            break;
                     }
-                    // if creep is builder, call builder script
-                    else if (creep.memory.role == 'builder') {
-                        roleBuilder.run(creep);
+                    creep.memory.jobQueueTask = undefined;
+                }
+                else if (creep.spawning == false) {
+                    if (CPUdebug == true) {
+                        CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name + "( " + creep.memory.role + "): " + Game.cpu.getUsed())
                     }
-                    // if creep is repairer, call repairer script
-                    else if (creep.memory.role == 'repairer') {
-                        roleRepairer.run(creep);
+                    if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
+                        // Minerals found in creep
+                        creep.getRidOfMinerals();
                     }
-                    // if creep is wallRepairer, call wallRepairer script
-                    else if (creep.memory.role == 'wallRepairer') {
-                        roleWallRepairer.run(creep);
-                    }
-                    // if creep is remoteHarvester, call remoteHarvester script
-                    else if (creep.memory.role == 'remoteHarvester') {
-                        roleRemoteHarvester.run(creep);
-                    }
-                    else if (creep.memory.role == 'protector') {
-                        roleProtector.run(creep, allies);
-                    }
-                    else if (creep.memory.role == 'claimer') {
-                        roleClaimer.run(creep);
-                    }
-                    else if (creep.memory.role == 'bigClaimer') {
-                        roleBigClaimer.run(creep);
-                    }
-                    else if (creep.memory.role == 'stationaryHarvester') {
-                        roleStationaryHarvester.run(creep);
-                    }
-                    else if (creep.memory.role == 'miner') {
-                        roleMiner.run(creep);
-                    }
-                    else if (creep.memory.role == 'distributor') {
-                        roleDistributor.run(creep);
-                    }
-                    else if (creep.memory.role == 'demolisher') {
-                        roleDemolisher.run(creep);
-                    }
-                    else if (creep.memory.role == 'energyTransporter') {
-                        roleEnergyTransporter.run(creep);
-                    }
-                    else if (creep.memory.role == 'energyHauler') {
-                        roleEnergyHauler.run(creep);
-                    }
-                    else if (creep.memory.role == 'remoteStationaryHarvester') {
-                        roleRemoteStationaryHarvester.run(creep);
-                    }
-                    else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer') {
-                        roleUnit.run(creep);
-                    }
-                    else if (creep.memory.role == 'scientist') {
-                        roleScientist.run(creep);
-                    }
-                    else if (creep.memory.role == 'transporter') {
-                        roleTransporter.run(creep);
-                    }
-                    else if (creep.memory.role == 'bigUpgrader') {
-                        roleUpgrader.run(creep);
+                    else {
+                        // if creep is harvester, call harvester script
+                        if (creep.memory.role == 'harvester') {
+                            roleHarvester.run(creep);
+                        }
+                        // if creep is upgrader, call upgrader script
+                        else if (creep.memory.role == 'upgrader') {
+                            roleUpgrader.run(creep);
+                        }
+                        // if creep is builder, call builder script
+                        else if (creep.memory.role == 'builder') {
+                            roleBuilder.run(creep);
+                        }
+                        // if creep is repairer, call repairer script
+                        else if (creep.memory.role == 'repairer') {
+                            roleRepairer.run(creep);
+                        }
+                        // if creep is wallRepairer, call wallRepairer script
+                        else if (creep.memory.role == 'wallRepairer') {
+                            roleWallRepairer.run(creep);
+                        }
+                        // if creep is remoteHarvester, call remoteHarvester script
+                        else if (creep.memory.role == 'remoteHarvester') {
+                            roleRemoteHarvester.run(creep);
+                        }
+                        else if (creep.memory.role == 'protector') {
+                            roleProtector.run(creep, allies);
+                        }
+                        else if (creep.memory.role == 'claimer') {
+                            roleClaimer.run(creep);
+                        }
+                        else if (creep.memory.role == 'bigClaimer') {
+                            roleBigClaimer.run(creep);
+                        }
+                        else if (creep.memory.role == 'stationaryHarvester') {
+                            roleStationaryHarvester.run(creep);
+                        }
+                        else if (creep.memory.role == 'miner') {
+                            roleMiner.run(creep);
+                        }
+                        else if (creep.memory.role == 'distributor') {
+                            roleDistributor.run(creep);
+                        }
+                        else if (creep.memory.role == 'demolisher') {
+                            roleDemolisher.run(creep);
+                        }
+                        else if (creep.memory.role == 'energyTransporter') {
+                            roleEnergyTransporter.run(creep);
+                        }
+                        else if (creep.memory.role == 'energyHauler') {
+                            roleEnergyHauler.run(creep);
+                        }
+                        else if (creep.memory.role == 'remoteStationaryHarvester') {
+                            roleRemoteStationaryHarvester.run(creep);
+                        }
+                        else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer') {
+                            roleUnit.run(creep);
+                        }
+                        else if (creep.memory.role == 'scientist') {
+                            roleScientist.run(creep);
+                        }
+                        else if (creep.memory.role == 'transporter') {
+                            roleTransporter.run(creep);
+                        }
+                        else if (creep.memory.role == 'bigUpgrader') {
+                            roleUpgrader.run(creep);
+                        }
+                        else if (creep.memory.role == 'test') {
+                            roleTest.run(creep);
+                        }
                     }
                 }
             }

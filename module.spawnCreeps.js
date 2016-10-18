@@ -185,8 +185,9 @@ module.exports = {
             }
         }
 
-        // Harvester & Repairer
-        minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5);
+        // EnergyTransporter, Harvester & Repairer
+        minimumSpawnOf["energyTransporter"] = minimumSpawnOf.stationaryHarvester;
+        minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5) - minimumSpawnOf.energyTransporter;
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
 
         /** Rest **/
@@ -227,7 +228,19 @@ module.exports = {
         //console.log(spawnRoom.name + ": " + minimumSpawnOf.upgrader);
 
         // Measuring number of active creeps
-        var numberOf = new Array();
+        var numberOf = [];
+
+        var allMyCreeps = _.filter(Game.creeps,{memory: { homeroom: spawnRoom.name}});
+        var counter = _.countBy(allMyCreeps, "memory.role");
+
+        var roleList = (Object.getOwnPropertyNames(minimumSpawnOf));
+        for (z in roleList) {
+            if (roleList[z] != "length" && counter[roleList[z]] == undefined) {
+                counter[roleList[z]] = 0;
+            }
+        }
+         numberOf = counter;
+        /*
         // Creeps not leaving room
         numberOf["harvester"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "harvester")}).length;
         numberOf["stationaryHarvester"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "stationaryHarvester")}).length;
@@ -241,17 +254,19 @@ module.exports = {
         numberOf["scientist"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "scientist")}).length;
 
         //Creeps leaving room
-        numberOf["remoteHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["remoteStationaryHarvester"] = _.filter(Game.creeps,{ memory: { role: 'remoteStationaryHarvester', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["claimer"] = _.filter(Game.creeps,{ memory: { role: 'claimer', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["bigClaimer"] = _.filter(Game.creeps,{ memory: { role: 'bigClaimer', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["protector"] = _.filter(Game.creeps,{ memory: { role: 'protector', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["demolisher"] = _.filter(Game.creeps,{ memory: { role: 'demolisher', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["energyHauler"] = _.filter(Game.creeps,{ memory: { role: 'energyHauler', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["attacker"] = _.filter(Game.creeps,{ memory: { role: 'attacker', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["healer"] = _.filter(Game.creeps,{ memory: { role: 'healer', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["einarr"] = _.filter(Game.creeps,{ memory: { role: 'einarr', spawn: spawnRoom.memory.masterSpawn}}).length;
-        numberOf["transporter"] = _.filter(Game.creeps,{ memory: { role: 'transporter', spawn: spawnRoom.memory.masterSpawn}}).length;
+        let myCreeps = _.filter(Game.creeps,{ memory: { spawn: spawnRoom.memory.masterSpawn}});
+        numberOf["remoteHarvester"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'remoteHarvester'}}).length;
+        numberOf["remoteStationaryHarvester"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'remoteStationaryHarvester'}}).length;
+        numberOf["claimer"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'claimer'}}).length;
+        numberOf["bigClaimer"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'bigClaimer'}}).length;
+        numberOf["protector"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'protector'}}).length;
+        numberOf["demolisher"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'demolisher'}}).length;
+        numberOf["energyHauler"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'energyHauler'}}).length;
+        numberOf["attacker"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'attacker'}}).length;
+        numberOf["healer"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'healer'}}).length;
+        numberOf["einarr"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'einarr'}}).length;
+        numberOf["transporter"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'transporter'}}).length;
+
 
         // Addition of creeps being spawned
         for (s in spawnRoom.memory.roomArraySpawns) {
@@ -266,6 +281,13 @@ module.exports = {
                 }
             }
         }
+        */
+        for (let p in numberOf) {
+            if (numberOf[p] != counter[p]){
+                console.log(spawnRoom + " (" + p + ") Numberof: " + numberOf[p] + " / Counter: " + counter[p]);
+            }
+        }
+        //console.log(spawnRoom + ": " + minimumSpawnOf.upgrader);
 
         // Role selection
         var energy = spawnRoom.energyCapacityAvailable;
@@ -273,18 +295,20 @@ module.exports = {
         var hostiles = spawnRoom.memory.hostiles;
         var rcl = spawnRoom.controller.level;
 
+        //console.log(this.getNextSpawnRole(minimumSpawnOf, numberOf));
+
         // if not enough harvesters
         if (numberOf.harvester + numberOf.energyTransporter < minimumSpawnOf.harvester) {
             // try to spawn one
             var rolename = 'harvester';
-            // if spawning failed and we have no harvesters left
-            if (numberOf.harvester + numberOf.energyTransporter == 0 || spawnRoom.energyCapacityAvailable < 350) {
+            // if we have no harvesters left
+            if (numberOf.harvester + numberOf.energyTransporter == 0) {
                 // spawn one with what is available
                 var rolename = 'miniharvester';
             }
-            else if (minimumSpawnOf.stationaryHarvester > 0 && minimumSpawnOf.stationaryHarvester == numberOf.stationaryHarvester && minimumSpawnOf.harvester - numberOf.harvester <= minimumSpawnOf.stationaryHarvester) {
-                var rolename = "energyTransporter";
-            }
+        }
+        else if (numberOf.energyTransporter < minimumSpawnOf.energyTransporter && (buildingPlans.energyTransporter[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.energyTransporter[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
+            var rolename = 'energyTransporter';
         }
         else if (numberOf.protector < minimumSpawnOf.protector && (buildingPlans.protector[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.protector[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'protector';
@@ -357,7 +381,7 @@ module.exports = {
             for (var e in container) {
                 containerEnergie += container[e].store[RESOURCE_ENERGY];
             }
-            if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 2.5) {
+            if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 2.5 && spawnRoom.controller.level < 8) {
                 if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2.5)) {
                     var rolename = 'upgrader';
                 }
@@ -386,11 +410,179 @@ module.exports = {
                 name = actingSpawn.createCustomCreep(energy, rolename, spawnRoom.memory.masterSpawn);
                 actingSpawn.memory.lastSpawnAttempt = rolename;
                 
-                if (!(name < 0)) {
+                if (!(name < 0) && name != undefined) {
                     console.log("<font color=#00ff22 type='highlight'>" + actingSpawn.name + " is spawning creep: " + name + " (" + rolename + ") in room " + spawnRoom.name + ".</font>");
                     actingSpawn.memory.lastSpawn = rolename;
                 }
             }
         }
+    },
+
+    getNextSpawnRole: function (spawnRoom, minimumSpawnOf, numberOf) {
+        var rcl = spawnRoom.controller.level;
+        var energyCapacity = spawnRoom.energyCapacityAvailable;
+        var storage;
+        if (spawnRoom.storage == undefined) {
+            storage = 0;
+        }
+        else {
+            storage = spawnRoom.storage.store[RESOURCE_ENERGY];
+        }
+
+        var tableImportance = {
+            harvester: {
+                name: "harvester",
+                prio: 10,
+                energyRole: true,
+                min: minimumSpawnOf.harvester,
+                max: numberOf.harvester
+            },
+            stationaryHarvester: {
+                name: "stationaryHarvester",
+                prio: 10,
+                energyRole: true,
+                min: minimumSpawnOf.stationaryHarvester,
+                max: numberOf.stationaryHarvester
+            },
+            builder: {name: "builder", prio: 20, energyRole: false, min: minimumSpawnOf.builder, max: numberOf.builder},
+            repairer: {
+                name: "repairer",
+                prio: 10,
+                energyRole: false,
+                min: minimumSpawnOf.repairer,
+                max: numberOf.repairer
+            },
+            wallRepairer: {
+                name: "wallRepairer",
+                prio: 20,
+                energyRole: false,
+                min: minimumSpawnOf.wallRepairer,
+                max: numberOf.wallRepairer
+            },
+            miner: {name: "miner", prio: 30, energyRole: false, min: minimumSpawnOf.miner, max: numberOf.miner},
+            upgrader: {
+                name: "upgrader",
+                prio: 10,
+                energyRole: false,
+                min: minimumSpawnOf.upgrader,
+                max: numberOf.upgrader
+            },
+            distributor: {
+                name: "distributor",
+                prio: 20,
+                energyRole: false,
+                min: minimumSpawnOf.distributor,
+                max: numberOf.distributor
+            },
+            energyTransporter: {
+                name: "energyTransporter",
+                prio: 20,
+                energyRole: true,
+                min: minimumSpawnOf.energyTransporter,
+                max: numberOf.energyTransporter
+            },
+            scientist: {
+                name: "scientist",
+                prio: 20,
+                energyRole: false,
+                min: minimumSpawnOf.scientist,
+                max: numberOf.scientist
+            },
+            remoteHarvester: {
+                name: "remoteHarvester",
+                prio: 10,
+                energyRole: true,
+                min: minimumSpawnOf.remoteHarvester,
+                max: numberOf.remoteHarvester
+            },
+            remoteStationaryHarvester: {
+                name: "remoteStationaryHarvester",
+                prio: 20,
+                energyRole: true,
+                min: minimumSpawnOf.remoteStationaryHarvester,
+                max: numberOf.remoteStationaryHarvester
+            },
+            claimer: {name: "claimer", prio: 10, energyRole: false, min: minimumSpawnOf.claimer, max: numberOf.claimer},
+            bigClaimer: {
+                name: "bigClaimer",
+                prio: 10,
+                energyRole: false,
+                min: minimumSpawnOf.bigClaimer,
+                max: numberOf.bigClaimer
+            },
+            protector: {
+                name: "protector",
+                prio: 10,
+                energyRole: false,
+                min: minimumSpawnOf.protector,
+                max: numberOf.protector
+            },
+            demolisher: {
+                name: "demolisher",
+                prio: 30,
+                energyRole: true,
+                min: minimumSpawnOf.demolisher,
+                max: numberOf.demolisher
+            },
+            energyHauler: {
+                name: "energyHauler",
+                prio: 20,
+                energyRole: true,
+                min: minimumSpawnOf.energyHauler,
+                max: numberOf.energyHauler
+            },
+            attacker: {
+                name: "attacker",
+                prio: 10,
+                energyRole: false,
+                min: minimumSpawnOf.attacker,
+                max: numberOf.attacker
+            },
+            healer: {name: "healer", prio: 10, energyRole: false, min: minimumSpawnOf.healer, max: numberOf.healer},
+            einarr: {name: "einarr", prio: 10, energyRole: false, min: minimumSpawnOf.einarr, max: numberOf.einarr},
+            transporter: {
+                name: "transporter",
+                prio: 30,
+                energyRole: false,
+                min: minimumSpawnOf.transporter,
+                max: numberOf.transporter
+            }
+        };
+
+        var spawnCandidates = _.filter(tableImportance, function (x) {
+            return (!(x.min == 0 || x.min == x.max))
+        });
+
+        if (spawnCandidates.length > 0) {
+            spawnCandidates = _.sortBy(spawnCandidates, "prio");
+            console.log(spawnCandidates[Object.getOwnPropertyNames(spawnCandidates)[0]].name + " / " + tableImportance[spawnCandidates[Object.getOwnPropertyNames(spawnCandidates)[0]].name].min + " - " + tableImportance[spawnCandidates[Object.getOwnPropertyNames(spawnCandidates)[0]].name].max);
+            if (storage < energyCapacity) {
+                //Prioritize energy roles
+                spawnCandidates = _.sortBy(spawnCandidates, function (x) {
+                    return (x.energyRole == true)
+                });
+            }
+            else {
+                //Prioritize non-energy roles
+                spawnCandidates = _.sortBy(spawnCandidates, function (x) {
+                    return (x.energyRole == false)
+                });
+            }
+            if (spawnCandidates[0].name == "harvester") {
+                if (tableImportance.harvester.max + tableImportance.energyTransporter.max == 0 || energyCapacity < 350) {
+                    return "miniharvester";
+                }
+                else if (tableImportance.stationaryHarvester.min > 0 && tableImportance.stationaryHarvester.min == tableImportance.stationaryHarvester.max && tableImportance.harvester.min - tableImportance.harvester.max <= tableImportance.stationaryHarvester.min) {
+                    return "energyTransporter";
+                }
+                return spawnCandidates[0].name;
+            }
+            else {
+                return spawnCandidates[0].name;
+            }
+        }
+        else {
+            return null;
+        }
     }
-}
+};

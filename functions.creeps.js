@@ -1,15 +1,81 @@
 module.exports = function() {
+    //Memory.wayFinder.roomname.targetFlagName.pos
+    //Memory.wayFinder.roomname.targetFlagName.start
+    //Memory.wayFinder.roomname.targetFlagName.way
+    //Memory.wayFinder.roomname.realmExists.exitFlagName.pos
 
-
-    Creep.prototype.MoveToRemoteFlag = function(flagName) {
-
+    Creep.prototype.MoveToRemoteFlag = function(targetFlagName) {
+        if (Game.flags[targetFlagName] != undefined && Game.flags[targetFlagName].pos != undefined) {
+            if (Memory.wayFinder == undefined) {
+                // Initialize wayFinder
+                Memory.wayFinder = {};
+            }
+            let init = false;
+            
+            if (Memory.wayFinder[this.room.name] == undefined) {
+                // Initialize room
+                console.log("Initialize room " + this.room.name);
+                init = true;
+                Memory.wayFinder[this.room.name] = {};
+                Memory.wayFinder[this.room.name].realmExits = {};
+                let exitFlags = this.room.find(FIND_FLAGS, {filter: (s) => (s.memory.function == "realmExit")});
+                for (let f in exitFlags) {
+                    Memory.wayFinder[this.room.name].realmExits[exitFlags[f].name] = exitFlags[f].pos;
+                }
+            }
+            if (Memory.wayFinder[this.room.name][targetFlagName] == undefined) {
+                //Initialize target Flag
+                console.log("Initialize target flag " + targetFlagName);
+                init = true;
+                Memory.wayFinder[this.room.name][targetFlagName] = {};
+                Memory.wayFinder[this.room.name][targetFlagName].pos = Game.flags[targetFlagName].pos;
+            }
+            else if (Game.flags[targetFlagName].pos.x != Memory.wayFinder[this.room.name][targetFlagName].pos.x || Game.flags[targetFlagName].pos.y != Memory.wayFinder[this.room.name][targetFlagName].pos.y) {
+                //Target flag moved -> re-initialize target flag
+                console.log("Initialize target flag " + targetFlagName);
+                init = true;
+                Memory.wayFinder[this.room.name][targetFlagName] = {};
+                Memory.wayFinder[this.room.name][targetFlagName].pos = Game.flags[targetFlagName].pos;
+            }
+            if (init == true) {
+                console.log("New path calculation");
+                //Path to flag unknown -> find correct realmExit for target flag
+                var exitFlags = this.room.find(FIND_FLAGS, {filter: (s) => (s.memory.function == "realmExit")});
+                if (exitFlags.length > 0) {
+                    //TODO Find correct realmExit flag
+                    //var realmExitFlag = Game.flags[targetFlagName].pos.findClosestByPath(exitFlags);
+                    var realmExitFlag = Game.flags["W18S44_Exit_East"];
+                    if (realmExitFlag != null) {
+                        Memory.wayFinder[this.room.name][targetFlagName].start = realmExitFlag.name;
+                        Memory.wayFinder[this.room.name][targetFlagName].way = realmExitFlag.pos.findPathTo(Game.flags[targetFlagName], {ignoreCreeps: true});
+                    }
+                }
+            }
+            // Creep still in homeroom
+            if (this.memory.journeyPath == undefined && Memory.wayFinder[this.memory.homeroom][targetFlagName].start != undefined) {
+                //Creep on its way to startFlag
+                let startFlag = Game.flags[Memory.wayFinder[this.memory.homeroom][targetFlagName].start];
+                if (this.pos.isEqualTo(startFlag.pos) == true) {
+                    this.memory.journeyPath = Memory.wayFinder[this.memory.homeroom][targetFlagName].way;
+                }
+                else if (this.goToHomeRoom() == true) {
+                    this.moveTo(startFlag, {reusePath: DELAYPATHFINDING});
+                }
+                else {
+                    this.moveTo(Game.rooms[this.creep.homeroom].controller, {reusePath: DELAYPATHFINDING});
+                }
+            }
+            if (this.memory.journeyPath != undefined) {
+                //Journey has begun
+                this.moveByPath(this.memory.journeyPath);
+            }
+        }
     };
-
-    Creep.prototype.towerEmergencyFill = function() {
+    Creep.prototype.towerEmergencyFill = function () {
         var tower = this.pos.findClosestByPath(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_TOWER && s.energy < s.energyCapacity});
         if (tower != null) {
             if (this.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                this.moveTo(tower, {reusePath: 5});
+                this.moveTo(tower, {reusePath: DELAYPATHFINDING});
             }
         }
     };
@@ -31,7 +97,7 @@ module.exports = function() {
                     else {
                         var freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                         if (this.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                            this.moveTo(freeContainer, {reusePath: 3});
+                            this.moveTo(freeContainer, {reusePath: DELAYPATHFINDING});
                         }
                     }
                     specialResources = true;
@@ -106,8 +172,8 @@ module.exports = function() {
     Creep.prototype.goToHomeRoom = function() {
         // send creep back to room indicated in creep.memory.homeroom. Returns true if creep is in homeroom, false otherwise
         if (this.room.name != this.memory.homeroom) {
-            var spawn = Game.getObjectById(this.memory.spawn);
-            this.moveTo(spawn, {reusePath: 5});
+            var controller = Game.rooms[this.memory.homeroom].controller;
+            this.moveTo(controller, {reusePath: DELAYPATHFINDING});
             return false;
         }
         else {return true;}
@@ -133,7 +199,7 @@ module.exports = function() {
                 targetContainer = this.findResource(RESOURCE_SPACE,STRUCTURE_CONTAINER);
             }
             if (this.pos.getRangeTo(targetContainer) > 1) {
-                this.moveTo(targetContainer, {reusePath: 3});
+                this.moveTo(targetContainer, {reusePath: DELAYPATHFINDING});
             }
             else {
                 for (var res in this.carry) {
@@ -148,5 +214,19 @@ module.exports = function() {
             return false;
         }
         else {return true;}
+    };
+
+    Creep.prototype.fleefromAttacker = function() {
+
+        if (creep.memory.hotRoom > 0) {
+            if (creep.pos.getRangeTo( Game.getObjectById(creep.memory.spawn)) > 5) {
+                creep.moveTo( Game.getObjectById(creep.memory.spawn)), {reusePath: DELAYPATHFINDING};
+            }
+            creep.memory.hotRoom--;
+        }
+        if (creep.memory.hotRoom == 0) {
+            delete creep.memory.hotRoom;
+        }
+        return checkTerminalLimits(this.room, resource);
     };
 };

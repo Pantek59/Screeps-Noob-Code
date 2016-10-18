@@ -55,7 +55,7 @@ module.exports = {
                 }
                 else if (flag != undefined) {
                     // Move to harvesting point
-                    creep.moveTo(flag, {reusePath: 5});
+                    creep.moveTo(flag, {reusePath:DELAYPATHFINDING});
                 }
                 else {
                     console.log(creep.name + " in room " + creep.room.name + " has a problem.");

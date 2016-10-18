@@ -27,7 +27,7 @@ module.exports = function() {
             }
         }
 
-	    if (this.memory.targetBuffer != undefined && this.memory.resourceBuffer != undefined && this.memory.resourceBuffer == resource &&  Game.time % delayPathfinding == 0)
+	    if (this.memory.targetBuffer != undefined && this.memory.resourceBuffer != undefined && this.memory.resourceBuffer == resource &&  Game.time % DELAYPATHFINDING == 0)
         {
             //return buffered resource
             return Game.getObjectById(this.memory.targetBuffer);

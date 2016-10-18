@@ -17,7 +17,7 @@ module.exports = {
                 if (flag != undefined) {
                     if (flag.pos.roomName != creep.room.name) {
                         // Creep not in assigned room
-                        creep.moveTo(flag, {reusePath: 10});
+                        creep.moveTo(flag, {reusePath: DELAYPATHFINDING});
                     }
                     else if (creep.pos.isEqualTo(flag)) {
                         // Harvesting position reached
@@ -76,7 +76,7 @@ module.exports = {
                     }
                     else {
                         // Move to harvesting point
-                        creep.moveTo(flag, {reusePath: 5});
+                        creep.moveTo(flag, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else {
@@ -86,11 +86,12 @@ module.exports = {
             else {
                 // Hostiles present
                 var homespawn = Game.getObjectById(creep.memory.spawn);
+                creep.memory.fleeing = true;
                 if (creep.room.name != creep.memory.homeroom) {
-                    creep.moveTo(homespawn), {reusePath: 10};
+                    creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                 }
                 else if (creep.pos.getRangeTo(homespawn) > 5) {
-                    creep.moveTo(homespawn), {reusePath: 10};
+                    creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                 }
             }
         }

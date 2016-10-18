@@ -31,28 +31,23 @@ module.exports = {
                     roleBuilder.run(creep);
                 }
                 else {
+                    // Move to structure
                     var road = creep.pos.lookFor(LOOK_STRUCTURES);
                     if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
                         // Found road to repair
-                        var repairFlag = false;
-                        for (var part in creep.body) {
-                            if (creep.body[part].type == WORK && creep.body[part].hits > 0) {
-                                creep.repair(road[0]);
-                                repairFlag = true;
-                                break;
-                            }
+                        if (creep.getActiveBodyparts(WORK) > 0)
+                        {
+                            creep.repair(road[0]);
                         }
-                        if (repairFlag == false) {
+                        else {
                             var spawn = Game.getObjectById(creep.memory.spawn);
-                            creep.moveTo(spawn, {reusePath: 5})
+                            creep.moveTo(spawn, {reusePath: DELAYPATHFINDING})
                         }
-
                     }
                     else {
-                        // Find exit to spawn room
-                        var spawn = Game.getObjectById(creep.memory.spawn);
                         if (creep.room.name != creep.memory.homeroom) {
-                            creep.moveTo(spawn, {reusePath: 5})
+                            // Find exit to spawn room
+                            creep.moveTo(Game.getObjectById(creep.memory.spawn), {reusePath: DELAYPATHFINDING})
                         }
                         else {
                             // back in spawn room
@@ -64,7 +59,7 @@ module.exports = {
                                 // try to transfer energy, if it is not in range
                                 if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                     // move towards it
-                                    creep.moveTo(structure, {reusePath: 5, ignoreCreeps: false});
+                                    creep.moveTo(structure, {reusePath: DELAYPATHFINDING, ignoreCreeps: false});
                                 }
                             }
                             else {
@@ -83,7 +78,7 @@ module.exports = {
                     // Find exit to target room
                     if (creep.room.name != remoteSource.pos.roomName) {
                         //still in old room, go out
-                        creep.moveTo(remoteSource, {reusePath: 10});
+                        creep.moveTo(remoteSource, {reusePath: DELAYPATHFINDING});
                     }
                     else {
                         //new room reached, start collecting
@@ -93,12 +88,8 @@ module.exports = {
                             container = _.filter(container, { structureType: STRUCTURE_CONTAINER});
                             if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
                                 if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(container[0], {reusePath: 5});
+                                    creep.moveTo(container[0], {reusePath: DELAYPATHFINDING});
                                 }
-                            }
-                            if (remoteSource.pos == creep.pos && Game.time % 5 == 0) {
-                                // Creep is blocking position
-                                creep.moveTo(creep.room.controller);
                             }
                             else {
                                 roleCollector.run(creep);
@@ -106,12 +97,12 @@ module.exports = {
                         }
                         else {
                             //Hostiles creeps in new room
-                            var homespawn = Game.getObjectById(creep.memory.spawn);
                             if (creep.room.name != creep.memory.homeroom) {
-                                creep.moveTo(homespawn), {reusePath: 10};
+                                creep.moveTo(Game.getObjectById(creep.memory.spawn)), {reusePath: DELAYPATHFINDING};
+                                creep.memory.fleeing = true;
                             }
                             else if (creep.pos.getRangeTo(homespawn) > 5) {
-                                creep.moveTo(homespawn), {reusePath: 10};
+                                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                             }
                         }
                     }

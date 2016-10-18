@@ -178,6 +178,100 @@ module.exports = {
                 }
                 break;
 
+            case "harvestingSK":
+                // Check for commander
+                var commander;
+                if (flag.memory.commander != undefined) {
+                    commander = Game.creeps[flag.memory.commander];
+                }
+                else {
+                    //TODO If there is no commander --> trigger election
+
+                    //commander = electCommander
+                }
+
+                switch (creep.memory.role) {
+                    case "attacker":
+                    case "einarr":
+                        if (creep.room.memory.hostiles == 0) {
+                            //No invader spawned, go wait in front of spawn
+                        }
+                        else {
+                            //Check for invader in front of energyHaul and remoteSource flags
+
+                        }
+
+                        let target;
+                        let targets = flag.pos.findInRange(hostileCreeps, 5);
+                        if (targets.length > 0) {
+                            //Hostile creeps within flag range -> attack
+                            target = flag.pos.findClosestByPath(targets);
+                            if (target != null && creep.attack(target) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(target);
+                            }
+                        }
+                        else if (creep.memory.role == "einarr") {
+                            let patients = flag.pos.findInRange(friendlyCreeps, 5);
+                            if (patients.length > 0) {
+                                //Damaged creeps near flag found
+                                let patient = creep.pos.findClosestByPath(patients, {filter: (s) => s.hits < s.hitsMax});
+                                if (patient != null && creep.heal(patient) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(patient);
+                                }
+                                else {
+                                    //No path to patient found
+                                    if (creep.pos.getRangeTo(flag) > 2) {
+                                        creep.moveTo(flag, {reusePath: 2});
+                                    }
+                                }
+                            }
+                            else {
+                                //No damaged creeps around
+                                if (creep.pos.getRangeTo(flag) > 2) {
+                                    creep.moveTo(flag, {reusePath: 2});
+                                }
+                            }
+                        }
+                        else {
+                            //No hostile creeps around
+                            if (creep.pos.getRangeTo(flag) > 2) {
+                                creep.moveTo(flag, {reusePath: 2});
+                            }
+                        }
+                        break;
+
+                    case "healer":
+                        let danger = creep.pos.findInRange(hostileCreeps, 2);
+                        if (danger.length > 0) {
+                            creep.moveTo(danger, {flee: true, reusePath: 2});
+                        }
+                        else {
+                            // No hostile creeps around
+                            let patients = flag.pos.findInRange(friendlyCreeps, 5);
+                            if (patients.length > 0) {
+                                //Damaged creeps near flag found
+                                let patient = creep.pos.findClosestByPath(patients, {filter: (s) => s.hits < s.hitsMax});
+                                if (patient != null && creep.heal(patient) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(patient);
+                                }
+                                else {
+                                    //No path to patient found
+                                    if (creep.pos.getRangeTo(flag) > 2) {
+                                        creep.moveTo(flag, {reusePath: 2});
+                                    }
+                                }
+                            }
+                            else {
+                                //No damaged creeps around
+                                if (creep.pos.getRangeTo(flag) > 2) {
+                                    creep.moveTo(flag, {reusePath: 2});
+                                }
+                            }
+                        }
+                        break;
+                }
+                break;
+
             default:
                 bunkerDown = true
                 break;

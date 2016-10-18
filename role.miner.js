@@ -35,7 +35,7 @@ module.exports = {
                      }
 
                      if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                         creep.moveTo(container, {reusePath: 3});
+                         creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                      }
                  }
                  else {
@@ -49,13 +49,13 @@ module.exports = {
                          //No storage found in room
                          var container = creep.memory.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
                          if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
-                             creep.moveTo(container, {reusePath: 3});
+                             creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                          }
                      }
                      else {
                          //storage found
                          if (creep.transfer(storage, resource) == ERR_NOT_IN_RANGE) {
-                             creep.moveTo(storage, {reusePath: 3});
+                             creep.moveTo(storage, {reusePath: DELAYPATHFINDING});
                          }
                      }
                  }

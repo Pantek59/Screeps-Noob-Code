@@ -8,7 +8,7 @@ module.exports = {
         if (creep.room.name != creep.memory.homeroom && creep.memory.role != "remoteHarvester") {
             //return to home room
             var hometarget = Game.getObjectById(creep.memory.spawn);
-            creep.moveTo(hometarget, {reusePath: 10});
+            creep.moveTo(hometarget, {reusePath: DELAYPATHFINDING});
         }
         else {
             // if creep is trying to repair something but has no energy left
@@ -34,7 +34,7 @@ module.exports = {
                         // Refresh level 8 controller
                         if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
                             // try to upgrade the controller, if not in range, move towards the controller
-                            creep.moveTo(creep.room.controller, {reusePath: 10});
+                            creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
                         }
                     }
                     else if (creep.room.memory.roomArraySpawns.length > 0) {
@@ -44,7 +44,7 @@ module.exports = {
                         if (structure != undefined) {
                             var result = creep.repair(structure);
                             if (result == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(structure, {reusePath: 5});
+                                creep.moveTo(structure, {reusePath: DELAYPATHFINDING});
                             }
                         }
                         // if we can't fine one
@@ -61,7 +61,7 @@ module.exports = {
                         }
                         if (creep.build(constructionSite) == ERR_NOT_IN_RANGE) {
                             // move towards it
-                            creep.moveTo(constructionSite, {reusePath: 5});
+                            creep.moveTo(constructionSite, {reusePath: DELAYPATHFINDING});
                         }
                     }
                 }

@@ -45,12 +45,12 @@ module.exports = {
                                                     creepPackage = amount;
                                                 }
                                                 if (creep.withdraw(creep.room.storage, innerLabs[lb].resource, creepPackage) == ERR_NOT_IN_RANGE) {
-                                                    creep.moveTo(creep.room.storage, {reusePath: 5});
+                                                    creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING});
                                                 }
                                             }
                                             else {
                                                 if (creep.transfer(currentInnerLab, innerLabs[lb].resource) == ERR_NOT_IN_RANGE) {
-                                                    creep.moveTo(currentInnerLab, {reusePath: 5});
+                                                    creep.moveTo(currentInnerLab, {reusePath: DELAYPATHFINDING});
                                                 }
                                             }
                                         }
@@ -60,7 +60,7 @@ module.exports = {
                                         if (creep.storeAllBut() == true) {
                                             //Get minerals from storage
                                             if (creep.withdraw(currentInnerLab, currentInnerLab.mineralType) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(currentInnerLab, {reusePath: 5});
+                                                creep.moveTo(currentInnerLab, {reusePath: DELAYPATHFINDING});
                                             }
                                         }
                                     }
@@ -84,11 +84,11 @@ module.exports = {
                             var lab;
                             for (var c in creep.room.memory.roomArrayLabs) {
                                 lab = Game.getObjectById(creep.room.memory.roomArrayLabs[c]);
-                                if (creep.room.memory.boostLabs.indexOf(lab.id) == -1 && lab.mineralAmount > 0 && lab.id != innerLabs[0].labID && lab.id != innerLabs[1].labID) {
+                                if ((creep.room.memory.boostLabs == undefined || creep.room.memory.boostLabs.indexOf(lab.id) == -1) && lab.mineralAmount > 0 && lab.id != innerLabs[0].labID && lab.id != innerLabs[1].labID) {
                                     {
                                         if (_.sum(creep.carry) < creep.carryCapacity) {
                                             if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(lab, {reusePath: 5});
+                                                creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
                                             }
                                         }
                                         else {
@@ -96,11 +96,11 @@ module.exports = {
                                         }
                                     }
                                 }
-                                else if (creep.room.memory.boostLabs.indexOf(lab.id) == -1 && lab.energy > 0)
+                                else if ((creep.room.memory.boostLabs == undefined || creep.room.memory.boostLabs.indexOf(lab.id) == -1) && lab.energy > 0)
                                 {
                                     if (_.sum(creep.carry) < creep.carryCapacity) {
                                         if (creep.withdraw(lab, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(lab, {reusePath: 5});
+                                            creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
                                         }
                                     }
                                     else {
@@ -144,7 +144,7 @@ module.exports = {
                         if (lab.mineralAmount > 0) {
                             if (creep.storeAllBut() == true) {
                                 if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(lab, {reusePath: 5});
+                                    creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
                                 }
                             }
                         }

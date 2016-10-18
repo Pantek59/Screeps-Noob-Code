@@ -55,21 +55,21 @@ module.exports = {
                     // if we found one -> try to transfer energy, if it is not in range
                     if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         // move towards it
-                        creep.moveTo(structure, {reusePath: 3});
+                        creep.moveTo(structure, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else if (nuker != null && nuker.energy < nuker.energyCapacity && creep.room.storage.store[RESOURCE_ENERGY] > 50000) {
                     //Bring energy to nuker
                     if (creep.transfer(nuker, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         // move towards it
-                        creep.moveTo(nuker, {reusePath: 3});
+                        creep.moveTo(nuker, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else if (powerSpawn != null && powerSpawn.energy < powerSpawn.energyCapacity && creep.room.storage.store[RESOURCE_ENERGY] > 50000) {
                     //Bring energy to power spawn
                     if (creep.transfer(powerSpawn, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         // move towards it
-                        creep.moveTo(powerSpawn, {reusePath: 3});
+                        creep.moveTo(powerSpawn, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else {
@@ -82,7 +82,7 @@ module.exports = {
                                 //lab needs energy
                                 if (creep.transfer(lab, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                     // move towards it
-                                    creep.moveTo(lab, {reusePath: 3});
+                                    creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
                                 }
                                 labBreaker = true;
                                 break;
@@ -98,7 +98,7 @@ module.exports = {
                         }
 
                         if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(container, {reusePath: 3});
+                            creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                         }
                     }
                 }

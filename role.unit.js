@@ -25,7 +25,7 @@ module.exports = {
                     }
                 }
                 else {
-                    creep.moveTo(groupFlag, {reusePath: 5});
+                    creep.moveTo(groupFlag, {reusePath: DELAYPATHFINDING});
                 }
             }
         }
@@ -34,7 +34,7 @@ module.exports = {
             //Move to flag if not in target room yet
             var range = creep.pos.getRangeTo(groupFlag);
             if (range > 5) {
-                creep.moveTo(groupFlag, {reusePath: 3});
+                creep.moveTo(groupFlag, {reusePath: DELAYPATHFINDING});
             }
         }
         else {

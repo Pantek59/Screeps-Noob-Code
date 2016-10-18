@@ -18,7 +18,7 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
         return "Minimal amount for terminal transfers are 100 units.";
     }
 
-    for (var r in Game.rooms) {
+    for (var r in myRooms) {
         if (Game.rooms[r].terminal != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
             //Fill candidate array with rooms
             var roomResourceTotal = 0;
@@ -168,10 +168,10 @@ global.listStorages = function (displayResource) {
     var resourceTable = new Array();
 
     //Prepare header row
-    for (var r in Game.rooms) {
+    for (var r in myRooms) {
         if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
             returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "  </th>");
-            for (var res in Game.rooms[r].storage.store) {
+            for (var res in myRooms[r].storage.store) {
                 if (resourceTable.indexOf(res) == -1) {
                     resourceTable.push(res);
                 }
@@ -183,7 +183,7 @@ global.listStorages = function (displayResource) {
     for (res in resourceTable) {
         if (arguments.length == 0 || displayResource == resourceTable[res]) {
             returnstring = returnstring.concat("<tr></tr><td>" + resourceTable[res] + "  </td>");
-            for (var r in Game.rooms) {
+            for (var r in myRooms) {
                 if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
                     var amount;
                     var color;
@@ -257,10 +257,10 @@ global.listLimits = function (limitType, displayResource) {
     else {return "Invalid limit type."}
 
     //Prepare header row
-    for (var r in Game.rooms) {
+    for (var r in myRooms) {
         if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
             returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "  </th>");
-            for (var res in Game.rooms[r].memory.resourceLimits) {
+            for (var res in myRooms[r].memory.resourceLimits) {
                 if (resourceTable.indexOf(res) == -1) {
                     resourceTable.push(res);
                 }
@@ -273,7 +273,7 @@ global.listLimits = function (limitType, displayResource) {
         if (arguments.length == 1 || displayResource == resourceTable[res]) {
             var tempstring ="<tr><td>" + resourceTable[res] + "  </td>";
             var tempsum = 0;
-            for (var r in Game.rooms) {
+            for (var r in myRooms) {
                 if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
                     tempstring = tempstring.concat("<td>" + prettyInt(Game.rooms[r].memory.resourceLimits[resourceTable[res]][limitType]) + "  </td>");
                     tempsum += Game.rooms[r].memory.resourceLimits[resourceTable[res]].maxStorage;
@@ -607,7 +607,7 @@ global.listBoost = function (roomName) {
     var roles = [];
     var boostMinerals = [];
     var volumes = [];
-    for (let e in Game.rooms[roomName].memory.boostList) {
+    for (let e in myRooms[roomName].memory.boostList) {
         if (roles.indexOf(Game.rooms[roomName].memory.boostList[e].role) == -1) {
             roles.push(Game.rooms[roomName].memory.boostList[e].role);
             boostMinerals.push(Game.rooms[roomName].memory.boostList[e].mineralType);
@@ -625,3 +625,4 @@ global.listBoost = function (roomName) {
     returnstring = returnstring.concat("</table>");
     return returnstring;
 };
+

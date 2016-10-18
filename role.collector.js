@@ -3,13 +3,7 @@ require ("globals");
 module.exports = {
     run: function(creep) {
 		// check for picked up minerals
-        if (creep.memory.sleep != undefined) {
-            creep.memory.sleep--;
-            if (creep.memory.sleep < 1) {
-                delete creep.memory.sleep;
-            }
-        }
-        else if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false) {
+        if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false) {
             var container;
             if (creep.memory.role == "harvester" || creep.memory.role == "energyTransporter" || creep.memory.role == "distributor" || creep.memory.role == "scientist") {
                 // find closest container with energy
@@ -79,13 +73,13 @@ module.exports = {
                 else if (container.ticksToRegeneration == undefined && (container.energy == undefined || container.energy < 3000)) {
                     //container
                     if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(container, {reusePath: delayPathfinding});
+                        creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else {
                     //Source
                     if (creep.harvest(container) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(container, {reusePath: delayPathfinding});
+                        creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                     }
                 }
             }
@@ -106,7 +100,7 @@ module.exports = {
                     }
 
                     if (res == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(container, {reusePath: delayPathfinding});
+                        creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                     }
                 }
                 else {
