@@ -225,7 +225,7 @@ module.exports = {
                 break;
             }
         }
-        //console.log(spawnRoom.name + ": " + minimumSpawnOf.upgrader);
+        //console.log(spawnRoom.name + ": " + minimumSpawnOf.harvester);
 
         // Measuring number of active creeps
         var numberOf = [];
@@ -298,7 +298,7 @@ module.exports = {
         //console.log(this.getNextSpawnRole(minimumSpawnOf, numberOf));
 
         // if not enough harvesters
-        if (numberOf.harvester + numberOf.energyTransporter < minimumSpawnOf.harvester) {
+        if (numberOf.harvester < minimumSpawnOf.harvester) {
             // try to spawn one
             var rolename = 'harvester';
             // if we have no harvesters left
