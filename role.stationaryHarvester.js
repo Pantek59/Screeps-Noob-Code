@@ -43,19 +43,24 @@ module.exports = {
                         else {
                             var source = Game.getObjectById(creep.memory.narrowSource);
                         }
-                        if (creep.harvest(source) != OK) {
-                            creep.memory.statusHarvesting = false;
-                            delete creep.memory.narrowSource;
+
+                        if (source.energy == 0) {
+                            creep.memory.sleep = source.ticksToRegeneration;
                         }
                         else {
-                            creep.memory.statusHarvesting = source.id;
+                            if (creep.harvest(source) != OK) {
+                                creep.memory.statusHarvesting = false;
+                                delete creep.memory.narrowSource;
+                            }
+                            else {
+                                creep.memory.statusHarvesting = source.id;
+                            }
                         }
-
                     }
                 }
                 else if (flag != undefined) {
                     // Move to harvesting point
-                    creep.moveTo(flag, {reusePath:DELAYPATHFINDING});
+                    creep.moveTo(flag, {reusePath:moveReusePath()});
                 }
                 else {
                     console.log(creep.name + " in room " + creep.room.name + " has a problem.");

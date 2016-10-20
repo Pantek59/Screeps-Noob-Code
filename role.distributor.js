@@ -73,12 +73,12 @@ module.exports = {
             if (creep.storeAllBut(RESOURCE_GHODIUM) == true) {
                 if (_.sum(creep.carry) < creep.carryCapacity && creep.room.storage.store[RESOURCE_GHODIUM] > 0) {
                     if (creep.withdraw(creep.room.storage, RESOURCE_GHODIUM) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                     }
                 }
                 else {
                     if (creep.transfer(nuker, RESOURCE_GHODIUM) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(nuker, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(nuker, {reusePath: moveReusePath()});
                     }
                 }
             }

@@ -8,7 +8,7 @@ module.exports = {
         if (creep.room.name != creep.memory.homeroom && creep.memory.role != "remoteHarvester" && creep.memory.role != "energyHauler") {
             //return to home room
             var hometarget = Game.getObjectById(creep.memory.spawn);
-            creep.moveTo(hometarget, {reusePath: DELAYPATHFINDING});
+            creep.moveTo(hometarget, {reusePath: moveReusePath()});
         }
         else {
             if (creep.memory.statusBuilding != undefined) {
@@ -46,7 +46,7 @@ module.exports = {
                         var result = creep.build(constructionSite);
                         if (result == ERR_NOT_IN_RANGE) {
                             // move towards the constructionSite
-                            creep.moveTo(constructionSite, {reusePath: DELAYPATHFINDING});
+                            creep.moveTo(constructionSite, {reusePath: moveReusePath()});
                         }
                         else if (result == OK) {
                             creep.memory.statusBuilding = constructionSite.id;

@@ -58,7 +58,6 @@ const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/packa
 //profiler.enable();
 module.exports.loop = function() {
     //profiler.wrap(function() {
-
         if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
         // check for memory entries of died creeps by iterating over Memory.creeps
         memCleanCreeps();
@@ -208,8 +207,6 @@ module.exports.loop = function() {
                                         orders = Memory.marketBuffer
                                     }
 
-
-
                                     for (var o = 0; o < orders.length; o++) {
                                         var orderResource = orders[o].resourceType;
                                         var orderRoomName = orders[o].roomName;
@@ -269,18 +266,17 @@ module.exports.loop = function() {
                             let recipientRooms = [];
                             let fullRooms = [];
                             for (var ru in myRooms) {
-                                if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && checkStorageLimits(Game.rooms[ru], combinedResources[n]) <= -100) {
-                                    recipientRooms.push(Game.rooms[ru]);
-                                }
-                                else if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && Game.rooms[ru].storage.owner.username == playerUsername && checkStorageLimits(Game.rooms[ru], combinedResources[n]) >= 100) {
-                                    fullRooms.push(Game.rooms[ru]);
+                                if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && Game.rooms[ru].storage.owner.username == playerUsername) {
+                                    if (checkStorageLimits(Game.rooms[ru], combinedResources[n]) < 0) {
+                                        recipientRooms.push(Game.rooms[ru]);
+                                    }
+                                    else {
+                                        fullRooms.push(Game.rooms[ru]);
+                                    }
                                 }
                             }
-
                             recipientRooms = _.sortBy(recipientRooms,function (room) { return checkStorageLimits(room, combinedResources[n]);});
                             fullRooms = _.sortBy(fullRooms,function (room) { return checkStorageLimits(room, combinedResources[n]);});
-                            if (recipientRooms.length > 0) {
-                            }
                             if (recipientRooms.length > 0) {
                                 let recipientDelta = checkStorageLimits(recipientRooms[0], combinedResources[n]);
                                 if (recipientDelta < 0) {
@@ -292,6 +288,11 @@ module.exports.loop = function() {
                                     else {
                                         transferAmount = storageDelta;
                                     }
+
+                                    if (transferAmount < 100) {
+                                        transferAmount = 100;
+                                    }
+
                                     terminalTransferX(combinedResources[n], transferAmount, Game.rooms[r].name, recipientRooms[0].name, true);
                                     break;
                                 }
@@ -353,12 +354,6 @@ module.exports.loop = function() {
                 }
                 Game.rooms[r].memory.resourceLimits = roomLimits;
             }
-
-            //Remove deprecated memory entries
-            delete Game.rooms[r].memory.roomMineralLimit;
-            delete Game.rooms[r].memory.roomMarketLimit;
-            delete Game.rooms[r].memory.IDofSources;
-            delete Game.rooms[r].memory.resourceTicker;
 
             //  Refresher (will be executed every few ticks)
             var searchResult;
@@ -645,48 +640,52 @@ module.exports.loop = function() {
             }
 
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting tower code: " + Game.cpu.getUsed())}
+
+
             // Tower code
-            var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
-            var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
+            if (Game.rooms[r].memory.hostiles > 0) {
+                var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
+                var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
 
-            for (var tower in towers) {
-                // Tower attack code
-                var maxAttackBodyParts = 0;
-                var AttackBodyParts = 0;
-                var attackingInvader = undefined;
+                for (var tower in towers) {
+                    // Tower attack code
+                    var maxAttackBodyParts = 0;
+                    var AttackBodyParts = 0;
+                    var attackingInvader = undefined;
 
-                for (var h in hostiles) {
-                    AttackBodyParts = 0;
-                    for (var part in hostiles[h].body) {
-                        if (hostiles[h].body[part].type == ATTACK) {
-                            //Healing body part found
-                            AttackBodyParts++;
+                    for (var h in hostiles) {
+                        AttackBodyParts = 0;
+                        for (var part in hostiles[h].body) {
+                            if (hostiles[h].body[part].type == ATTACK) {
+                                //Healing body part found
+                                AttackBodyParts++;
+                            }
+                        }
+
+                        if (AttackBodyParts > maxAttackBodyParts) {
+                            maxAttackBodyParts = AttackBodyParts;
+                            attackingInvader = hostiles[h].id;
                         }
                     }
 
-                    if (AttackBodyParts > maxAttackBodyParts) {
-                        maxAttackBodyParts = AttackBodyParts;
-                        attackingInvader = hostiles[h].id;
-                    }
-                }
-
-                if (hostiles.length > 0) {
-                    if (attackingInvader != undefined) {
-                        hostiles[0] = Game.getObjectById(attackingInvader);
-                    }
-                    var username = hostiles[0].owner.username;
-                    if (allies.indexOf(username) == -1) {
-                        if (Game % 3 == 0) {
-                            console.log("Hostile creep " + username + " spotted in room " + Game.rooms[r].name + "!");
+                    if (hostiles.length > 0) {
+                        if (attackingInvader != undefined) {
+                            hostiles[0] = Game.getObjectById(attackingInvader);
                         }
-                        towers.forEach(tower => tower.attack(hostiles[0]));
+                        var username = hostiles[0].owner.username;
+                        if (allies.indexOf(username) == -1) {
+                            if (Game % 3 == 0) {
+                                console.log("Hostile creep " + username + " spotted in room " + Game.rooms[r].name + "!");
+                            }
+                            towers.forEach(tower => tower.attack(hostiles[0]));
+                        }
                     }
-                }
-                else {
-                    // Tower healing code
-                    var wounded = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => s.hits < s.hitsMax});
-                    if (wounded.length > 0) {
-                        towers[tower].heal(wounded[0]);
+                    else {
+                        // Tower healing code
+                        var wounded = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => s.hits < s.hitsMax});
+                        if (wounded.length > 0) {
+                            towers[tower].heal(wounded[0]);
+                        }
                     }
                 }
             }
@@ -1074,7 +1073,7 @@ module.exports.loop = function() {
                     area = _.filter(area, function (a) { return (a.terrain != "wall")});
                     if (area.length > 0) {
                         let destPos = creep.room.getPositionAt(area[0].x, area[0].y);
-                        creep.moveTo(destPos, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(destPos, {reusePath: moveReusePath()});
                     }
                     else {
                         console.log("No safe area found in room " + Game.rooms[r].name + ".");
@@ -1090,7 +1089,7 @@ module.exports.loop = function() {
             { // Check for sleeping creeps
                 if (creep.memory.sleep != undefined) {
                     creep.memory.sleep--;
-                    creep.say("Zzzzz");
+                    //creep.say("Zzz: " + creep.memory.sleep);
                     if (creep.memory.sleep < 1) {
                         delete creep.memory.sleep;
                     }
@@ -1111,7 +1110,7 @@ module.exports.loop = function() {
                                     // Lab ready for boost
                                     let returnCode = boostLab.boostCreep(creep);
                                     if (returnCode == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING});
+                                        creep.moveTo(boostLab, {reusePath: moveReusePath()});
                                     }
                                     else if (returnCode == OK) {
                                         delete creep.memory.boost;
@@ -1128,14 +1127,14 @@ module.exports.loop = function() {
                                                 amount = creep.carryCapacity;
                                             }
                                             if (creep.withdraw(creep.room.storage, creep.memory.boost, amount) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING})
+                                                creep.moveTo(creep.room.storage, {reusePath: moveReusePath()})
                                                 break;
                                             }
                                         }
                                         else {
                                             //Bring minerals to lab
                                             if (creep.transfer(boostLab, creep.memory.boost) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING})
+                                                creep.moveTo(boostLab, {reusePath: moveReusePath()})
                                                 break;
                                             }
                                         }
@@ -1191,7 +1190,7 @@ module.exports.loop = function() {
                                 roleRemoteHarvester.run(creep);
                             }
                             else if (creep.memory.role == 'protector') {
-                                roleProtector.run(creep, allies);
+                                roleProtector.run(creep);
                             }
                             else if (creep.memory.role == 'claimer') {
                                 roleClaimer.run(creep);

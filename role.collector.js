@@ -73,13 +73,13 @@ module.exports = {
                 else if (container.ticksToRegeneration == undefined && (container.energy == undefined || container.energy < 3000)) {
                     //container
                     if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(container, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(container, {reusePath: moveReusePath()});
                     }
                 }
                 else {
                     //Source
                     if (creep.harvest(container) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(container, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(container, {reusePath: moveReusePath()});
                     }
                 }
             }
@@ -100,7 +100,7 @@ module.exports = {
                     }
 
                     if (res == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(container, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(container, {reusePath: moveReusePath()});
                     }
                 }
                 else {

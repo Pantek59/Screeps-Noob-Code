@@ -60,7 +60,7 @@ module.exports = {
                 returncode = creep.attackController(creep.room.controller);
             }
             if (returncode == ERR_NOT_IN_RANGE) {
-                creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
+                creep.moveTo(creep.room.controller, {reusePath: moveReusePath()});
             }
             if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == playerUsername) {
                 //Roomed successfully claimed, now build spawn and remove spawns and extensions from previous owner

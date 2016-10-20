@@ -43,7 +43,7 @@ module.exports = {
 			case (ERR_NOT_IN_RANGE):
 				// move towards the source
                 if (creep.memory.role != "stationaryHarvester" && creep.memory.role != "remoteStationaryHarvester") {
-                    var code = creep.moveTo(source, {reusePath: DELAYPATHFINDING});
+                    var code = creep.moveTo(source, {reusePath: moveReusePath()});
                 }
 				else {
 				    var code = 0;

@@ -1,25 +1,17 @@
-moveReusePath = function() {
-    let minTicks = 10, maxTicks = 60;
-    let range = maxTicks - minTicks;
-
-    return minTicks + Math.floor((1 - (Game.cpu.bucket / 10000)) * range);
-};
-
-DELAYPATHFINDING = moveReusePath();
 DELAYMARKETAUTOSELL = 31;
 DELAYMARKETBUY = 5;
 DELAYFLAGCOLORS = 31;
 DELAYRESOURCEBALANCING = 27;
 DELAYROOMSCANNING = 50;
 DELAYPANICFLAG = 5;
-DELAYSPAWNING = 13;
+DELAYSPAWNING = 17;
 DELAYLINK = 3;
 DELAYPRODUCTION = 25;
 DELAYLAB = 10;
 RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 TERMINALMAXFILLING = 290000;
-RBS_PACKETSIZE = 2000;
+RBS_PACKETSIZE = 5000;
 CPU_THRESHOLD = 2500;
 
 playerUsername = "Pantek59";
@@ -72,6 +64,13 @@ mineralDescriptions.XZH2O = {tier: 3, component1: "X", component2: "ZH2O", bodyP
 mineralDescriptions.XZHO2 = {tier: 3, component1: "X", component2: "ZHO2", bodyPart: MOVE };
 mineralDescriptions.XGH2O = {tier: 3, component1: "X", component2: "GH2O", bodyPart: WORK };
 mineralDescriptions.XGHO2 = {tier: 3, component1: "X", component2: "GHO2", bodyPart: TOUGH };
+
+moveReusePath = function() {
+    let minSteps = 10, maxSteps = 60;
+    let range = maxSteps - minSteps;
+
+    return minSteps + Math.floor((1 - (Game.cpu.bucket / 10000)) * range);
+};
 
 isHostile = function (creep) {
     if (allies.indexOf(creep.owner.username) == -1 && creep.owner.username != playerUsername) {

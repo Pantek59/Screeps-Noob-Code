@@ -32,11 +32,11 @@ module.exports = {
                     }
                 }
                 else {
-                    creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
+                    creep.moveTo(creep.room.controller, {reusePath: moveReusePath()});
                 }
 
                 if (returncode == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
+                    creep.moveTo(creep.room.controller, {reusePath: moveReusePath()});
                 }
 
                 if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == playerUsername) {
@@ -61,7 +61,7 @@ module.exports = {
                 //Hostiles creeps in new room
                 var homespawn = Game.getObjectById(creep.memory.spawn);
                 if (creep.room.name != creep.memory.homeroom) {
-                    creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
+                    creep.moveTo(homespawn), {reusePath: moveReusePath()};
                 }
                 creep.memory.fleeing = true;
             }

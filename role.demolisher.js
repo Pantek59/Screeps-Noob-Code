@@ -9,10 +9,10 @@ module.exports = {
         if (creep.room.memory.hostiles > 0) {
             var homespawn = Game.getObjectById(creep.memory.spawn);
             if (creep.room.name != creep.memory.homeroom) {
-                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
+                creep.moveTo(homespawn), {reusePath: moveReusePath()};
             }
             else if (creep.pos.getRangeTo(homespawn) > 5) {
-                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
+                creep.moveTo(homespawn), {reusePath: moveReusePath()};
             }
             return;
         }
@@ -66,7 +66,7 @@ module.exports = {
                     // try to transfer energy, if it is not in range
                     if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         // move towards it
-                        creep.moveTo(structure, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(structure, {reusePath: moveReusePath()});
                     }
                 }
             }
@@ -112,11 +112,11 @@ module.exports = {
                                         if ((targetlist[i].store != undefined && targetlist[i].store[RESOURCE_ENERGY] > 0) || (targetlist[i].energy != undefined && targetlist[i].energy > 0)) {
                                             //empty structure of energy first
                                             if (creep.withdraw(targetlist[i], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(targetlist[i], {reusePath: DELAYPATHFINDING});
+                                                creep.moveTo(targetlist[i], {reusePath: moveReusePath()});
                                             }
                                         }
                                         else if (creep.dismantle(targetlist[i]) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(targetlist[i], {reusePath: DELAYPATHFINDING});
+                                            creep.moveTo(targetlist[i], {reusePath: moveReusePath()});
                                         }
                                         break;
                                     }
@@ -139,16 +139,16 @@ module.exports = {
                                     if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || target.energy != undefined && target.energy > 20) {
                                         //empty structure of energy first
                                         if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: DELAYPATHFINDING});
+                                            creep.moveTo(target, {reusePath: moveReusePath()});
                                         }
                                         else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: DELAYPATHFINDING});
+                                            creep.moveTo(target, {reusePath: moveReusePath()});
                                         }
                                     }
                                     else {
                                         var result = creep.dismantle(target);
                                         if (result == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: DELAYPATHFINDING});
+                                            creep.moveTo(target, {reusePath: moveReusePath()});
                                         }
                                         else if (result == OK) {
                                             creep.memory.statusDemolishing = target.id;
@@ -170,10 +170,11 @@ module.exports = {
                         //Hostiles creeps in new room
                         var homespawn = Game.getObjectById(creep.memory.spawn);
                         if (creep.room.name != creep.memory.homeroom) {
-                            creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
+                            creep.moveTo(homespawn), {reusePath: moveReusePath()};
+                            creep.memory.fleeing = true;
                         }
                         else if (creep.pos.getRangeTo(homespawn) > 5) {
-                            creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
+                            creep.moveTo(homespawn), {reusePath: moveReusePath()};
                         }
                     }
                 }

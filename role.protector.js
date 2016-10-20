@@ -1,41 +1,17 @@
 
 module.exports = {
     // a function to run the logic for this role
-    run: function(creep, allies) {
+    run: function(creep) {
         var nameFlag = creep.findMyFlag("protector");
         var protectorFlag = _.filter(Game.flags,{ name: nameFlag})[0];
 
         if (creep.room.memory.hostiles > 0) {
-
             // Attack code
-            var hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
-            var maxHealBodyParts = 0;
-            var HealBodyParts;
-            var healingInvader = undefined;
+            var hostiles = _.filter(creep.room.find(FIND_HOSTILE_CREEPS), function (c) { return isHostile(c)});
+            var target = creep.pos.findClosestByPath(hostiles);
 
-            for (var h in hostiles) {
-                HealBodyParts = 0;
-                for (var part in hostiles[h].body) {
-                    if(hostiles[h].body[part].type == "heal") {
-                        //Healing body part found
-                        HealBodyParts++;
-                    }
-                }
-
-                if (HealBodyParts > maxHealBodyParts) {
-                    maxHealBodyParts = HealBodyParts;
-                    healingInvader = hostiles[h].id;
-                }
-            }
-
-            if (healingInvader != undefined) {
-                hostiles[0] = Game.getObjectById(healingInvader);
-            }
-            var username = hostiles[0].owner.username;
-            if (allies.indexOf(username) == -1) {
-                if (creep.attack(hostiles[0]) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(hostiles[0]);
-                }
+            if (creep.attack(target) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(target, {reusePath: moveReusePath()});
             }
         }
         else if (protectorFlag != undefined) {
@@ -43,7 +19,7 @@ module.exports = {
             //Move to flag if not there
             var range = creep.pos.getRangeTo(protectorFlag);
             if (range > 5) {
-                creep.moveTo(protectorFlag, {ignoreCreeps: false, reusePath: DELAYPATHFINDING});
+                creep.moveTo(protectorFlag, {ignoreCreeps: false, reusePath: moveReusePath()});
             }
         }
         else {
@@ -52,7 +28,7 @@ module.exports = {
                 var spawn = Game.getObjectById(creep.memory.spawn);
                 var range = creep.pos.getRangeTo(creep.room.controller);
                 if (range > 1) {
-                    creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
+                    creep.moveTo(creep.room.controller, {reusePath: moveReusePath()});
                 }
             }
         }

@@ -35,7 +35,7 @@ module.exports = {
                      }
 
                      if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                         creep.moveTo(container, {reusePath: DELAYPATHFINDING});
+                         creep.moveTo(container, {reusePath: moveReusePath()});
                      }
                  }
                  else {
@@ -49,13 +49,13 @@ module.exports = {
                          //No storage found in room
                          var container = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
                          if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
-                             creep.moveTo(container, {reusePath: DELAYPATHFINDING});
+                             creep.moveTo(container, {reusePath: moveReusePath()});
                          }
                      }
                      else {
                          //storage found
                          if (creep.transfer(storage, resource) == ERR_NOT_IN_RANGE) {
-                             creep.moveTo(storage, {reusePath: DELAYPATHFINDING});
+                             creep.moveTo(storage, {reusePath: moveReusePath()});
                          }
                      }
                  }
@@ -87,8 +87,11 @@ module.exports = {
                          creep.moveTo(mineral);
                          creep.memory.statusHarvesting = false;
                      }
-                     else if (mineral != null && (result == OK || result == ERR_TIRED)) {
+                     else if (mineral != null && result == OK) {
                          creep.memory.statusHarvesting = mineral.id;
+                     }
+                     else if (mineral != null && result == ERR_TIRED) {
+                         creep.memory.sleep = 3;
                      }
                      else {
                          creep.memory.statusHarvesting = false;

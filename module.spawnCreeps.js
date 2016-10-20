@@ -341,7 +341,7 @@ module.exports = {
                 containerEnergie += container[e].store[RESOURCE_ENERGY];
             }
             if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 2.5 && spawnRoom.controller.level < 8) {
-                if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2.5)) {
+                if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
                     var rolename = 'upgrader';
                 }
                 else {

@@ -41,13 +41,13 @@ module.exports = {
                         }
                         else {
                             var spawn = Game.getObjectById(creep.memory.spawn);
-                            creep.moveTo(spawn, {reusePath: DELAYPATHFINDING})
+                            creep.moveTo(spawn, {reusePath: moveReusePath()})
                         }
                     }
                     else {
                         if (creep.room.name != creep.memory.homeroom) {
                             // Find exit to spawn room
-                            creep.moveTo(Game.getObjectById(creep.memory.spawn), {reusePath: DELAYPATHFINDING})
+                            creep.moveTo(Game.getObjectById(creep.memory.spawn), {reusePath: moveReusePath()})
                         }
                         else {
                             // back in spawn room
@@ -59,7 +59,7 @@ module.exports = {
                                 // try to transfer energy, if it is not in range
                                 if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                                     // move towards it
-                                    creep.moveTo(structure, {reusePath: DELAYPATHFINDING, ignoreCreeps: false});
+                                    creep.moveTo(structure, {reusePath: moveReusePath(), ignoreCreeps: false});
                                 }
                             }
                             else {
@@ -78,7 +78,7 @@ module.exports = {
                     // Find exit to target room
                     if (creep.room.name != remoteSource.pos.roomName) {
                         //still in old room, go out
-                        creep.moveTo(remoteSource, {reusePath: DELAYPATHFINDING});
+                        creep.moveTo(remoteSource, {reusePath: moveReusePath()});
                     }
                     else {
                         //new room reached, start collecting
@@ -88,7 +88,7 @@ module.exports = {
                             container = _.filter(container, { structureType: STRUCTURE_CONTAINER});
                             if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
                                 if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(container[0], {reusePath: DELAYPATHFINDING});
+                                    creep.moveTo(container[0], {reusePath: moveReusePath()});
                                 }
                             }
                             else {
@@ -98,11 +98,11 @@ module.exports = {
                         else {
                             //Hostiles creeps in new room
                             if (creep.room.name != creep.memory.homeroom) {
-                                creep.moveTo(Game.getObjectById(creep.memory.spawn)), {reusePath: DELAYPATHFINDING};
+                                creep.moveTo(Game.getObjectById(creep.memory.spawn)), {reusePath: moveReusePath()};
                                 creep.memory.fleeing = true;
                             }
                             else if (creep.pos.getRangeTo(homespawn) > 5) {
-                                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
+                                creep.moveTo(homespawn), {reusePath: moveReusePath()};
                             }
                         }
                     }

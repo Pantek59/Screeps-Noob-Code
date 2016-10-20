@@ -45,12 +45,12 @@ module.exports = {
                                                     creepPackage = amount;
                                                 }
                                                 if (creep.withdraw(creep.room.storage, innerLabs[lb].resource, creepPackage) == ERR_NOT_IN_RANGE) {
-                                                    creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING});
+                                                    creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                                                 }
                                             }
                                             else {
                                                 if (creep.transfer(currentInnerLab, innerLabs[lb].resource) == ERR_NOT_IN_RANGE) {
-                                                    creep.moveTo(currentInnerLab, {reusePath: DELAYPATHFINDING});
+                                                    creep.moveTo(currentInnerLab, {reusePath: moveReusePath()});
                                                 }
                                             }
                                         }
@@ -60,7 +60,7 @@ module.exports = {
                                         if (creep.storeAllBut() == true) {
                                             //Get minerals from storage
                                             if (creep.withdraw(currentInnerLab, currentInnerLab.mineralType) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(currentInnerLab, {reusePath: DELAYPATHFINDING});
+                                                creep.moveTo(currentInnerLab, {reusePath: moveReusePath()});
                                             }
                                         }
                                     }
@@ -88,7 +88,7 @@ module.exports = {
                                     {
                                         if (_.sum(creep.carry) < creep.carryCapacity) {
                                             if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
+                                                creep.moveTo(lab, {reusePath: moveReusePath()});
                                             }
                                         }
                                         else {
@@ -100,7 +100,7 @@ module.exports = {
                                 {
                                     if (_.sum(creep.carry) < creep.carryCapacity) {
                                         if (creep.withdraw(lab, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
+                                            creep.moveTo(lab, {reusePath: moveReusePath()});
                                         }
                                     }
                                     else {
@@ -144,7 +144,7 @@ module.exports = {
                         if (lab.mineralAmount > 0) {
                             if (creep.storeAllBut() == true) {
                                 if (creep.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(lab, {reusePath: DELAYPATHFINDING});
+                                    creep.moveTo(lab, {reusePath: moveReusePath()});
                                 }
                             }
                         }

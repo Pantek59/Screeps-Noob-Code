@@ -59,10 +59,10 @@ module.exports = function() {
                     this.memory.journeyPath = Memory.wayFinder[this.memory.homeroom][targetFlagName].way;
                 }
                 else if (this.goToHomeRoom() == true) {
-                    this.moveTo(startFlag, {reusePath: DELAYPATHFINDING});
+                    this.moveTo(startFlag, {reusePath: moveReusePath()});
                 }
                 else {
-                    this.moveTo(Game.rooms[this.creep.homeroom].controller, {reusePath: DELAYPATHFINDING});
+                    this.moveTo(Game.rooms[this.creep.homeroom].controller, {reusePath: moveReusePath()});
                 }
             }
             if (this.memory.journeyPath != undefined) {
@@ -75,7 +75,7 @@ module.exports = function() {
         var tower = this.pos.findClosestByPath(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_TOWER && s.energy < s.energyCapacity});
         if (tower != null) {
             if (this.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                this.moveTo(tower, {reusePath: DELAYPATHFINDING});
+                this.moveTo(tower, {reusePath: moveReusePath()});
             }
         }
     };
@@ -97,7 +97,7 @@ module.exports = function() {
                     else {
                         var freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
                         if (this.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                            this.moveTo(freeContainer, {reusePath: DELAYPATHFINDING});
+                            this.moveTo(freeContainer, {reusePath: moveReusePath()});
                         }
                     }
                     specialResources = true;
@@ -107,21 +107,22 @@ module.exports = function() {
         return specialResources;
     };
 
-    Creep.prototype.findNearestEnemyAttacker = function(pos, range) {
+    Creep.prototype.findNearestEnemyAttackerInRange = function(pos, range) {
         // returns object of A) nearest hostile if no argument is given or B) nearest hostile within range when a range is indicated
         var foreignCreeps;
-        if (arguments.length == 0) {
-            foreignCreeps = this.room.find(FIND_HOSTILE_CREEPS);
-        }
-        else {
-            foreignCreeps = pos.findInRange(FIND_HOSTILE_CREEPS,range);
-        }
-        for (var c in foreignCreeps) {
-            if (isHostile(foreignCreeps[c]) == true && foreignCreeps[c].getActiveBodyparts(ATTACK) > 0) {
-                return foreignCreeps[c];
+        var attackerCreeps = [];
+        foreignCreeps = pos.findInRange(FIND_HOSTILE_CREEPS, range);
+        for (let d in foreignCreeps) {
+            if (isHostile(foreignCreeps[d]) == true && foreignCreeps[d].getActiveBodyparts(ATTACK) > 0) {
+                attackerCreeps.push(foreignCreeps[d]);
             }
+
         }
 
+        let target = pos.findClosestByPath(attackerCreeps);
+        if (target != null) {
+            return target;
+        }
         return null;
     };
 
@@ -129,7 +130,7 @@ module.exports = function() {
         // send creep back to room indicated in creep.memory.homeroom. Returns true if creep is in homeroom, false otherwise
         if (this.room.name != this.memory.homeroom) {
             var controller = Game.rooms[this.memory.homeroom].controller;
-            this.moveTo(controller, {reusePath: DELAYPATHFINDING});
+            this.moveTo(controller, {reusePath: moveReusePath()});
             return false;
         }
         else {return true;}
@@ -155,7 +156,7 @@ module.exports = function() {
                 targetContainer = this.findResource(RESOURCE_SPACE,STRUCTURE_CONTAINER);
             }
             if (this.pos.getRangeTo(targetContainer) > 1) {
-                this.moveTo(targetContainer, {reusePath: DELAYPATHFINDING});
+                this.moveTo(targetContainer, {reusePath: moveReusePath()});
             }
             else {
                 for (var res in this.carry) {
@@ -176,7 +177,7 @@ module.exports = function() {
 
         if (creep.memory.hotRoom > 0) {
             if (creep.pos.getRangeTo( Game.getObjectById(creep.memory.spawn)) > 5) {
-                creep.moveTo( Game.getObjectById(creep.memory.spawn)), {reusePath: DELAYPATHFINDING};
+                creep.moveTo( Game.getObjectById(creep.memory.spawn)), {reusePath: moveReusePath()};
             }
             creep.memory.hotRoom--;
         }
