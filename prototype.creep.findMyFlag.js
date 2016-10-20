@@ -7,7 +7,6 @@ module.exports = function() {
         var flagCreeps;
         var volume;
         //TODO Claimers should only get flag if the reservation ticker is below 3000
-        //TODO Flags "haulEnergy" are sometimes visited by two remoteStationaryHarvesters
 
 		if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
 		    // static volumes
@@ -31,24 +30,32 @@ module.exports = function() {
                 if (this.memory.currentFlag != undefined && flagCreeps.length <= volume) {
                     if (flagFunction == "haulEnergy") {
                         if (this.memory.role == "remoteStationaryHarvester") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
-                            if (peers.length > 1) {
+                            var peers = _.filter(flagCreeps,{ memory: { function: "haulEnergy", role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
+                            if (peers == null || peers.length > 1) {
                                 //Two remoteStationaryHarvesters on same source
                                 delete this.memory.currentFlag;
                             }
                             else {return this.memory.currentFlag;}
                         }
                         else if (this.memory.role == "energyHauler") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
-                            if (peers.length >= flag.memory.volume) {
+                            var peers = _.filter(flagCreeps,{ memory: { function: "energyHauler", role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
+                            if (peers == null || peers.length >= flag.memory.volume) {
                                 delete this.memory.currentFlag;
                             }
                             else {return this.memory.currentFlag;}
                         }
                     }
+                    else if (flagFunction == "remoteController") {
+                        let peers = _.filter(flagCreeps, {memory: {function: "remoteController", role: this.memory.role, currentFlag: this.memory.currentFlag}});
+                        if (peers == null || peers.length > 1) {
+                            //Too many creeps for this flag
+                            delete this.memory.currentFlag;
+                        }
+                        else {return this.memory.currentFlag;}
+                    }
                     else if (flagFunction == "unitGroup") {
-                        let peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
-                        if (peers.length > flag.memory[this.memory.role]) {
+                        let peers = _.filter(flagCreeps, {memory: {function: "unitGroup", role: this.memory.role, currentFlag: this.memory.currentFlag}});
+                        if (peers == null || peers.length > flag.memory[this.memory.role]) {
                             //Too many creeps for this flag
                             delete this.memory.currentFlag;
                         }
@@ -56,7 +63,7 @@ module.exports = function() {
                     }
                     else { //Only volume check
                         let peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
-                        if (peers.length > flag.memory.volume) {
+                        if (peers == null || peers.length > flag.memory.volume) {
                             //Too many creeps for this flag
                             delete this.memory.currentFlag;
                         }
@@ -74,7 +81,20 @@ module.exports = function() {
         }
         if (this.memory.currentFlag == undefined || this.memory.currentFlag == -1) {
             //Search for new flag necessary
-            flagList = _.filter(Game.flags, {memory: {function: flagFunction, spawn: this.memory.spawn}});
+            let mySpawn = this.memory.spawn;
+            if (flagFunction != "remoteController") {
+                flagList = _.filter(Game.flags, {memory: {function: flagFunction, spawn: mySpawn}});
+            }
+            else {
+                flagList = _.filter(Game.flags, function (f) {
+                    let flagRoom = Game.rooms[f.pos.roomName];
+
+                    if (f.memory.function == "remoteController" && f.memory.spawn == mySpawn && flagRoom != undefined && flagRoom.controller != undefined && flagRoom.controller.owner == undefined && (flagRoom.controller.reservation == undefined || flagRoom.controller.reservation.ticksToEnd < 3000)) {
+                        //Flag needing a claimer found
+                        return true;
+                    }
+                });
+            }
 
             for (var flag in flagList) {
                 this.memory.currentFlag = flagList[flag].name;
@@ -101,6 +121,13 @@ module.exports = function() {
                     case "unitGroup":
                         var peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
                         if (peers.length <= flagList[flag].memory[this.memory.role]) {
+                            return this.memory.currentFlag;
+                        }
+                        break;
+
+                    case "remoteController":
+                        var peers = _.filter(flagCreeps, {memory: {role: "claimer", currentFlag: this.memory.currentFlag}});
+                        if (peers.length < 2) {
                             return this.memory.currentFlag;
                         }
                         break;

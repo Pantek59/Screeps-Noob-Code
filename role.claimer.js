@@ -2,37 +2,9 @@ module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
         // Find exit to target room
-        var remoteControllers = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: creep.memory.spawn}});
-
-        var remoteController;
-        var busyCreeps;
-        //TODO Switch claimer to creep.findMyFlag() and somehow include 3000 ticksToEnd rule
-        if (creep.memory.remoteControllerFlag != undefined) {
-            //Check whether claiming this flag is this OK
-            busyCreeps = _.filter(Game.creeps,{ memory: { remoteControllerFlag: creep.memory.remoteControllerFlag, spawn: creep.memory.spawn}});
-        }
-
-        if (creep.memory.remoteControllerFlag == undefined || (creep.memory.remoteControllerFlag != undefined && busyCreeps.length != 1)) {
-            //Flag taken, choose other flag
-            for (var rem in remoteControllers) {
-                //Look for unoccupied remoteController
-                var flagName = remoteControllers[rem].name;
-
-                creep.memory.remoteControllerFlag = remoteControllers[rem].name;
-                busyCreeps = _.filter(Game.creeps,{ memory: { remoteControllerFlag: flagName, spawn: creep.memory.spawn}});
-
-                if (busyCreeps.length == 1 && (remoteControllers[rem].room == undefined || remoteControllers[rem].room.controller.reservation == undefined || remoteControllers[rem].room.controller.reservation.ticksToEnd < 3000)) {
-                    //No other claimer working on this flag
-                    remoteController = remoteControllers[rem];
-                    creep.memory.remoteControllerFlag = remoteController.name;
-                    break;
-                }
-            }
-        }
-        else {
-            //Load previous flag
-            remoteControllers = _.filter(Game.flags,{name: creep.memory.remoteControllerFlag});
-            remoteController = remoteControllers[0];
+        var remoteController = Game.flags[creep.findMyFlag("remoteController")];
+        if (remoteController != undefined) {
+            creep.memory.currentFlag = remoteController.name;
         }
 
         if (remoteController != undefined && (remoteController.room == undefined || creep.room.name != remoteController.pos.roomName)) {
@@ -91,9 +63,7 @@ module.exports = {
                 if (creep.room.name != creep.memory.homeroom) {
                     creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                 }
-                else if (creep.pos.getRangeTo(homespawn) > 5) {
-                    creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
-                }
+                creep.memory.fleeing = true;
             }
         }
     }

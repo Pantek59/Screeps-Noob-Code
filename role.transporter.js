@@ -32,7 +32,13 @@ module.exports = {
                     //Creep in destination room
                     var targetContainer;
                     if (creep.memory.targetContainer == undefined || Game.time % 8 == 0) {
-                        targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && _.sum(s.store) < s.storeCapacity});
+                        if (creep.room.controller.owner != undefined && creep.room.controller.owner.username == playerUsername) {
+                            targetContainer = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+                        }
+                        else {
+                            targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && _.sum(s.store) < s.storeCapacity});
+                        }
+
                         creep.memory.targetContainer = targetContainer.id;
                     }
                     else {

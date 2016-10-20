@@ -47,7 +47,7 @@ module.exports = {
                      }
                      if (storage == null) {
                          //No storage found in room
-                         var container = creep.memory.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
+                         var container = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
                          if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
                              creep.moveTo(container, {reusePath: DELAYPATHFINDING});
                          }

@@ -225,7 +225,7 @@ module.exports = {
                 break;
             }
         }
-        //console.log(spawnRoom.name + ": " + minimumSpawnOf.harvester);
+        //console.log(spawnRoom.name + ": " + minimumSpawnOf.builder);
 
         // Measuring number of active creeps
         var numberOf = [];
@@ -239,49 +239,8 @@ module.exports = {
                 counter[roleList[z]] = 0;
             }
         }
-         numberOf = counter;
-        /*
-        // Creeps not leaving room
-        numberOf["harvester"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "harvester")}).length;
-        numberOf["stationaryHarvester"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "stationaryHarvester")}).length;
-        numberOf["builder"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "builder")}).length;
-        numberOf["repairer"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "repairer")}).length;
-        numberOf["wallRepairer"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "wallRepairer")}).length;
-        numberOf["miner"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "miner")}).length;
-        numberOf["upgrader"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "upgrader")}).length;
-        numberOf["distributor"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "distributor")}).length;
-        numberOf["energyTransporter"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
-        numberOf["scientist"] = spawnRoom.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "scientist")}).length;
+        numberOf = counter;
 
-        //Creeps leaving room
-        let myCreeps = _.filter(Game.creeps,{ memory: { spawn: spawnRoom.memory.masterSpawn}});
-        numberOf["remoteHarvester"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'remoteHarvester'}}).length;
-        numberOf["remoteStationaryHarvester"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'remoteStationaryHarvester'}}).length;
-        numberOf["claimer"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'claimer'}}).length;
-        numberOf["bigClaimer"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'bigClaimer'}}).length;
-        numberOf["protector"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'protector'}}).length;
-        numberOf["demolisher"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'demolisher'}}).length;
-        numberOf["energyHauler"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'energyHauler'}}).length;
-        numberOf["attacker"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'attacker'}}).length;
-        numberOf["healer"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'healer'}}).length;
-        numberOf["einarr"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'einarr'}}).length;
-        numberOf["transporter"] = _.filter(myCreeps,{ spawning: false, memory: { role: 'transporter'}}).length;
-
-
-        // Addition of creeps being spawned
-        for (s in spawnRoom.memory.roomArraySpawns) {
-            testSpawn = Game.getObjectById(spawnRoom.memory.roomArraySpawns[s]);
-            if (testSpawn != null && testSpawn.spawning != null) {
-                // Active spawn found
-                if (testSpawn.memory.lastSpawn == "miniharvester") {
-                    numberOf.harvester++;
-                }
-                else {
-                    numberOf[testSpawn.memory.lastSpawn]++;
-                }
-            }
-        }
-        */
         for (let p in numberOf) {
             if (numberOf[p] != counter[p]){
                 console.log(spawnRoom + " (" + p + ") Numberof: " + numberOf[p] + " / Counter: " + counter[p]);

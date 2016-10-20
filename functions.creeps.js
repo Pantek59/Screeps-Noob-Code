@@ -107,66 +107,22 @@ module.exports = function() {
         return specialResources;
     };
 
-    Creep.prototype.findNearestEnemyAttacker = function(range, pos) {
+    Creep.prototype.findNearestEnemyAttacker = function(pos, range) {
         // returns object of A) nearest hostile if no argument is given or B) nearest hostile within range when a range is indicated
-        var attackerCreeps = [];
         var foreignCreeps;
         if (arguments.length == 0) {
             foreignCreeps = this.room.find(FIND_HOSTILE_CREEPS);
-            pos = this.pos;
         }
         else {
             foreignCreeps = pos.findInRange(FIND_HOSTILE_CREEPS,range);
         }
-        for (var creep in foreignCreeps) {
-            if (allies.indexOf(foreignCreeps[creep].owner.username) == -1) {
-                // Foreign creep not on allies list
-                for (var part in foreignCreeps[creep].body) {
-                    if (foreignCreeps[creep].body[part].type == ATTACK && foreignCreeps[creep].body[part].hits > 0) {
-                        // Creep with working attack part found
-                        attackerCreeps.push(foreignCreeps[creep]);
-                    }
-                }
+        for (var c in foreignCreeps) {
+            if (isHostile(foreignCreeps[c]) == true && foreignCreeps[c].getActiveBodyparts(ATTACK) > 0) {
+                return foreignCreeps[c];
             }
         }
 
-        if (attackerCreeps.length == 0) {
-            return null;
-        }
-        else {
-            return pos.findClosestByPath(attackerCreeps);
-        }
-    };
-
-    Creep.prototype.findNearestEnemyHealer = function(range, pos) {
-        // returns object of A) nearest healer if no argument is given or B) nearest healer within range when a range is indicated
-        var healerCreeps = new Array();
-        var foreignCreeps;
-        if (arguments.length == 0) {
-            foreignCreeps = this.room.find(FIND_HOSTILE_CREEPS);
-            pos = this.pos;
-        }
-        else {
-            foreignCreeps = pos.findInRange(FIND_HOSTILE_CREEPS,range);
-        }
-        for (var creep in foreignCreeps) {
-            if (allies.indexOf(foreignCreeps[creep].owner.username) == -1) {
-                // Foreign creep not on allies list
-                for (var part in foreignCreeps[creep].body) {
-                    if (foreignCreeps[creep].body[part].type == HEAL && foreignCreeps[creep].body[part].hits > 0) {
-                        // Creep with working attack part found
-                        healerCreeps.push(foreignCreeps[creep]);
-                    }
-                }
-            }
-        }
-
-        if (healerCreeps.length == 0) {
-            return null;
-        }
-        else {
-            return pos.findClosestByPath(healerCreeps);
-        }
+        return null;
     };
 
     Creep.prototype.goToHomeRoom = function() {

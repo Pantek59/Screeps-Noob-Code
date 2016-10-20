@@ -44,7 +44,7 @@ module.exports = {
             if (creep.goToHomeRoom() == true) {
                 var range = creep.pos.getRangeTo(creep.room.controller);
                 if (range > 1) {
-                    creep.moveTo(creep.room.controller, {reusePath: 3});
+                    creep.moveTo(creep.room.controller, {reusePath: DELAYPATHFINDING});
                 }
             }
         }

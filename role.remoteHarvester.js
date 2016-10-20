@@ -114,9 +114,7 @@ module.exports = {
                             if (creep.room.name != creep.memory.homeroom) {
                                 creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
                             }
-                            else if (creep.pos.getRangeTo(homespawn) > 5) {
-                                creep.moveTo(homespawn), {reusePath: DELAYPATHFINDING};
-                            }
+                            creep.memory.fleeing = true;
                         }
                     }
                 }

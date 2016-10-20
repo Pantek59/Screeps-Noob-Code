@@ -165,7 +165,8 @@ global.terminalTransferX = function (transferResource, transferAmount, sourceRoo
 
 global.listStorages = function (displayResource) {
     var returnstring = "<table><tr><th>Resource  </th>";
-    var resourceTable = new Array();
+    var resourceTable = [];
+    var total = [];
 
     //Prepare header row
     for (var r in myRooms) {
@@ -183,8 +184,10 @@ global.listStorages = function (displayResource) {
     for (res in resourceTable) {
         if (arguments.length == 0 || displayResource == resourceTable[res]) {
             returnstring = returnstring.concat("<tr></tr><td>" + resourceTable[res] + "  </td>");
+            let c = -1;
             for (var r in myRooms) {
                 if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
+                    c++;
                     var amount;
                     var color;
                     if (Game.rooms[r].storage.store[resourceTable[res]] == undefined) {
@@ -203,10 +206,21 @@ global.listStorages = function (displayResource) {
                         color = "#aaffff";
                     }
                     returnstring = returnstring.concat("<td><font color='" + color + "'>" + prettyInt(amount) + "  </font></td>");
+
+                    if (total[c] == undefined) {
+                        total[c] = amount;
+                    }
+                    else {
+                        total[c] += amount;
+                    }
                 }
             }
             returnstring = returnstring.concat("</tr>");
         }
+    }
+    returnstring = returnstring.concat("<tr></tr><td>Total  </td>");
+    for (let c in total) {
+        returnstring = returnstring.concat("<td>" + prettyInt(total[c]) + " </td>");
     }
     returnstring = returnstring.concat("</tr></table>");
     return returnstring;
@@ -626,3 +640,50 @@ global.listBoost = function (roomName) {
     return returnstring;
 };
 
+global.activeTerminals = function () {
+    let entries = 0;
+    let returnString ="";
+    for (r in myRooms) {
+        if (myRooms[r].memory.terminalTransfer != undefined) {
+            entries ++;
+            var info = myRooms[r].memory.terminalTransfer.split(":");
+            let targetRoom = info[0];
+            let amount = parseInt(info[1]);
+            let resource = info[2];
+            let comment = info[3];
+            if (comment == "MarketOrder") {
+                returnString = returnString.concat(myRooms[r].name + ": " + "Sending " + amount + " " + resource + " to room " + targetRoom + "<br>");
+            }
+            else {
+                returnString = returnString.concat(myRooms[r].name + ": " + "Sending " + amount + " " + resource + " to room " + targetRoom + "<br>");
+            }
+        }
+    }
+
+    if (entries == 0) {
+        returnString = "No active terminals.";
+    }
+
+    return returnString;
+};
+
+global.activeLabs = function () {
+    let entries = 0;
+    let returnString ="";
+    for (r in myRooms) {
+        if (myRooms[r].memory.labOrder != undefined) {
+            entries ++;
+            var info = myRooms[r].memory.labOrder.split(":");
+            let amount = parseInt(info[0]);
+            let resource1 = info[1];
+            let resource2 = info[2];
+            returnString = returnString.concat(myRooms[r].name + ": " + "Reaction -> [ " + amount + " " + resource1 + " + " + resource2 + " ]<br>");
+        }
+    }
+
+    if (entries == 0) {
+        returnString = "No active labs.";
+    }
+
+    return returnString;
+};

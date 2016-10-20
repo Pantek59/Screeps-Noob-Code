@@ -1,3 +1,4 @@
+
 const CPUdebug = false;
 require("globals");
 require('prototype.spawn2')();
@@ -36,7 +37,6 @@ function memCleanFlags(){
 function memCleanCreeps(){
     memCleanThingy(Game.creeps,Memory.creeps);
 }
-
 //delete obsolete memory entries
 //g - in game objects
 //m - in memory data
@@ -133,46 +133,53 @@ module.exports.loop = function() {
             let info = Memory.buyOrder.split(":"); //Format: [AMOUNT]:[ORDERID]
             var left = info[0];
             var order =Game.market.getOrderById(info[1]);
-            if (left > 500) {
-                left = 500;
-            }
+            if (order != null) {
+                if (left > 500) {
+                    left = 500;
+                }
 
-            var bestRoom;
-            if (Memory.buyRoom != undefined) {
-                bestRoom = Game.rooms[Memory.buyRoom];
-            }
-            else {
-                var bestCost = 999999;
-                for (var r in myRooms) {
-                    var cost = Game.market.calcTransactionCost(left, order.roomName, myRooms[r].name);
-                    if (myRooms[r].terminal != undefined && myRooms[r].terminal.owner.username == playerUsername) {
-                        if (bestCost > cost) {
-                            bestRoom = myRooms[r];
-                            bestCost = cost;
+                var bestRoom;
+                if (Memory.buyRoom != undefined) {
+                    bestRoom = Game.rooms[Memory.buyRoom];
+                }
+                else {
+                    var bestCost = 999999;
+                    for (var r in myRooms) {
+                        var cost = Game.market.calcTransactionCost(left, order.roomName, myRooms[r].name);
+                        if (myRooms[r].terminal != undefined && myRooms[r].terminal.owner.username == playerUsername) {
+                            if (bestCost > cost) {
+                                bestRoom = myRooms[r];
+                                bestCost = cost;
+                            }
                         }
                     }
+                    if (bestRoom == undefined || bestRoom.name == undefined) {
+                        console.log("No room with enough energy found!");
+                    }
+                    else {
+                        Memory.buyRoom = bestRoom.name;
+                    }
                 }
-                if (bestRoom == undefined || bestRoom.name == undefined) {
-                    console.log("No room with enough energy found!");
-                }
-                else {
-                    Memory.buyRoom = bestRoom.name;
+
+                var returnCode = Game.market.deal(order.id, left, bestRoom.name);
+                if (returnCode == OK) {
+                    info[0] -= left;
+                    console.log("<font color=#fe2ec8 type='highlight'>" + left + " " + order.resourceType + " bought in room " + bestRoom.name + " for " + (left * order.price) + " credits.</font>");
+
+                    if (info[0] > 0) {
+                        Memory.buyOrder = info.join(":");
+                    }
+                    else {
+                        delete Memory.buyOrder;
+                        delete Memory.buyRoom;
+                        console.log("<font color=#fe2ec8 type='highlight'>Buy order accomplished.</font>");
+                    }
                 }
             }
-
-            var returnCode = Game.market.deal(order.id, left, bestRoom.name);
-            if (returnCode == OK) {
-                info[0] -= left;
-                console.log("<font color=#fe2ec8 type='highlight'>" + left + " " + order.resourceType + " bought in room " + bestRoom.name + " for " + (left * order.price) + " credits.</font>");
-
-                if (info[0] > 0) {
-                    Memory.buyOrder = info.join(":");
-                }
-                else {
-                    delete Memory.buyOrder;
-                    delete Memory.buyRoom;
-                    console.log("<font color=#fe2ec8 type='highlight'>Buy order accomplished.</font>");
-                }
+            else {
+                delete Memory.buyOrder;
+                delete Memory.buyRoom;
+                console.log("<font color=#fe2ec8 type='highlight'>Buy order cancelled since it disappeared from market.</font>");
             }
         }
     // Market Auto Selling Code
@@ -182,7 +189,7 @@ module.exports.loop = function() {
             var surplusMinerals;
 
             for (var r in myRooms) {
-                if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
+                if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined && _.sum(Game.rooms[r].terminal.store) < TERMINALMAXFILLING &&  Game.rooms[r].memory.terminalTransfer == undefined) {
                     for (var resource in Game.rooms[r].memory.resourceLimits) {
                         if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket && Game.rooms[r].memory.resourceLimits[resource] != undefined) {
 
@@ -191,14 +198,14 @@ module.exports.loop = function() {
                                 if (surplusMinerals >= 10000) {
                                     surplusMinerals = 10000;
                                     var orders = [];
-                                    if (Market.marketBuffer == undefined || Game.time % (2 * DELAYMARKETAUTOSELL) == 0) {
+                                    if (Memory.marketBuffer == undefined || Game.time % (2 * DELAYMARKETAUTOSELL) == 0) {
                                         orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
                                         orders = _.sortBy(orders, "price");
                                         orders.reverse();
-                                        Market.marketBuffer = orders;
+                                        Memory.marketBuffer = orders;
                                     }
                                     else {
-                                        orders = Market.marketBuffer
+                                        orders = Memory.marketBuffer
                                     }
 
 
@@ -246,36 +253,36 @@ module.exports.loop = function() {
                 var checkedResources = [];
                 combinedResources = _.sortBy(combinedResources, function (res) {return checkStorageLimits(Game.rooms[r], res);});
                 combinedResources = combinedResources.reverse();
-                for (let res in combinedResources) {
+
+                for (let n in combinedResources) {
                     //Iterate through resources in terminal and/or storage
-                    if (checkedResources.indexOf(combinedResources[res]) == -1) {
-                        var storageDelta = checkStorageLimits(Game.rooms[r], combinedResources[res]);
+                    if (checkedResources.indexOf(combinedResources[n]) == -1) {
+                        var storageDelta = checkStorageLimits(Game.rooms[r], combinedResources[n]);
                         var packetSize = RBS_PACKETSIZE;
-                        if (combinedResources[res] == RESOURCE_ENERGY) {
+                        if (combinedResources[n] == RESOURCE_ENERGY) {
                             packetSize = RBS_PACKETSIZE * 10;
                         }
 
-
-                        if (storageDelta >= (Game.rooms[r].memory.resourceLimits[combinedResources[res]].maxStorage * 0.1) && packetSize <= Game.rooms[r].storage.store[combinedResources[res]]&& storageDelta <= Game.rooms[r].storage.store[combinedResources[res]] && Game.rooms[r].memory.terminalTransfer == undefined) {
+                        if (storageDelta >= (Game.rooms[r].memory.resourceLimits[combinedResources[n]].maxStorage * 0.1) && packetSize <= Game.rooms[r].storage.store[combinedResources[n]]&& storageDelta <= Game.rooms[r].storage.store[combinedResources[n]] && Game.rooms[r].memory.terminalTransfer == undefined) {
                             // Resource can be shared with other rooms if their maxStorage is not reached yet
-                            checkedResources.push(res);
+                            checkedResources.push(n);
                             let recipientRooms = [];
                             let fullRooms = [];
                             for (var ru in myRooms) {
-                                if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && checkStorageLimits(Game.rooms[ru], combinedResources[res]) < 0) {
+                                if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && checkStorageLimits(Game.rooms[ru], combinedResources[n]) <= -100) {
                                     recipientRooms.push(Game.rooms[ru]);
                                 }
-                                else if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && Game.rooms[ru].storage.owner.username == playerUsername && checkStorageLimits(Game.rooms[ru], combinedResources[res]) >= 0) {
+                                else if (Game.rooms[ru].name != Game.rooms[r].name && Game.rooms[ru].storage != undefined && Game.rooms[ru].terminal != undefined && Game.rooms[ru].storage.owner.username == playerUsername && checkStorageLimits(Game.rooms[ru], combinedResources[n]) >= 100) {
                                     fullRooms.push(Game.rooms[ru]);
                                 }
                             }
 
-                            recipientRooms = _.sortBy(recipientRooms,function (room) { return checkStorageLimits(room, combinedResources[res]);});
-                            fullRooms = _.sortBy(fullRooms,function (room) { return checkStorageLimits(room, combinedResources[res]);});
+                            recipientRooms = _.sortBy(recipientRooms,function (room) { return checkStorageLimits(room, combinedResources[n]);});
+                            fullRooms = _.sortBy(fullRooms,function (room) { return checkStorageLimits(room, combinedResources[n]);});
                             if (recipientRooms.length > 0) {
                             }
                             if (recipientRooms.length > 0) {
-                                let recipientDelta = checkStorageLimits(recipientRooms[0], combinedResources[res]);
+                                let recipientDelta = checkStorageLimits(recipientRooms[0], combinedResources[n]);
                                 if (recipientDelta < 0) {
                                     // Recipient room need the resource
                                     let transferAmount;
@@ -285,16 +292,16 @@ module.exports.loop = function() {
                                     else {
                                         transferAmount = storageDelta;
                                     }
-                                    terminalTransferX(combinedResources[res], transferAmount, Game.rooms[r].name, recipientRooms[0].name, true);
+                                    terminalTransferX(combinedResources[n], transferAmount, Game.rooms[r].name, recipientRooms[0].name, true);
                                     break;
                                 }
                             }
                             else if (fullRooms.length > 0) {
                                 // Room is over storage limit --> look for rooms with less of the resource
                                 for (let p in fullRooms) {
-                                    if (fullRooms[p].storage != undefined && (fullRooms[p].storage.store[combinedResources[res]] == undefined || checkStorageLimits(Game.rooms[r], combinedResources[res]) > checkStorageLimits(fullRooms[p], combinedResources[res]) + packetSize)) {
+                                    if (fullRooms[p].storage != undefined && (fullRooms[p].storage.store[combinedResources[n]] == undefined || checkStorageLimits(Game.rooms[r], combinedResources[n]) > checkStorageLimits(fullRooms[p], combinedResources[n]) + packetSize)) {
                                         //room with less minerals found
-                                        terminalTransferX(combinedResources[res], packetSize / 2, Game.rooms[r].name, fullRooms[p].name, true);
+                                        terminalTransferX(combinedResources[n], packetSize / 2, Game.rooms[r].name, fullRooms[p].name, true);
                                         break;
                                     }
                                 }
@@ -332,7 +339,7 @@ module.exports.loop = function() {
                     roomLimits[RESOURCES_ALL[res]] = {};
                     if (Game.rooms[r].memory.roomArrayMinerals != undefined && Game.getObjectById(Game.rooms[r].memory.roomArrayMinerals[0]).mineralType == RESOURCES_ALL[res]) {
                         //Room mineral
-                        limit = {minTerminal:0, maxStorage:100000, minMarket:500000, minProduction: 600000};
+                        limit = {minTerminal:0, maxStorage:6000, minMarket:500000, minProduction: 600000};
                     }
                     else if (RESOURCES_ALL[res] == RESOURCE_ENERGY) {
                         //Energy
@@ -777,7 +784,7 @@ module.exports.loop = function() {
 
             // Terminal code
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
-            if (Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.terminalTransfer != undefined && Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.owner.username == playerUsername) {
+            if (Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.terminalTransfer != undefined && Game.rooms[r].terminal != undefined && _.sum(Game.rooms[r].terminal.store) < TERMINALMAXFILLING && Game.rooms[r].terminal.owner.username == playerUsername) {
                 var terminal = Game.rooms[r].terminal;
                 if (terminal != undefined && terminal.owner.username == playerUsername && Game.rooms[r].memory.terminalTransfer != undefined) {
                     //Terminal exists
@@ -979,7 +986,7 @@ module.exports.loop = function() {
             }
 
             // Lab Production Code
-            if (Game.time % DELAYPRODUCTION == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
+            if (Game.time % DELAYLAB == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
                 if (Game.rooms[r].memory.innerLabs == undefined) {
                     // Prepare link roles
                     var emptyArray = {};
@@ -1062,13 +1069,12 @@ module.exports.loop = function() {
             if (creep.room.memory.hostiles == 0 && creep.memory.fleeing == true) {
                 //Get away from the exit
                 if ((creep.pos.x < 5 || creep.pos.x > 45) || (creep.pos.y < 5 || creep.pos.y > 45)) {
-                    var area = creep.room.lookForAtArea(20, 20, 40, 40, true);
+
+                    var area = creep.room.lookAtArea(20, 20, 40, 40, true);
                     area = _.filter(area, function (a) { return (a.terrain != "wall")});
-
-                    console.log(Game.rooms[r].name + ": Fleeing creep. Areas found: " + area.length);
-
                     if (area.length > 0) {
-                        creep.moveTo(area[0].x, area[0].y, {reusePath: DELAYPATHFINDING});
+                        let destPos = creep.room.getPositionAt(area[0].x, area[0].y);
+                        creep.moveTo(destPos, {reusePath: DELAYPATHFINDING});
                     }
                     else {
                         console.log("No safe area found in room " + Game.rooms[r].name + ".");
@@ -1076,162 +1082,166 @@ module.exports.loop = function() {
                 }
                 else {
                     //Creep has distance to any room exit
-                    creep.memory.sleep = 30;
+                    creep.memory.sleep = 50;
                     delete creep.memory.fleeing;
                 }
             }
-
-            // Check for sleeping creeps
-            if (creep.memory.sleep != undefined) {
-                creep.memory.sleep--;
-                if (creep.memory.sleep < 1) {
-                    delete creep.memory.sleep;
+            else
+            { // Check for sleeping creeps
+                if (creep.memory.sleep != undefined) {
+                    creep.memory.sleep--;
+                    creep.say("Zzzzz");
+                    if (creep.memory.sleep < 1) {
+                        delete creep.memory.sleep;
+                    }
                 }
-            }
-            else {
-                if (creep.ticksToLive > 1300 && creep.memory.boost != undefined && creep.memory.boost != "") {
-                    //Check for boosts
-                    var boostLabs = creep.room.memory.boostLabs;
-                    if (boostLabs.length > 0) {
-                        let bodyPart = mineralDescriptions[creep.memory.boost].bodyPart;
-                        let numberofParts = creep.getActiveBodyparts(bodyPart);
-                        let mineralNeed = 30 * numberofParts;
-                        let energyNeed = 20 * numberofParts;
+                else {
+                    if (creep.ticksToLive > 1300 && creep.memory.boost != undefined && creep.memory.boost != "") {
+                        //Check for boosts
+                        var boostLabs = creep.room.memory.boostLabs;
+                        if (boostLabs.length > 0) {
+                            let bodyPart = mineralDescriptions[creep.memory.boost].bodyPart;
+                            let numberofParts = creep.getActiveBodyparts(bodyPart);
+                            let mineralNeed = 30 * numberofParts;
+                            let energyNeed = 20 * numberofParts;
 
-                        for (let l in boostLabs) {
-                            let boostLab = Game.getObjectById(boostLabs[l])
-                            if (boostLab.mineralType == creep.memory.boost && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
-                                // Lab ready for boost
-                                let returnCode = boostLab.boostCreep(creep);
-                                if (returnCode == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING});
+                            for (let l in boostLabs) {
+                                let boostLab = Game.getObjectById(boostLabs[l])
+                                if (boostLab.mineralType == creep.memory.boost && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
+                                    // Lab ready for boost
+                                    let returnCode = boostLab.boostCreep(creep);
+                                    if (returnCode == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING});
+                                    }
+                                    else if (returnCode == OK) {
+                                        delete creep.memory.boost;
+                                    }
+                                    break;
                                 }
-                                else if (returnCode == OK) {
-                                    delete creep.memory.boost;
+                                else if (boostLab.mineralAmount >= mineralNeed) {
+                                    //Lab needs minerals
+                                    if (creep.storeAllBut(creep.memory.boost) == true) {
+                                        if (_.sum(creep.carry) == 0) {
+                                            //Get minerals from storage
+                                            let amount = mineralNeed - boostLab.mineralAmount;
+                                            if (amount > creep.carryCapacity) {
+                                                amount = creep.carryCapacity;
+                                            }
+                                            if (creep.withdraw(creep.room.storage, creep.memory.boost, amount) == ERR_NOT_IN_RANGE) {
+                                                creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING})
+                                                break;
+                                            }
+                                        }
+                                        else {
+                                            //Bring minerals to lab
+                                            if (creep.transfer(boostLab, creep.memory.boost) == ERR_NOT_IN_RANGE) {
+                                                creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING})
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
+                            }
+                        }
+                    }
+                    else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
+                        //Job queue pending
+                        switch (creep.memory.jobQueueTask) {
+                            case "pickUpEnergy": //Dropped energy to be picked up
+                                roleJobber.run(creep, "droppedEnergy");
                                 break;
-                            }
-                            else if (boostLab.mineralAmount >= mineralNeed) {
-                                //Lab needs minerals
-                                if (creep.storeAllBut(creep.memory.boost) == true) {
-                                    if (_.sum(creep.carry) == 0) {
-                                        //Get minerals from storage
-                                        let amount = mineralNeed - boostLab.mineralAmount;
-                                        if (amount > creep.carryCapacity) {
-                                            amount = creep.carryCapacity;
-                                        }
-                                        if (creep.withdraw(creep.room.storage, creep.memory.boost, amount) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(creep.room.storage, {reusePath: DELAYPATHFINDING})
-                                            break;
-                                        }
-                                    }
-                                    else {
-                                        //Bring minerals to lab
-                                        if (creep.transfer(boostLab, creep.memory.boost) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(boostLab, {reusePath: DELAYPATHFINDING})
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
-                    //Job queue pending
-                    switch (creep.memory.jobQueueTask) {
-                        case "pickUpEnergy": //Dropped energy to be picked up
-                            roleJobber.run(creep, "droppedEnergy");
-                            break;
 
-                        case "prepareBoost": //Small amount distribution job pending
-                            roleJobber.run(creep, "prepareBoost");
-                            break;
+                            case "prepareBoost": //Small amount distribution job pending
+                                roleJobber.run(creep, "prepareBoost");
+                                break;
+                        }
+                        creep.memory.jobQueueTask = undefined;
                     }
-                    creep.memory.jobQueueTask = undefined;
+                    else if (creep.spawning == false) {
+                        if (CPUdebug == true) {
+                            CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name + "( " + creep.memory.role + "): " + Game.cpu.getUsed())
+                        }
+                        if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
+                            // Minerals found in creep
+                            creep.getRidOfMinerals();
+                        }
+                        else {
+                            // if creep is harvester, call harvester script
+                            if (creep.memory.role == 'harvester') {
+                                roleHarvester.run(creep);
+                            }
+                            // if creep is upgrader, call upgrader script
+                            else if (creep.memory.role == 'upgrader') {
+                                roleUpgrader.run(creep);
+                            }
+                            // if creep is builder, call builder script
+                            else if (creep.memory.role == 'builder') {
+                                roleBuilder.run(creep);
+                            }
+                            // if creep is repairer, call repairer script
+                            else if (creep.memory.role == 'repairer') {
+                                roleRepairer.run(creep);
+                            }
+                            // if creep is wallRepairer, call wallRepairer script
+                            else if (creep.memory.role == 'wallRepairer') {
+                                roleWallRepairer.run(creep);
+                            }
+                            // if creep is remoteHarvester, call remoteHarvester script
+                            else if (creep.memory.role == 'remoteHarvester') {
+                                roleRemoteHarvester.run(creep);
+                            }
+                            else if (creep.memory.role == 'protector') {
+                                roleProtector.run(creep, allies);
+                            }
+                            else if (creep.memory.role == 'claimer') {
+                                roleClaimer.run(creep);
+                            }
+                            else if (creep.memory.role == 'bigClaimer') {
+                                roleBigClaimer.run(creep);
+                            }
+                            else if (creep.memory.role == 'stationaryHarvester') {
+                                roleStationaryHarvester.run(creep);
+                            }
+                            else if (creep.memory.role == 'miner') {
+                                roleMiner.run(creep);
+                            }
+                            else if (creep.memory.role == 'distributor') {
+                                roleDistributor.run(creep);
+                            }
+                            else if (creep.memory.role == 'demolisher') {
+                                roleDemolisher.run(creep);
+                            }
+                            else if (creep.memory.role == 'energyTransporter') {
+                                roleEnergyTransporter.run(creep);
+                            }
+                            else if (creep.memory.role == 'energyHauler') {
+                                roleEnergyHauler.run(creep);
+                            }
+                            else if (creep.memory.role == 'remoteStationaryHarvester') {
+                                roleRemoteStationaryHarvester.run(creep);
+                            }
+                            else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer') {
+                                roleUnit.run(creep);
+                            }
+                            else if (creep.memory.role == 'scientist') {
+                                roleScientist.run(creep);
+                            }
+                            else if (creep.memory.role == 'transporter') {
+                                roleTransporter.run(creep);
+                            }
+                            else if (creep.memory.role == 'bigUpgrader') {
+                                roleUpgrader.run(creep);
+                            }
+                            else if (creep.memory.role == 'test') {
+                                roleTest.run(creep);
+                            }
+                        }
+                    }
                 }
-                else if (creep.spawning == false) {
-                    if (CPUdebug == true) {
-                        CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name + "( " + creep.memory.role + "): " + Game.cpu.getUsed())
-                    }
-                    if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
-                        // Minerals found in creep
-                        creep.getRidOfMinerals();
-                    }
-                    else {
-                        // if creep is harvester, call harvester script
-                        if (creep.memory.role == 'harvester') {
-                            roleHarvester.run(creep);
-                        }
-                        // if creep is upgrader, call upgrader script
-                        else if (creep.memory.role == 'upgrader') {
-                            roleUpgrader.run(creep);
-                        }
-                        // if creep is builder, call builder script
-                        else if (creep.memory.role == 'builder') {
-                            roleBuilder.run(creep);
-                        }
-                        // if creep is repairer, call repairer script
-                        else if (creep.memory.role == 'repairer') {
-                            roleRepairer.run(creep);
-                        }
-                        // if creep is wallRepairer, call wallRepairer script
-                        else if (creep.memory.role == 'wallRepairer') {
-                            roleWallRepairer.run(creep);
-                        }
-                        // if creep is remoteHarvester, call remoteHarvester script
-                        else if (creep.memory.role == 'remoteHarvester') {
-                            roleRemoteHarvester.run(creep);
-                        }
-                        else if (creep.memory.role == 'protector') {
-                            roleProtector.run(creep, allies);
-                        }
-                        else if (creep.memory.role == 'claimer') {
-                            roleClaimer.run(creep);
-                        }
-                        else if (creep.memory.role == 'bigClaimer') {
-                            roleBigClaimer.run(creep);
-                        }
-                        else if (creep.memory.role == 'stationaryHarvester') {
-                            roleStationaryHarvester.run(creep);
-                        }
-                        else if (creep.memory.role == 'miner') {
-                            roleMiner.run(creep);
-                        }
-                        else if (creep.memory.role == 'distributor') {
-                            roleDistributor.run(creep);
-                        }
-                        else if (creep.memory.role == 'demolisher') {
-                            roleDemolisher.run(creep);
-                        }
-                        else if (creep.memory.role == 'energyTransporter') {
-                            roleEnergyTransporter.run(creep);
-                        }
-                        else if (creep.memory.role == 'energyHauler') {
-                            roleEnergyHauler.run(creep);
-                        }
-                        else if (creep.memory.role == 'remoteStationaryHarvester') {
-                            roleRemoteStationaryHarvester.run(creep);
-                        }
-                        else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer') {
-                            roleUnit.run(creep);
-                        }
-                        else if (creep.memory.role == 'scientist') {
-                            roleScientist.run(creep);
-                        }
-                        else if (creep.memory.role == 'transporter') {
-                            roleTransporter.run(creep);
-                        }
-                        else if (creep.memory.role == 'bigUpgrader') {
-                            roleUpgrader.run(creep);
-                        }
-                        else if (creep.memory.role == 'test') {
-                            roleTest.run(creep);
-                        }
-                    }
+                if (CPUdebug == true) {
+                    CPUdebugString = CPUdebugString.concat("<br>Creep " + creep.name + "( " + creep.memory.role + ") finished: " + Game.cpu.getUsed())
                 }
             }
-            if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Creep " + creep.name +"( "+ creep.memory.role + ") finished: " + Game.cpu.getUsed())}
         }
         if (CPUdebug == true) {
             CPUdebugString = CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());

@@ -5,7 +5,7 @@ module.exports = {
     run: function(creep) {
         var nuker = Game.getObjectById(creep.room.memory.roomArrayNukers[0]);
 
-        if (creep.room.memory.terminalTransfer != undefined && creep.room.terminal.storeCapacity > _.sum(creep.room.terminal.store)) {
+        if (creep.room.memory.terminalTransfer != undefined && _.sum(creep.room.terminal.store) < TERMINALMAXFILLING) {
             //ongoing terminal transfer
             if (_.sum(creep.carry) > 0) {
                 //Creep full
@@ -113,19 +113,22 @@ module.exports = {
                 if (_.sum(creep.carry) > 0) {
                     //Creep full
                     var terminalResources = [];
-                    for (var res in creep.carry) {
-                        delta = creep.checkTerminalLimits(res);
-                        if (delta.amount < 0 && creep.carry[res] > 0) {
-                            //Terminal needs material
-                            var load = Math.abs(delta.amount);
-                            if (load > creep.carry[res]) {
-                                load = creep.carry[res];
+                    if (_.sum(creep.room.terminal.store) < TERMINALMAXFILLING) {
+
+                        for (var res in creep.carry) {
+                            delta = creep.checkTerminalLimits(res);
+                            if (delta.amount < 0 && creep.carry[res] > 0) {
+                                //Terminal needs material
+                                var load = Math.abs(delta.amount);
+                                if (load > creep.carry[res]) {
+                                    load = creep.carry[res];
+                                }
+                                if (creep.transfer(creep.room.terminal, res, load) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(creep.room.terminal);
+                                }
+                                terminalResources.push(res);
+                                break;
                             }
-                            if (creep.transfer(creep.room.terminal, res, load) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(creep.room.terminal);
-                            }
-                            terminalResources.push(res);
-                            break;
                         }
                     }
                     if (terminalResources.length == 0) {
@@ -137,17 +140,16 @@ module.exports = {
                     // Creep empty
                     //Check storage for useful resources
                     terminalDelta = 0;
-                    for (var res in creep.room.storage.store) {
-                        delta = creep.checkTerminalLimits(res);
-                        if (delta.amount < 0) {
-                            //Terminal needs material from storage
+                    for (var res in creep.room.terminal.store) {
+                        var delta = creep.checkTerminalLimits(res);
+                        if (delta.amount > 0) {
+                            //Terminal has surplus material
                             var load = Math.abs(delta.amount);
                             if (load > creep.carryCapacity) {
                                 load = creep.carryCapacity;
                             }
-
-                            if (creep.withdraw(creep.room.storage, res, load) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(creep.room.storage);
+                            if (creep.withdraw(creep.room.terminal, res, load) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(creep.room.terminal);
                             }
                             terminalDelta++;
                             break;
@@ -157,21 +159,23 @@ module.exports = {
                     if (terminalDelta == 0) {
                         //Check for surplus material in terminal
                         var breaker = false;
-                        for (var res in creep.room.terminal.store) {
-                            var delta = creep.checkTerminalLimits(res);
-                            if (delta.amount > 0) {
-                                //Terminal has surplus material
+                        for (var res in creep.room.storage.store) {
+                            delta = creep.checkTerminalLimits(res);
+                            if (delta.amount < 0) {
+                                //Terminal needs material from storage
                                 var load = Math.abs(delta.amount);
                                 if (load > creep.carryCapacity) {
                                     load = creep.carryCapacity;
                                 }
-                                if (creep.withdraw(creep.room.terminal, res, load) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(creep.room.terminal);
+
+                                if (creep.withdraw(creep.room.storage, res, load) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(creep.room.storage);
                                 }
                                 breaker = true;
                                 break;
                             }
                         }
+
 
                         if (breaker == false && _.sum(creep.carry) == 0) {
                             //Look for minerals in containers
