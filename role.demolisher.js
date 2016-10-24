@@ -168,14 +168,8 @@ module.exports = {
                     }
                     else {
                         //Hostiles creeps in new room
-                        var homespawn = Game.getObjectById(creep.memory.spawn);
-                        if (creep.room.name != creep.memory.homeroom) {
-                            creep.moveTo(homespawn), {reusePath: moveReusePath()};
-                            creep.memory.fleeing = true;
-                        }
-                        else if (creep.pos.getRangeTo(homespawn) > 5) {
-                            creep.moveTo(homespawn), {reusePath: moveReusePath()};
-                        }
+                        creep.memory.fleeing = true;
+                        creep.goToHomeRoom();
                     }
                 }
             }

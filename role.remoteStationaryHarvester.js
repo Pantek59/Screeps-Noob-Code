@@ -89,14 +89,23 @@ module.exports = {
                 }
             }
             else {
-                // Hostiles present
-                var homespawn = Game.getObjectById(creep.memory.spawn);
-                creep.memory.fleeing = true;
-                if (creep.room.name != creep.memory.homeroom) {
-                    creep.moveTo(homespawn), {reusePath: moveReusePath()};
+                if (3 == 5 && remoteSource.memory.skr == true) {
+                    // SourceKeeper Room
+                    let sourceKeeper = remoteSource.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
+                    if (sourceKeeper.length > 0) {
+                        //Source is guarded by source keeper -> retreat
+                        if (creep.pos.getRangeTo(remoteSource) < 6) {
+                            creep.moveTo(remoteSource, {flee: true, reusePath: moveReusePath()});
+                        }
+                        else {
+                            creep.memory.sleep = 20;
+                        }
+                    }
                 }
-                else if (creep.pos.getRangeTo(homespawn) > 5) {
-                    creep.moveTo(homespawn), {reusePath: moveReusePath()};
+                else {
+                    // Hostiles present
+                    creep.memory.fleeing = true;
+                    creep.goToHomeRoom();
                 }
             }
         }

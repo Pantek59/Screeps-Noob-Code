@@ -6,7 +6,7 @@ module.exports = {
         var group = creep.findMyFlag("unitGroup");
         var groupFlag = _.filter(Game.flags,{ name: group})[0];
 
-        if (creep.memory.strategy == true && groupFlag != undefined && groupFlag.memory.strategy != undefined && groupFlag.memory.strategy == creep.memory.strategy) {
+        if (creep.memory.strategy == true && groupFlag != undefined && groupFlag.memory.strategy != undefined) {
             strategies.run(creep, groupFlag);
         }
         else if (groupFlag != undefined) {
@@ -29,8 +29,7 @@ module.exports = {
                 }
             }
         }
-
-        if (groupFlag != undefined && groupFlag != null) {
+        else if (groupFlag != undefined && groupFlag != null) {
             //Move to flag if not in target room yet
             var range = creep.pos.getRangeTo(groupFlag);
             if (range > 5) {

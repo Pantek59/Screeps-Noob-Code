@@ -1,5 +1,5 @@
 DELAYMARKETAUTOSELL = 31;
-DELAYMARKETBUY = 5;
+DELAYMARKETBUY = 3;
 DELAYFLAGCOLORS = 31;
 DELAYRESOURCEBALANCING = 27;
 DELAYROOMSCANNING = 50;
@@ -8,11 +8,13 @@ DELAYSPAWNING = 17;
 DELAYLINK = 3;
 DELAYPRODUCTION = 25;
 DELAYLAB = 10;
+DELAYRCL8INSTALLATION = 100;
 RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 TERMINALMAXFILLING = 290000;
 RBS_PACKETSIZE = 5000;
 CPU_THRESHOLD = 2500;
+WALLMAX = 5500000
 
 playerUsername = "Pantek59";
 allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima"];
@@ -222,13 +224,13 @@ buildingPlans = {
         },
         {
             //Level 3 (max 800)
-            minEnergy: 750,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 600,
+            body: [MOVE,MOVE,MOVE,MOVE,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY]
         },
         {
             //Level 4 (max 1300)
-            minEnergy: 1300,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 1050,
+            body: [MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY]
         },
         {
             //Level 5 (max 1800)
@@ -264,8 +266,8 @@ buildingPlans = {
         },
         {
             //Level 3 (max 800)
-            minEnergy: 800,
-            body: [MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 700,
+            body: [MOVE, MOVE, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY]
         },
         {
             //Level 4 (max 1300)
@@ -306,8 +308,8 @@ buildingPlans = {
         },
         {
             //Level 3 (max 800)
-            minEnergy: 800,
-            body: [MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 700,
+            body: [MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY]
         },
         {
             //Level 4 (max 1300)
@@ -988,8 +990,8 @@ buildingPlans = {
         },
         {
             //Level 5 (max 1750)
-            minEnergy: 1500,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, HEAL, HEAL, HEAL, HEAL, HEAL]
+            minEnergy: 1480,
+            body: [MOVE,MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK,ATTACK,ATTACK,HEAL,HEAL,HEAL]
         },
         {
             //Level 6 (max 2100)

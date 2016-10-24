@@ -9,7 +9,7 @@ module.exports = {
                  creep.memory.statusHarvesting = false;
              }
          }
-         else {
+         else if (creep.room.memory.roomArrayMinerals != undefined) {
              // if creep is bringing minerals to a structure but is empty now
              if (_.sum(creep.carry) == 0) {
                  // switch state to harvesting

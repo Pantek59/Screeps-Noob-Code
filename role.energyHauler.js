@@ -82,28 +82,38 @@ module.exports = {
                     }
                     else {
                         //new room reached, start collecting
-                        if (creep.room.memory.hostiles == 0) {
-                            //No enemy creeps
-                            var container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
-                            container = _.filter(container, { structureType: STRUCTURE_CONTAINER});
-                            if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
-                                if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(container[0], {reusePath: moveReusePath()});
+                        if (creep.room.memory.hostiles == 0 || remoteSource.memory.skr == true) {
+                            if (remoteSource.memory.skr == true) {
+                                // SourceKeeper Room
+                                let sourceKeeper = remoteSource.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
+                                if (sourceKeeper.length > 0) {
+                                    //Source is guarded by source keeper -> retreat
+                                    if (creep.pos.getRangeTo(remoteSource) < 6) {
+                                        creep.moveTo(remoteSource, {flee: true, reusePath: moveReusePath()});
+                                    }
+                                    else {
+                                        creep.memory.sleep = 20;
+                                    }
                                 }
                             }
                             else {
-                                roleCollector.run(creep);
+                                //No enemy creeps
+                                var container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
+                                container = _.filter(container, {structureType: STRUCTURE_CONTAINER});
+                                if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
+                                    if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(container[0], {reusePath: moveReusePath()});
+                                    }
+                                }
+                                else {
+                                    roleCollector.run(creep);
+                                }
                             }
                         }
                         else {
                             //Hostiles creeps in new room
-                            if (creep.room.name != creep.memory.homeroom) {
-                                creep.moveTo(Game.getObjectById(creep.memory.spawn)), {reusePath: moveReusePath()};
-                                creep.memory.fleeing = true;
-                            }
-                            else if (creep.pos.getRangeTo(homespawn) > 5) {
-                                creep.moveTo(homespawn), {reusePath: moveReusePath()};
-                            }
+                            creep.memory.fleeing = true;
+                            creep.goToHomeRoom();
                         }
                     }
                 }

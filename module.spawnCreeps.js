@@ -225,7 +225,6 @@ module.exports = {
                 break;
             }
         }
-        //console.log(spawnRoom.name + ": " + minimumSpawnOf.builder);
 
         // Measuring number of active creeps
         var numberOf = [];
@@ -246,7 +245,7 @@ module.exports = {
                 console.log(spawnRoom + " (" + p + ") Numberof: " + numberOf[p] + " / Counter: " + counter[p]);
             }
         }
-        //console.log(spawnRoom + ": " + minimumSpawnOf.upgrader);
+        //console.log(spawnRoom + ": " + minimumSpawnOf.wallRepairer);
 
         // Role selection
         var energy = spawnRoom.energyCapacityAvailable;

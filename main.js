@@ -184,6 +184,14 @@ module.exports.loop = function() {
     // Market Auto Selling Code
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start Market Code: " + Game.cpu.getUsed())}
         if (Game.time % DELAYMARKETAUTOSELL == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
+            //Remove expired market orders
+            let expiredOrders = _.filter(Game.market.orders, {remainingAmount: 0});
+            if (expiredOrders.length > 0) {
+                for (let o in expiredOrders) {
+                    Game.market.cancelOrder(expiredOrders[o].id);
+                }
+            }
+
             //Look for surplus materials
             var surplusMinerals;
 
@@ -332,8 +340,8 @@ module.exports.loop = function() {
                 }
             }
 
+            //Set default resource limits:
             if (Game.rooms[r].memory.resourceLimits == undefined && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
-                //Set default resource limits:
                 var roomLimits = {};
                 var limit;
                 for (var res in RESOURCES_ALL) {
@@ -355,6 +363,20 @@ module.exports.loop = function() {
                 Game.rooms[r].memory.resourceLimits = roomLimits;
             }
 
+            //Build RCL8 installations
+            if (Game.time % DELAYRCL8INSTALLATION == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.level == 8 && Game.rooms[r].controller.owner.username == playerUsername) {
+                let structures = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_NUKER || s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_TOWER || s.structureType == STRUCTURE_STORAGE});
+                for (let s in structures) {
+                    let foundStructures = structures[s].pos.lookFor(LOOK_STRUCTURES);
+                    foundStructures = foundStructures.concat(structures[s].pos.lookFor(LOOK_CONSTRUCTION_SITES));
+                    let ramparts = _.filter(foundStructures, function (s) { return s.structureType == STRUCTURE_RAMPART});
+                    if (ramparts.length == 0) {
+                        structures[s].pos.createConstructionSite(STRUCTURE_RAMPART);
+                        console.log("built");
+                    }
+                }
+            }
+
             //  Refresher (will be executed every few ticks)
             var searchResult;
             if (Game.time % DELAYROOMSCANNING == 0) {
@@ -362,7 +384,7 @@ module.exports.loop = function() {
                 var defenseObjects = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                 defenseObjects = _.sortBy(defenseObjects,"hits");
 
-                if (defenseObjects != undefined && defenseObjects[0] != undefined && defenseObjects[0].hits > 5000000) {
+                if (defenseObjects != undefined && defenseObjects[0] != undefined && ((Game.rooms[r].controller.level == 8 && defenseObjects[0].hits > WALLMAX * 2) || (Game.rooms[r].controller.level < 8 && defenseObjects[0].hits > WALLMAX))) {
                     Game.rooms[r].memory.roomSecure = true;
                 }
                 else if (Game.rooms[r].memory.roomSecure != undefined) {
@@ -512,7 +534,7 @@ module.exports.loop = function() {
                     var flag = remoteHarvestingFlags[f];
                     if (flag.room != undefined) {
                         // We have visibility in room
-                        if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
+                        if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
                             //Hostiles present in room with remote harvesters
                             var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
                             flag.room.memory.panicFlag = panicFlag;

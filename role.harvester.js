@@ -45,12 +45,13 @@ module.exports = {
                 else {
                     nuker = null;
                 }
-                if (creep.room.memory.roomArrayPowerSpawns != undefined) {
+                                if (creep.room.memory.roomArrayPowerSpawns != undefined) {
                     powerSpawn = Game.getObjectById(creep.room.memory.roomArrayPowerSpawns[0]);
                 }
                 else {
                     powerSpawn = null;
                 }
+
                 if (structure != undefined && structure != null) {
                     // if we found one -> try to transfer energy, if it is not in range
                     if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

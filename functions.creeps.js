@@ -172,18 +172,4 @@ module.exports = function() {
         }
         else {return true;}
     };
-
-    Creep.prototype.fleefromAttacker = function() {
-
-        if (creep.memory.hotRoom > 0) {
-            if (creep.pos.getRangeTo( Game.getObjectById(creep.memory.spawn)) > 5) {
-                creep.moveTo( Game.getObjectById(creep.memory.spawn)), {reusePath: moveReusePath()};
-            }
-            creep.memory.hotRoom--;
-        }
-        if (creep.memory.hotRoom == 0) {
-            delete creep.memory.hotRoom;
-        }
-        return checkTerminalLimits(this.room, resource);
-    };
 };
