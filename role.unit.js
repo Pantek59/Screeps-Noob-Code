@@ -17,9 +17,9 @@ module.exports = {
             }
             else {
                 // Creep still on route, attack within 4 range
-                let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4);
+                let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4, function (c) { return isHostile(c)});
                 if (nearTargets.length > 0) {
-                    target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS);
+                    target = creep.pos.findClosestByPath(nearTargets);
                     if (creep.attack(target) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target);
                     }

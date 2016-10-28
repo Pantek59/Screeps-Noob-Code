@@ -21,12 +21,12 @@ module.exports = function() {
 
     StructureSpawn.prototype.createCustomCreep = function (energyCapacity, roleName, spawnID) {
         //Check for boost
-        var boost = undefined;
+        var boost = [];
         for (let l in this.room.memory.boostList) {
             if (this.room.memory.boostList[l].role == roleName) {
                 //Creep should get boost entry
                 let boostEntry = this.room.memory.boostList[l];
-                boost = boostEntry.mineralType;
+                boost.push(boostEntry.mineralType);
                 if (boostEntry.volume >= 0) {
                     boostEntry.volume--;
                     if (boostEntry.volume == 0) {
@@ -38,11 +38,12 @@ module.exports = function() {
                 }
             }
         }
+        let body = this.getBodyInfo(roleName, this.room.energyAvailable);
+
         if (roleName == "miniharvester") {
             roleName = "harvester";
         }
 
-        let body = this.getBodyInfo(roleName, this.room.energyAvailable);
         if (body != null && this.canCreateCreep(body) == OK) {
             return this.createCreep(body, undefined, {
                 role: roleName,
@@ -50,7 +51,7 @@ module.exports = function() {
                 spawn: spawnID,
                 jobQueueTask: undefined,
                 homeroom: this.room.name,
-                boost: boost
+                boostList: boost
             });
         }
     };

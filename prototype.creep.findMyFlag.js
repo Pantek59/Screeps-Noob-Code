@@ -88,7 +88,6 @@ module.exports = function() {
             else {
                 flagList = _.filter(Game.flags, function (f) {
                     let flagRoom = Game.rooms[f.pos.roomName];
-
                     if (f.memory.function == "remoteController" && f.memory.spawn == mySpawn && flagRoom != undefined && flagRoom.controller != undefined && flagRoom.controller.owner == undefined && (flagRoom.controller.reservation == undefined || flagRoom.controller.reservation.ticksToEnd < 3000)) {
                         //Flag needing a claimer found
                         return true;
@@ -147,6 +146,7 @@ module.exports = function() {
                         break;
                 }
             }
+            delete this.memory.currentFlag;
             return undefined;
         }
     }

@@ -45,6 +45,7 @@ module.exports = {
         minimumSpawnOf["attacker"] = 0;
         minimumSpawnOf["healer"] = 0;
         minimumSpawnOf["einarr"] = 0;
+        minimumSpawnOf["apaHatchi"] = 0;
         minimumSpawnOf["scientist"] = 0;
         minimumSpawnOf["transporter"] = 0;
 
@@ -92,6 +93,22 @@ module.exports = {
         }
 
         // Check for active flag "remoteController"
+        /*
+        let vacantFlags = _.filter(Game.flags, function (f) {
+            if (f.memory.function == "remoteController" && f.memory.spawn == spawnRoom.memory.masterSpawn && _.filter(Game.creeps, {memory: {currentFlag: f.name}}).length == 0) {
+                if (Game.rooms[f.pos.roomName] != undefined) {
+                    let controller = Game.rooms[f.pos.roomName].controller;
+                    if (controller.owner == undefined && (controller.reservation == undefined || controller.reservation.ticksToEnd < 3000)) {
+                        return true;
+                    }
+                }
+                else {
+                    return true;
+                }
+            }
+        });
+        */
+
         var remoteController = _.filter(Game.flags,{ memory: { function: 'remoteController', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in remoteController) {
             let tempRoom = Game.rooms[remoteController[t].pos.roomName];
@@ -121,6 +138,9 @@ module.exports = {
             }
             if (groupFlags[g].memory.einarr != undefined) {
                 minimumSpawnOf.einarr += groupFlags[g].memory.einarr;
+            }
+            if (groupFlags[g].memory.apaHatchi != undefined) {
+                minimumSpawnOf.apaHatchi += groupFlags[g].memory.apaHatchi;
             }
         }
 
@@ -227,8 +247,6 @@ module.exports = {
         }
 
         // Measuring number of active creeps
-        var numberOf = [];
-
         var allMyCreeps = _.filter(Game.creeps,{memory: { homeroom: spawnRoom.name}});
         var counter = _.countBy(allMyCreeps, "memory.role");
 
@@ -238,14 +256,14 @@ module.exports = {
                 counter[roleList[z]] = 0;
             }
         }
-        numberOf = counter;
+        var numberOf = counter;
 
         for (let p in numberOf) {
             if (numberOf[p] != counter[p]){
                 console.log(spawnRoom + " (" + p + ") Numberof: " + numberOf[p] + " / Counter: " + counter[p]);
             }
         }
-        //console.log(spawnRoom + ": " + minimumSpawnOf.wallRepairer);
+        //console.log(spawnRoom + ": " + minimumSpawnOf.harvester);
 
         // Role selection
         var energy = spawnRoom.energyCapacityAvailable;
@@ -254,6 +272,19 @@ module.exports = {
         var rcl = spawnRoom.controller.level;
 
         //console.log(this.getNextSpawnRole(minimumSpawnOf, numberOf));
+        
+        //calc ticks needed to fill the ranks
+        var missingBodyParts = 0;
+        for(var rn in minimumSpawnOf){
+            if(minimumSpawnOf[rn] != undefined && buildingPlans[rn] != undefined) {
+                missingBodyParts+=minimumSpawnOf[rn]*buildingPlans[rn][rcl-1].body.length;
+            }
+        }
+        var neededTicksToSpawn = 3 * missingBodyParts;
+        var neededTicksThreshold = 1300 * spawnRoom.memory.roomArraySpawns.length;
+        if(neededTicksToSpawn > neededTicksThreshold) {
+            console.log("Warning: Possible bottleneck to spawn creeps needed for room " + spawnRoom.name + "  detected: " + neededTicksToSpawn + " ticks > " + neededTicksThreshold + " ticks");
+        }
 
         // if not enough harvesters
         if (numberOf.harvester < minimumSpawnOf.harvester) {
@@ -282,6 +313,9 @@ module.exports = {
         }
         else if (numberOf.attacker < minimumSpawnOf.attacker && (buildingPlans.attacker[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.attacker[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'attacker';
+        }
+        else if (numberOf.apaHatchi < minimumSpawnOf.apaHatchi && (buildingPlans.apaHatchi[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.apaHatchi[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
+            var rolename = 'apaHatchi';
         }
         else if (numberOf.healer < minimumSpawnOf.healer && (buildingPlans.healer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.healer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'healer';
@@ -495,6 +529,13 @@ module.exports = {
                 energyRole: false,
                 min: minimumSpawnOf.attacker,
                 max: numberOf.attacker
+            },
+            apaHatchi: {
+                name: "apaHatchi",
+                prio: 10,
+                energyRole: false,
+                min: minimumSpawnOf.apaHatchi,
+                max: numberOf.apaHatchi
             },
             healer: {name: "healer", prio: 10, energyRole: false, min: minimumSpawnOf.healer, max: numberOf.healer},
             einarr: {name: "einarr", prio: 10, energyRole: false, min: minimumSpawnOf.einarr, max: numberOf.einarr},

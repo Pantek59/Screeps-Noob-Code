@@ -65,7 +65,10 @@ module.exports = {
                             else {
                                 var source = Game.getObjectById(creep.memory.narrowSource);
                             }
-                            if (source.energy == 0) {
+                            if (source == undefined) {
+                                delete creep.memory.source;
+                            }
+                            else if (source.energy == 0) {
                                 creep.memory.sleep = source.ticksToRegeneration;
                             }
                             else {

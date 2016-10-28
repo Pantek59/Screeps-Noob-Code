@@ -43,7 +43,7 @@ module.exports = {
                     //Roomed successfully claimed, now build spawn and remove spawns and extensions from previous owner
                     var spawns = creep.room.find(FIND_MY_SPAWNS).length;
                     if (spawns == 0) {
-                        var spawnConstructionsites = creep.room.find(FIND_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
+                        var spawnConstructionsites = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
                         if (spawnConstructionsites == 0) {
                             remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
                         }

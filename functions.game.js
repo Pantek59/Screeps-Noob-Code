@@ -391,8 +391,8 @@ global.checkTerminalLimits = function (room, resource) {
 
         if (relevantOrders.length > 0) {
             for (let o in relevantOrders) {
-                if (relevantOrders[o].remainingAmount > 10000) {
-                    uplift = 10000;
+                if (relevantOrders[o].remainingAmount > TERMINALMARKETSTORE) {
+                    uplift = TERMINALMARKETSTORE;
                 }
                 else {
                     uplift += relevantOrders[o].remainingAmount;
@@ -618,6 +618,9 @@ global.delBoost = function (roomName, entryNr) {
 };
 
 global.listBoost = function (roomName) {
+    if (arguments.length == 0) {
+        return "listBoost (roomName)";
+    }
     var roles = [];
     var boostMinerals = [];
     var volumes = [];
