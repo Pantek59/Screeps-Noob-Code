@@ -1179,9 +1179,9 @@ module.exports.loop = function() {
                         switch (creep.memory.jobQueueTask) {
                             case "pickUpEnergy": //Dropped energy to be picked up
                                 let source = creep.pos.findClosestByPath(FIND_DROPPED_ENERGY);
-                                let enemy = creep.pos.findClosestByPath(creep.room.memory.hostiles);
+                                //let enemy = creep.pos.findClosestByPath(creep.room.memory.hostiles);
 
-                                if (creep.pickup(source) == ERR_NOT_IN_RANGE && (enemy == null || creep.pos.getRangeTo(enemy) > 7)) {
+                                if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
                                     creep.moveTo(source, {reusePath: moveReusePath()});
                                 }
                                 creep.memory.jobQueueTask = undefined;
