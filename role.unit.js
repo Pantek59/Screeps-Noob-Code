@@ -6,7 +6,7 @@ module.exports = {
         var group = creep.findMyFlag("unitGroup");
         var groupFlag = _.filter(Game.flags,{ name: group})[0];
 
-        if (creep.memory.strategy == true && groupFlag != undefined && groupFlag.memory.strategy != undefined) {
+        if (creep.memory.strategy == true && groupFlag != undefined && groupFlag.memory.strategy != undefined && creep.room.name == groupFlag.pos.roomName) {
             strategies.run(creep, groupFlag);
         }
         else if (groupFlag != undefined) {
@@ -17,6 +17,7 @@ module.exports = {
             }
             else {
                 // Creep still on route, attack within 4 range
+                creep.memory.strategy = false;
                 let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4, function (c) { return isHostile(c)});
                 if (nearTargets.length > 0) {
                     target = creep.pos.findClosestByPath(nearTargets);

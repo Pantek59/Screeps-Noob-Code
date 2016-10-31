@@ -324,19 +324,10 @@ module.exports.loop = function() {
         for (var r in Game.rooms) {
 
             //Save # of hostile creeps in room
-            Game.rooms[r].memory.hostiles = 0;
             var enemies = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
-            for (var cr in enemies) {
-                if (allies.indexOf(enemies[cr].owner.username) == -1) {
-                    Game.rooms[r].memory.hostiles++;
-                }
-            }
-            if (Game.rooms[r].storage != undefined && Game.rooms[r].controller.level >= 6) {
-                let statusFlag = Game.rooms[r].storage;
-                if (Game.rooms[r].memory.terminalEnergyCost == undefined) {
-                    Game.rooms[r].memory.terminalEnergyCost = 0;
-                }
-            }
+            Game.rooms[r].memory.hostiles = _.filter(enemies, function (e) {return (isHostile(e))});
+
+
 
             //Set default resource limits:
             if (Game.rooms[r].memory.resourceLimits == undefined && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
@@ -482,8 +473,14 @@ module.exports.loop = function() {
                 for (let s in searchResult) {
                     towerIDs.push(searchResult[s].id);
                 }
-
                 Game.rooms[r].memory.roomArrayTowers = towerIDs;
+
+                var lairIDs = [];
+                searchResult = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_KEEPER_LAIR});
+                for (let s in searchResult) {
+                    lairIDs.push(searchResult[s].id);
+                }
+                Game.rooms[r].memory.roomArrayLairs = lairIDs;
 
                 if (Game.rooms[r].memory.roomArrayConstructionSites == undefined) {
                     var constructionIDs = [];
@@ -520,7 +517,7 @@ module.exports.loop = function() {
             if (Game.time % DELAYPANICFLAG == 0) {
                 // Check existing flags
                 let panicFlags = Game.rooms[r].find(FIND_FLAGS,{filter: (f) => f.memory.function == "protector" && f.memory.panic == true});
-                if (panicFlags.length > 0 && Game.rooms[r].memory.hostiles == 0) {
+                if (panicFlags.length > 0 && Game.rooms[r].memory.hostiles.length == 0) {
                     for (let f in panicFlags) {
                         Game.flags[panicFlags[f].name].remove();
                     }
@@ -532,19 +529,19 @@ module.exports.loop = function() {
                     var flag = remoteHarvestingFlags[f];
                     if (flag.room != undefined) {
                         // We have visibility in room
-                        if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
+                        if (flag.room.memory.hostiles.length > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
                             //Hostiles present in room with remote harvesters
                             var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
                             flag.room.memory.panicFlag = panicFlag;
                             panicFlag = _.filter(Game.flags, {name: panicFlag})[0];
                             panicFlag.memory.function = "protector";
-                            panicFlag.memory.volume = flag.room.memory.hostiles;
+                            panicFlag.memory.volume = flag.room.memory.hostiles.length;
                             panicFlag.memory.spawn = flag.memory.spawn;
                             panicFlag.memory.panic = true;
 
                             console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
                         }
-                        else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
+                        else if (flag.room.memory.hostiles.length == 0 && flag.room.memory.panicFlag != undefined) {
                             // No hostiles present in room with remote harvesters
                             var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
                             tempFlag.remove();
@@ -559,19 +556,19 @@ module.exports.loop = function() {
                     var flag = stationaryRemoteHarvestingFlags[f];
                     if (flag.room != undefined) {
                         // We have visibility in room
-                        if (flag.room.memory.hostiles > 0 && flag.room.memory.panicFlag == undefined) {
+                        if (flag.room.memory.hostiles.length > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
                             //Hostiles present in room with remote harvesters
                             var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
                             flag.room.memory.panicFlag = panicFlag;
                             panicFlag = _.filter(Game.flags, {name: panicFlag})[0];
                             panicFlag.memory.function = "protector";
-                            panicFlag.memory.volume = flag.room.memory.hostiles;
+                            panicFlag.memory.volume = flag.room.memory.hostiles.length;
                             panicFlag.memory.spawn = flag.memory.spawn;
                             panicFlag.memory.panic = true;
 
                             console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
                         }
-                        else if (flag.room.memory.hostiles == 0 && flag.room.memory.panicFlag != undefined) {
+                        else if (flag.room.memory.hostiles.length == 0 && flag.room.memory.panicFlag != undefined) {
                             // No hostiles present in room with remote harvesters
                             var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
                             if (tempFlag != undefined) {
@@ -663,7 +660,7 @@ module.exports.loop = function() {
 
 
             // Tower code
-            if (Game.rooms[r].memory.hostiles > 0) {
+            if (Game.rooms[r].memory.hostiles.length > 0) {
                 var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
                 var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
 
@@ -717,7 +714,7 @@ module.exports.loop = function() {
                 var energyID = energies[energy].id;
                 var energyAmount = energies[energy].amount;
 
-                if (energyAmount > 15 && Game.rooms[r].memory.hostiles == 0) {
+                if (energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArrayLairs.length > 0)) {
                     var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
                             filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true});
 
@@ -1084,7 +1081,7 @@ module.exports.loop = function() {
             }
 
             //Check for fleeing creeps
-            if (creep.room.memory.hostiles == 0 && creep.memory.fleeing == true) {
+            if (creep.room.memory.hostiles.length == 0 && creep.memory.fleeing == true) {
                 //Get away from the exit
                 if ((creep.pos.x < 5 || creep.pos.x > 45) || (creep.pos.y < 5 || creep.pos.y > 45)) {
 
@@ -1114,7 +1111,7 @@ module.exports.loop = function() {
                     }
                 }
                 else {
-                    if (creep.memory.boostList != undefined) {
+                    if (creep.spawning == false && creep.ticksToLive > 1000 && creep.memory.boostList != undefined) {
                         //Creep needs boosting
                         if (creep.memory.boostList.length > 0) {
                             let boostLabs = creep.room.memory.boostLabs;
@@ -1160,7 +1157,7 @@ module.exports.loop = function() {
                                                  creep.memory.boostList.slice(0,1);
                                             }
                                             if (creep.memory.boostList.length == 0) {
-                                                delete creep.memory.boostList.length;
+                                                delete creep.memory.boostList;
                                                 if (creep.memory.myButler != undefined) {
                                                     let butler = Game.getObjectById(creep.memory.myButler);
                                                     delete butler.memory.jobQueueObject;
@@ -1182,7 +1179,9 @@ module.exports.loop = function() {
                         switch (creep.memory.jobQueueTask) {
                             case "pickUpEnergy": //Dropped energy to be picked up
                                 let source = creep.pos.findClosestByPath(FIND_DROPPED_ENERGY);
-                                if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
+                                let enemy = creep.pos.findClosestByPath(creep.room.memory.hostiles);
+
+                                if (creep.pickup(source) == ERR_NOT_IN_RANGE && creep.pos.getRangeTo(enemy) > 7) {
                                     creep.moveTo(source, {reusePath: moveReusePath()});
                                 }
                                 creep.memory.jobQueueTask = undefined;
@@ -1212,7 +1211,7 @@ module.exports.loop = function() {
 
                                     if (boostLab.mineralAmount >= mineralNeed || boostLab.mineralType != clientCreep.memory.boostList[0]) {
                                         //Lab needs minerals
-                                        if (creep.storeAllBut(creep.memory.boostList[0]) == true) {
+                                        if (creep.storeAllBut(clientCreep.memory.boostList[0]) == true) {
                                             if (_.sum(creep.carry) == 0) {
                                                 //Get minerals from storage
                                                 let amount = mineralNeed - boostLab.mineralAmount;

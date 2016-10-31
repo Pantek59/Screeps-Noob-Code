@@ -4,7 +4,7 @@ DELAYFLAGCOLORS = 31;
 DELAYRESOURCEBALANCING = 27;
 DELAYROOMSCANNING = 50;
 DELAYPANICFLAG = 5;
-DELAYSPAWNING = 17;
+DELAYSPAWNING = 13;
 DELAYLINK = 3;
 DELAYPRODUCTION = 25;
 DELAYLAB = 10;
@@ -762,84 +762,84 @@ buildingPlans = {
         {
             //Level 1 (max 300)
             minEnergy: 300,
-            body: [MOVE, WORK, WORK, CARRY]
+            body: [WORK, WORK, CARRY, MOVE]
         },
         {
             //Level 2 (max 550)
             minEnergy: 550,
-            body: [MOVE, MOVE, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE]
         },
         {
             //Level 3 (max 800)
             minEnergy: 700,
-            body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         },
         {
             //Level 4 (max 1300)
             minEnergy: 700,
-            body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         },
         {
             //Level 5 (max 1800)
             minEnergy: 700,
-            body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         },
         {
             //Level 6 (max 2300)
             minEnergy: 700,
-            body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         },
         {
             //Level 7 (max 5600)
             minEnergy: 700,
-            body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         },
         {
             //Level 8 (max 12900)
             minEnergy: 700,
-            body: [MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, WORK, CARRY]
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         }],
 
     energyHauler: [
         {
             //Level 1 (max 300)
             minEnergy: 300,
-            body: [MOVE, MOVE, WORK, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, MOVE, MOVE]
         },
         {
             //Level 2 (max 550)
             minEnergy: 500,
-            body: [MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]
         },
         {
             //Level 3 (max 800)
             minEnergy: 650,
-            body: [MOVE, MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]
         },
         {
             //Level 4 (max 1300)
             minEnergy: 1100,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         },
         {
             //Level 5 (max 1800)
             minEnergy: 1350,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         },
         {
             //Level 6 (max 2300)
             minEnergy: 1350,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         },
         {
             //Level 7 (max 5600)
             minEnergy: 1350,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         },
         {
             //Level 8 (max 12900)
             minEnergy: 1350,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         }],
 
     transporter: [

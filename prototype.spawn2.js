@@ -19,7 +19,7 @@ module.exports = function() {
         }
     }
 
-    StructureSpawn.prototype.createCustomCreep = function (energyCapacity, roleName, spawnID) {
+    StructureSpawn.prototype.createCustomCreep = function (energyCapacity, roleName, spawnID, vacantClaimerFlags) {
         //Check for boost
         var boost = [];
         for (let l in this.room.memory.boostList) {
@@ -45,14 +45,27 @@ module.exports = function() {
         }
 
         if (body != null && this.canCreateCreep(body) == OK) {
-            return this.createCreep(body, undefined, {
-                role: roleName,
-                working: false,
-                spawn: spawnID,
-                jobQueueTask: undefined,
-                homeroom: this.room.name,
-                boostList: boost
-            });
+            if (roleName != "claimer") {
+                return this.createCreep(body, undefined, {
+                    role: roleName,
+                    working: false,
+                    spawn: spawnID,
+                    jobQueueTask: undefined,
+                    homeroom: this.room.name,
+                    boostList: boost
+                });
+            }
+            else {
+                return this.createCreep(body, undefined, {
+                    role: roleName,
+                    working: false,
+                    spawn: spawnID,
+                    jobQueueTask: undefined,
+                    homeroom: this.room.name,
+                    boostList: boost,
+                    currentFlag: vacantClaimerFlags[0].name
+                });
+            }
         }
     };
 };

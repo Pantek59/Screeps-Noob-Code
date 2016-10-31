@@ -14,7 +14,7 @@ module.exports = {
                 }
                 creep.memory.working = false;
             }
-            else if (_.sum(creep.carry) == creep.carryCapacity) {
+            else if (_.sum(creep.carry) == creep.carryCapacity || (creep.room.name == creep.memory.homeroom && _.sum(creep.carry) > 0)) {
                 // creep is collecting energy but is full
                 if (creep.memory.working == false) {
                     delete creep.memory._move;
@@ -28,7 +28,10 @@ module.exports = {
                 var constructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
                 if (constructionSites.length > 0 && creep.room.name != creep.memory.homeroom) {
                     // Construction sites found, build them!
-                    roleBuilder.run(creep);
+                    let site = creep.pos.findClosestByPath(constructionSites);
+                    if (creep.build(site) == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(site, {reusePath: moveReusePath()});
+                    }
                 }
                 else {
                     // Move to structure
@@ -82,23 +85,49 @@ module.exports = {
                     }
                     else {
                         //new room reached, start collecting
-                        if (creep.room.memory.hostiles == 0 || remoteSource.memory.skr == true) {
-                            if (remoteSource.memory.skr == true) {
+                        if (creep.room.memory.hostiles.length == 0 || remoteSource.memory.skr == true) {
+                            let flag = Game.flags[creep.memory.currentFlag];
+                            if (flag.memory.skr == true) {
                                 // SourceKeeper Room
-                                let sourceKeeper = remoteSource.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
+                                let activeLair = null;
+                                let sourceKeeper = flag.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
                                 if (sourceKeeper.length > 0) {
                                     //Source is guarded by source keeper -> retreat
-                                    if (creep.pos.getRangeTo(remoteSource) < 6) {
-                                        creep.moveTo(remoteSource, {flee: true, reusePath: moveReusePath()});
+                                    if (creep.pos.getRangeTo(flag) < 7) {
+                                        creep.goToHomeRoom()
                                     }
                                     else {
-                                        creep.memory.sleep = 20;
+                                        creep.memory.sleep = 5;
+                                    }
+                                }
+                                else {
+                                    //No enemy creeps
+                                    activeLair = flag.pos.findClosestByPath(FIND_STRUCTURES, {filter: (k) => k.structureType == STRUCTURE_KEEPER_LAIR && k.ticksToSpawn != undefined && k.ticksToSpawn < 10});
+                                    if (activeLair != null) {
+                                        if (creep.pos.getRangeTo(activeLair) < 7) {
+                                            creep.goToHomeRoom();
+                                        }
+                                        else {
+                                            creep.memory.sleep = 5;
+                                        }
+                                    }
+                                    else {
+                                        let container = flag.pos.lookFor(LOOK_STRUCTURES);
+                                        container = _.filter(container, {structureType: STRUCTURE_CONTAINER});
+                                        if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
+                                            if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                                creep.moveTo(container[0], {reusePath: moveReusePath()});
+                                            }
+                                        }
+                                        else {
+                                            roleCollector.run(creep);
+                                        }
                                     }
                                 }
                             }
                             else {
                                 //No enemy creeps
-                                var container = remoteSource.pos.lookFor(LOOK_STRUCTURES);
+                                var container = flag.pos.lookFor(LOOK_STRUCTURES);
                                 container = _.filter(container, {structureType: STRUCTURE_CONTAINER});
                                 if (container.length > 0 && container[0].store[RESOURCE_ENERGY] > 0) {
                                     if (creep.withdraw(container[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

@@ -315,10 +315,10 @@ module.exports = {
             case "skr": //Source keeper room patrol -> not working yet
                 //Find target
                 var keepers = [];
-                if (flag.memory.keeperLairs == undefined || Game.time % 5 == 0) {
-                    //Search and save lair IDss
+                let roomFlags = creep.room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "haulEnergy" || f.memory.function == "haulMinerals" || f.memory.function == "remoteSource"});
+                if (flag.memory.keeperLairs == undefined || Game.time % 2 == 0) {
+                    //Search and save lair IDss & source keeper
                     flag.memory.keeperLairs = [];
-                    let roomFlags = creep.room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "haulEnergy" || f.memory.function == "remoteSource"});
                     if (roomFlags.length > 0) {
                         for (let f in roomFlags) {
                             let lairs = roomFlags[f].pos.findInRange(FIND_HOSTILE_STRUCTURES, 5);
@@ -328,46 +328,77 @@ module.exports = {
 
                             let invaders = roomFlags[f].pos.findInRange(FIND_HOSTILE_CREEPS, 5, {filter: (c) => isHostile(c) == true});
                             if (invaders.length > 0) {
-                                keepers.push(invaders[0]);
+                                for (let i in invaders) {
+                                    if (keepers.indexOf(invaders[i]) == -1) {
+                                        keepers.push(invaders[i]);
+                                    }
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+                else {
+                    //Search and save source keeper
+                    if (roomFlags.length > 0) {
+                        for (let f in roomFlags) {
+                            let invaders = roomFlags[f].pos.findInRange(FIND_HOSTILE_CREEPS, 5, {filter: (c) => isHostile(c) == true});
+                            if (invaders.length > 0) {
+                                for (let i in invaders) {
+                                    if (keepers.indexOf(invaders[i]) == -1) {
+                                        keepers.push(invaders[i]);
+                                    }
+                                }
                             }
                         }
                     }
                 }
+
                 switch (creep.memory.role)
                 {
                     case "attacker":
                     case "einarr":
-                        if (Game.rooms[flag.pos.roomName].memory.hostiles == 0) {
+                        if (keepers.length == 0) {
                             //No source keepers spawned -> goto next spawn
-                            if (flag.memory.keeperLairs != undefined) {
-                                let lairs = [];
-                                for (let f in flag.memory.keeperLairs) {
-                                    lairs.push(Game.getObjectById(flag.memory.keeperLairs[f]));
-                                }
-                                lairs = _.sortBy(lairs, "ticksToSpawn");
-                                if (creep.pos.getRangeTo(lairs[0]) < 3) {
-                                    creep.moveTo(lairs[0], {reusePath: moveReusePath()});
-                                }
+                            let lairs = []
+                            for (let l in flag.memory.keeperLairs) {
+                                lairs.push(Game.getObjectById(flag.memory.keeperLairs[l]));
+                            }
+                            lairs = _.sortBy(lairs, "ticksToSpawn");
+                            if (creep.pos.getRangeTo(lairs[0]) > 1) {
+                                creep.moveTo(lairs[0], {reusePath: moveReusePath()});
+                            }
+                            else if (lairs[0].ticksToSpawn > 10) {
+                                creep.memory.sleep = lairs[0].ticksToSpawn -5
                             }
                         }
                         else {
-                            //TODO There are source keepers around
                             let myKeeper = creep.pos.findClosestByPath(keepers);
-
-                            if (creep.pos.getRangeTo(keepers[0]) > 6) {
-                                creep.moveTo(keepers[0], {reusePath: moveReusePath()});
+                            if (creep.pos.getRangeTo(myKeeper) > 6) {
+                                creep.moveTo(myKeeper, {reusePath: moveReusePath()});
                             }
-                            else if (creep.pos.findInRange(FIND_MY_CREEPS, 12, {filter: (c) => c.memory.role == "healer" && c.hits == c.hitsMax}).length > 0) {
+                            else if (creep.pos.findInRange(FIND_MY_CREEPS, 1, {filter: (c) => c.memory.role == "healer" && c.hits == c.hitsMax}).length > 0) {
                                 //Healthy healer in range
-                                if (creep.attack(keepers[0]) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(keepers[0], {reusePath: moveReusePath()});
+                                if (creep.attack(myKeeper) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(myKeeper, {reusePath: moveReusePath()});
                                 }
                             }
                         }
                         break;
 
                     case "healer":
-                        let patient = creep.pos.findClosestByPath(FIND_CREEPS, {filter: (c) => c.hits < c.hitsMax && isHostile(c) == false});
+                        let patient;
+                        if (creep.memory.myPatient == undefined || Game.time % 10 == 0) {
+                            patient = creep.pos.findClosestByPath(FIND_CREEPS, {filter: (c) => c.hits < c.hitsMax && isHostile(c) == false && ((c.memory.currentFlag != undefined && c.memory.currentFlag == creep.memory.currentFlag) || c.getActiveBodyparts(MOVE) == 0)});
+                            if (patient != null) {
+                                creep.memory.myPatient = patient.id;
+                            }
+                        }
+                        else {
+                           patient = Game.getObjectById(creep.memory.myPatient);
+                        }
+
                         if (patient != null) {
                             if (creep.heal(patient) == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(patient, {reusePath: moveReusePath()});
@@ -375,6 +406,7 @@ module.exports = {
                         }
                         else {
                             //No patients, found -> goto attacker
+                            delete creep.memory.myPatient;
                             let myAttacker = creep.pos.findClosestByPath(FIND_MY_CREEPS, {filter: (c) => c.memory.role == "attacker" && c.memory.spawn == creep.memory.spawn});
                             if (creep.pos.getRangeTo(myAttacker) > 1) {
                                 creep.moveTo(myAttacker, {reusePath: moveReusePath()});

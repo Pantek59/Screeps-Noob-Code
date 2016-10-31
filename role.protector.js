@@ -5,7 +5,7 @@ module.exports = {
         var nameFlag = creep.findMyFlag("protector");
         var protectorFlag = _.filter(Game.flags,{ name: nameFlag})[0];
 
-        if (creep.room.memory.hostiles > 0) {
+        if (creep.room.memory.hostiles.length > 0) {
             // Attack code
             var hostiles = _.filter(creep.room.find(FIND_HOSTILE_CREEPS), function (c) { return isHostile(c)});
             var target = creep.pos.findClosestByPath(hostiles);

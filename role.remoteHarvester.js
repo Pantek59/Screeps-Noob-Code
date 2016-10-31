@@ -17,7 +17,7 @@ module.exports = {
                 creep.memory.working = false;
             }
             // if creep is harvesting energy but is full
-            else if (_.sum(creep.carry) == creep.carryCapacity) {
+            else if (_.sum(creep.carry) == creep.carryCapacity  || (creep.room.name == creep.memory.homeroom && _.sum(creep.carry) > 0)) {
                 if (creep.memory.working == false) {
                     delete creep.memory.path;
                     delete creep.memory._move;
@@ -102,7 +102,7 @@ module.exports = {
                     }
                     else {
                         //new room reached, start harvesting
-                        if (creep.room.memory.hostiles == 0) {
+                        if (creep.room.memory.hostiles.length == 0) {
                             //No enemy creeps
                             if (roleCollector.run(creep) != OK) {
                                 creep.moveTo(remoteSource, {reusePath: moveReusePath()});

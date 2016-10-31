@@ -17,7 +17,7 @@ module.exports = {
 
             // if creep is supposed to transfer energy to the controller
             if (creep.memory.working == true) {
-                if (creep.room.memory.hostiles > 0) {
+                if (creep.room.memory.hostiles.length > 0) {
                     // Hostiles present in room
                     creep.towerEmergencyFill();
                 }

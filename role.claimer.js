@@ -21,7 +21,7 @@ module.exports = {
             //new room reached, start reserving / claiming
             var returncode;
 
-            if (creep.room.memory.hostiles == 0) {
+            if (creep.room.memory.hostiles.length == 0) {
                 // try to claim the controller
                 if (creep.room.controller.owner == undefined) {
                     if (remoteController.memory.claim == 1) {

@@ -28,7 +28,7 @@ module.exports = {
             }
             // if creep is supposed to complete a constructionSite
             if (creep.memory.working == true) {
-                if (creep.room.memory.hostiles > 0) {
+                if (creep.room.memory.hostiles.length > 0) {
                     creep.towerEmergencyFill();
                 }
                 else {

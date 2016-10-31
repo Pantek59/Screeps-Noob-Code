@@ -6,7 +6,7 @@ module.exports = {
     run: function(creep) {
         var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
         // if creep is bringing energy to a structure but has no energy left
-        if (creep.room.memory.hostiles > 0) {
+        if (creep.room.memory.hostiles.length > 0) {
             var homespawn = Game.getObjectById(creep.memory.spawn);
             if (creep.room.name != creep.memory.homeroom) {
                 creep.moveTo(homespawn), {reusePath: moveReusePath()};
@@ -92,7 +92,7 @@ module.exports = {
 
                 if (creep.room.name == demolishFlag.pos.roomName) {
 
-                    if (creep.room.memory.hostiles == 0) {
+                    if (creep.room.memory.hostiles.length == 0) {
                         if (creep.memory.statusDemolishing == undefined) {
                             //new room reached, start demolishing
                             if (creep.memory.oldRoom == true) {

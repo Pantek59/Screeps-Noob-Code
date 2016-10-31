@@ -29,7 +29,7 @@ module.exports = {
                 var numberOfTransporters = creep.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
                 var structure;
 
-                if (creep.room.memory.hostiles > 0 && creep.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "protector")}).length == 0) {
+                if (creep.room.memory.hostiles.length > 0 && creep.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "protector")}).length == 0) {
                     //no tower refill;
                     structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_SPAWN, STRUCTURE_EXTENSION);
                 }
