@@ -30,7 +30,7 @@ module.exports = function() {
                 if (this.memory.currentFlag != undefined && flagCreeps.length <= volume) {
                     if (flagFunction == "haulEnergy") {
                         if (this.memory.role == "remoteStationaryHarvester") {
-                            var peers = _.filter(flagCreeps,{ memory: { function: "haulEnergy", role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
                             if (peers == null || peers.length > 1) {
                                 //Two remoteStationaryHarvesters on same source
                                 delete this.memory.currentFlag;
@@ -38,7 +38,24 @@ module.exports = function() {
                             else {return this.memory.currentFlag;}
                         }
                         else if (this.memory.role == "energyHauler") {
-                            var peers = _.filter(flagCreeps,{ memory: { function: "energyHauler", role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', spawn: this.room.memory.masterSpawn}});
+                            if (peers == null || peers.length >= flag.memory.volume) {
+                                delete this.memory.currentFlag;
+                            }
+                            else {return this.memory.currentFlag;}
+                        }
+                    }
+                    else if (flagFunction == "SKHarvest") {
+                        if (this.memory.role == "SKHarvester") {
+                            let peers = _.filter(flagCreeps,{ memory: { role: 'SKHarvester', currentFlag: this.memory.currentFlag}});
+                            if (peers == null || peers.length > 1) {
+                                //Two remoteStationaryHarvesters on same source
+                                delete this.memory.currentFlag;
+                            }
+                            else {return this.memory.currentFlag;}
+                        }
+                        else if (this.memory.role == "SKHauler") {
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHauler', spawn: this.room.memory.masterSpawn}});
                             if (peers == null || peers.length >= flag.memory.volume) {
                                 delete this.memory.currentFlag;
                             }
@@ -111,6 +128,21 @@ module.exports = function() {
                         }
                         else if (this.memory.role == "energyHauler") {
                             var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', currentFlag: this.memory.currentFlag}});
+                            if (peers.length <= (flagList[flag].memory.volume - 1)) {
+                                return this.memory.currentFlag;
+                            }
+                        }
+                        break;
+
+                    case "SKHarvest":
+                        if (this.memory.role == "SKHarvester") {
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHarvester', currentFlag: this.memory.currentFlag}});
+                            if (peers.length <= 1) {
+                                return this.memory.currentFlag;
+                            }
+                        }
+                        else if (this.memory.role == "SKHauler") {
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHauler', currentFlag: this.memory.currentFlag}});
                             if (peers.length <= (flagList[flag].memory.volume - 1)) {
                                 return this.memory.currentFlag;
                             }

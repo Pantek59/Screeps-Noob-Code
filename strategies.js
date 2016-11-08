@@ -315,8 +315,8 @@ module.exports = {
             case "skr": //Source keeper room patrol -> not working yet
                 //Find target
                 var keepers = [];
-                let roomFlags = creep.room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "haulEnergy" || f.memory.function == "haulMinerals" || f.memory.function == "remoteSource"});
-                if (flag.memory.keeperLairs == undefined || Game.time % 2 == 0) {
+                let roomFlags = creep.room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "SKHarvest" || f.memory.function == "SKMine"});
+                if (flag.memory.keeperLairs == undefined || Game.time % 11 == 0) {
                     //Search and save lair IDss & source keeper
                     flag.memory.keeperLairs = [];
                     if (roomFlags.length > 0) {
@@ -335,8 +335,6 @@ module.exports = {
                                 }
                             }
                         }
-
-
                     }
                 }
                 else {
@@ -359,7 +357,19 @@ module.exports = {
                 {
                     case "attacker":
                     case "einarr":
-                        if (keepers.length == 0) {
+                    case "archer":
+                        if (creep.memory.role == "einarr" && creep.hits < creep.hitsMax) {
+                            creep.heal(creep);
+                        }
+                        let invaders = creep.room.find(FIND_HOSTILE_CREEPS, {filter: (c) => c.owner.username == "Invader"});
+                        if (invaders.length > 0) {
+                            //Invaders spawned
+                            let myInvader = creep.pos.findClosestByPath(invaders);
+                            if (creep.attack(myInvader) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(myInvader, {reusePath: moveReusePath()});
+                            }
+                        }
+                        else if (keepers.length == 0) {
                             //No source keepers spawned -> goto next spawn
                             let lairs = []
                             for (let l in flag.memory.keeperLairs) {
@@ -369,37 +379,43 @@ module.exports = {
                             if (creep.pos.getRangeTo(lairs[0]) > 1) {
                                 creep.moveTo(lairs[0], {reusePath: moveReusePath()});
                             }
-                            else if (lairs[0].ticksToSpawn > 10) {
-                                creep.memory.sleep = lairs[0].ticksToSpawn -5
-                            }
                         }
                         else {
                             let myKeeper = creep.pos.findClosestByPath(keepers);
                             if (creep.pos.getRangeTo(myKeeper) > 6) {
                                 creep.moveTo(myKeeper, {reusePath: moveReusePath()});
                             }
-                            else if (creep.pos.findInRange(FIND_MY_CREEPS, 1, {filter: (c) => c.memory.role == "healer" && c.hits == c.hitsMax}).length > 0) {
+                            else if (creep.pos.findInRange(FIND_MY_CREEPS, 2, {filter: (c) => c.memory.role == "healer"}).length > 0) {
                                 //Healthy healer in range
                                 if (creep.attack(myKeeper) == ERR_NOT_IN_RANGE) {
                                     creep.moveTo(myKeeper, {reusePath: moveReusePath()});
                                 }
                             }
+                            else if (creep.pos.getRangeTo(myKeeper) < 7) {
+                                creep.goToHomeRoom();
+                            }
                         }
                         break;
 
                     case "healer":
+                        if (creep.hitsMax > creep.hits) {
+                            creep.heal(creep);
+                        }
+
                         let patient;
-                        if (creep.memory.myPatient == undefined || Game.time % 10 == 0) {
-                            patient = creep.pos.findClosestByPath(FIND_CREEPS, {filter: (c) => c.hits < c.hitsMax && isHostile(c) == false && ((c.memory.currentFlag != undefined && c.memory.currentFlag == creep.memory.currentFlag) || c.getActiveBodyparts(MOVE) == 0)});
-                            if (patient != null) {
-                                creep.memory.myPatient = patient.id;
+                        if (creep.memory.myPatient == undefined && Game.time % 3 == 0) {
+                            let patients = creep.pos.findInRange(FIND_CREEPS, 5, {filter: (c) => c.hits < c.hitsMax && isHostile(c) == false});
+                            if (patients.length > 0) {
+                                patient = creep.pos.findClosestByPath(patients);
+                                if (patient != null) {
+                                    creep.memory.myPatient = patient.id;
+                                }
                             }
                         }
                         else {
                            patient = Game.getObjectById(creep.memory.myPatient);
                         }
-
-                        if (patient != null) {
+                        if (patient != null && patient.hits < patient.hitsMax && patient.hits < creep.hits) {
                             if (creep.heal(patient) == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(patient, {reusePath: moveReusePath()});
                             }

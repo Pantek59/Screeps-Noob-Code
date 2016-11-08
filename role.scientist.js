@@ -7,7 +7,10 @@ module.exports = {
         if (Game.cpu.bucket > CPU_THRESHOLD) {
             if (creep.ticksToLive < 50 && _.sum(creep.carry) == 0) {
                 //Scientist will die soon and possibly drop precious material
-                creep.suicide();
+                let spawn = Game.getObjectById(creep.memory.spawn);
+                if (spawn.recycleCreep(creep) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(spawn, {reusePath: moveReusePath()});
+                }
             }
             else {
                 if (creep.room.memory.labOrder != undefined && creep.room.memory.innerLabs != undefined) {
@@ -37,13 +40,11 @@ module.exports = {
                                         if (creep.storeAllBut(innerLabs[lb].resource) == true) {
                                             if (_.sum(creep.carry) == 0) {
                                                 //Get minerals from storage
-                                                var creepPackage;
-                                                if (amount > creep.carryCapacity) {
+                                                var creepPackage = amount - currentInnerLab.mineralAmount;
+                                                if (creepPackage > creep.carryCapacity) {
                                                     creepPackage = creep.carryCapacity;
                                                 }
-                                                else {
-                                                    creepPackage = amount;
-                                                }
+
                                                 if (creep.withdraw(creep.room.storage, innerLabs[lb].resource, creepPackage) == ERR_NOT_IN_RANGE) {
                                                     creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                                                 }

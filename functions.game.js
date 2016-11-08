@@ -22,7 +22,7 @@ global.terminalTransfer = function (transferResource, transferAmount, targetRoom
         if (Game.rooms[r].terminal != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername) {
             //Fill candidate array with rooms
             var roomResourceTotal = 0;
-            var roomArray = new Array();
+            var roomArray = [];
 
             // Add resource in storage
             if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[transferResource] != undefined) {
@@ -385,7 +385,7 @@ global.checkTerminalLimits = function (room, resource) {
         //Look through orders to determine whether additional material is needed in terminal
 
         var relevantOrders = _.filter(Game.market.orders,function (order) {
-            if (order.resourceType == resource && order.roomName == room.name) {return true}
+            if (order.resourceType == resource && order.roomName == room.name && order.type == ORDER_SELL) {return true}
             else {return false}
         });
 

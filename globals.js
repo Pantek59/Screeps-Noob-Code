@@ -6,9 +6,10 @@ DELAYROOMSCANNING = 50;
 DELAYPANICFLAG = 5;
 DELAYSPAWNING = 13;
 DELAYLINK = 3;
-DELAYPRODUCTION = 25;
+DELAYPRODUCTION = 7;
 DELAYLAB = 10;
 DELAYRCL8INSTALLATION = 100;
+DELAYDROPPEDENERGY = 3;
 RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 TERMINALMAXFILLING = 290000;
@@ -800,6 +801,48 @@ buildingPlans = {
             body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
         }],
 
+    SKHarvester: [
+        {
+            //Level 1 (max 300)
+            minEnergy: 300,
+            body: [WORK, WORK, CARRY, MOVE]
+        },
+        {
+            //Level 2 (max 550)
+            minEnergy: 550,
+            body: [WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE]
+        },
+        {
+            //Level 3 (max 800)
+            minEnergy: 700,
+            body: [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE]
+        },
+        {
+            //Level 4 (max 1300)
+            minEnergy: 1200,
+            body: [WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 5 (max 1800)
+            minEnergy: 1550,
+            body: [WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 6 (max 2300)
+            minEnergy: 1550,
+            body: [WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 7 (max 5600)
+            minEnergy: 1550,
+            body: [WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 8 (max 12900)
+            minEnergy: 1550,
+            body: [WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        }],
+
     energyHauler: [
         {
             //Level 1 (max 300)
@@ -884,6 +927,48 @@ buildingPlans = {
             body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
         }],
 
+    SKHauler: [
+        {
+            //Level 1 (max 300)
+            minEnergy: 300,
+            body: [WORK, CARRY, CARRY, MOVE, MOVE]
+        },
+        {
+            //Level 2 (max 550)
+            minEnergy: 500,
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]
+        },
+        {
+            //Level 3 (max 800)
+            minEnergy: 650,
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]
+        },
+        {
+            //Level 4 (max 1300)
+            minEnergy: 1100,
+            body: [WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
+        },
+        {
+            //Level 5 (max 1800)
+            minEnergy: 1750,
+            body: [WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 6 (max 2300)
+            minEnergy: 1750,
+            body: [WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 7 (max 5600)
+            minEnergy: 1750,
+            body: [WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        },
+        {
+            //Level 8 (max 12900)
+            minEnergy: 1750,
+            body: [WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
+        }],
+
     attacker: [
         {
             //Level 1 (max 300)
@@ -924,6 +1009,48 @@ buildingPlans = {
             //Level 8 (max 12900)
             minEnergy: 3040,
             body: [TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK]
+        }],
+
+    archer: [
+        {
+            //Level 1 (max 300)
+            minEnergy: 260,
+            body: [MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 2 (max 550)
+            minEnergy: 390,
+            body: [MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 3 (max 800)
+            minEnergy: 800,
+            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 4 (max 1300)
+            minEnergy: 1300,
+            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 5 (max 1750)
+            minEnergy: 1350,
+            body: [TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 6 (max 2300)
+            minEnergy: 2270,
+            body: [TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 7 (max 5600)
+            minEnergy: 3040,
+            body: [TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+        },
+        {
+            //Level 8 (max 12900)
+            minEnergy: 3040,
+            body: [TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
         }],
 
     healer: [

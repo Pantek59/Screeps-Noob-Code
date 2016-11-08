@@ -172,4 +172,13 @@ module.exports = function() {
         }
         else {return true;}
     };
+
+    Creep.prototype.flee = function (hostilesArray, range) {
+        let hostilesMarker = [];
+        for (let h in hostilesArray) {
+            hostilesMarker.push({ pos: hostilesArray[h].pos, range: range });
+        }
+        var flightPath = PathFinder.search(this.pos, hostilesMarker, {flee: true}).path;
+        this.moveByPath(flightPath);
+    }
 };

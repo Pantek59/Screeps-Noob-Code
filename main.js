@@ -26,6 +26,8 @@ var roleUnit = require('role.unit');
 var roleScientist = require('role.scientist');
 var roleBigClaimer = require('role.bigClaimer');
 var roleTransporter = require('role.transporter');
+var roleSKHarvester = require('role.SKHarvester');
+var roleSKHauler = require('role.SKHauler');
 
 var CPUdebugString = "CPU Debug<br><br>";
 
@@ -50,7 +52,7 @@ function memCleanThingy(g,m){
 }
 
 // Any modules that you use that modify the game's prototypes should be require'd before you require the profiler.
-const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
+//const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
 
 // This line monkey patches the global prototypes.
 //profiler.enable();
@@ -58,7 +60,9 @@ module.exports.loop = function() {
     //profiler.wrap(function() {
         if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
         // check for memory entries of died creeps by iterating over Memory.creeps
-        memCleanCreeps();
+        if (Game.time % 37 == 0) {
+            memCleanCreeps();
+        }
         // same for flags
         //memCleanFlags(); //Flags do not count as memory (yet), therefore not necessary (yet)
     
@@ -117,9 +121,9 @@ module.exports.loop = function() {
                         Game.flags[f].setColor(COLOR_BLUE, COLOR_BROWN);
                         break;
 
-                    case "realmExit":
+                    case "SKHarvest":
                         //Flag marking the edge of civilization
-                        Game.flags[f].setColor(COLOR_WHITE, COLOR_BROWN);
+                        Game.flags[f].setColor(COLOR_CYAN, COLOR_YELLOW);
                         break;
                 }
             }
@@ -323,10 +327,13 @@ module.exports.loop = function() {
         // Cycle through rooms
         for (var r in Game.rooms) {
 
-            //Save # of hostile creeps in room
+            //Save hostile creeps in room
             var enemies = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
-            Game.rooms[r].memory.hostiles = _.filter(enemies, function (e) {return (isHostile(e))});
-
+            enemies = _.filter(enemies, function (e) {return (isHostile(e))});
+            Game.rooms[r].memory.hostiles = [];
+            for (let e in enemies) {
+                Game.rooms[r].memory.hostiles.push(enemies[e].id);
+            }
 
 
             //Set default resource limits:
@@ -354,7 +361,7 @@ module.exports.loop = function() {
 
             //Build RCL8 installations
             if (Game.time % DELAYRCL8INSTALLATION == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.level == 8 && Game.rooms[r].controller.owner.username == playerUsername) {
-                let structures = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_NUKER || s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_TOWER || s.structureType == STRUCTURE_STORAGE});
+                let structures = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_NUKER || s.structureType == STRUCTURE_TERMINAL || s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_TOWER || s.structureType == STRUCTURE_STORAGE});
                 for (let s in structures) {
                     let foundStructures = structures[s].pos.lookFor(LOOK_STRUCTURES);
                     foundStructures = foundStructures.concat(structures[s].pos.lookFor(LOOK_CONSTRUCTION_SITES));
@@ -512,7 +519,6 @@ module.exports.loop = function() {
             }
 
             //Panic flag code
-            //TODO Energyhaul sites must be included in one step
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting flag code: " + Game.cpu.getUsed())}
             if (Game.time % DELAYPANICFLAG == 0) {
                 // Check existing flags
@@ -524,9 +530,12 @@ module.exports.loop = function() {
                 }
 
                 //Set new flags
-                var remoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'remoteSource'}});
-                for (var f in remoteHarvestingFlags) {
-                    var flag = remoteHarvestingFlags[f];
+                //var remoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'remoteSource'}});
+                var remoteFlags = _.filter(Game.flags, function (f) {
+                    return (f.memory.function == "remoteSource" || f.memory.function == "haulEnergy");
+                });
+                for (var f in remoteFlags) {
+                    var flag = remoteFlags[f];
                     if (flag.room != undefined) {
                         // We have visibility in room
                         if (flag.room.memory.hostiles.length > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
@@ -546,36 +555,6 @@ module.exports.loop = function() {
                             var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
                             tempFlag.remove();
                             delete flag.room.memory.panicFlag;
-                        }
-                    }
-                }
-
-                var stationaryRemoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'haulEnergy'}});
-
-                for (var f in stationaryRemoteHarvestingFlags) {
-                    var flag = stationaryRemoteHarvestingFlags[f];
-                    if (flag.room != undefined) {
-                        // We have visibility in room
-                        if (flag.room.memory.hostiles.length > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
-                            //Hostiles present in room with remote harvesters
-                            var panicFlag = flag.pos.createFlag(); // create white panic flag to attract protectors
-                            flag.room.memory.panicFlag = panicFlag;
-                            panicFlag = _.filter(Game.flags, {name: panicFlag})[0];
-                            panicFlag.memory.function = "protector";
-                            panicFlag.memory.volume = flag.room.memory.hostiles.length;
-                            panicFlag.memory.spawn = flag.memory.spawn;
-                            panicFlag.memory.panic = true;
-
-                            console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
-                        }
-                        else if (flag.room.memory.hostiles.length == 0 && flag.room.memory.panicFlag != undefined) {
-                            // No hostiles present in room with remote harvesters
-                            var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
-                            if (tempFlag != undefined) {
-                                tempFlag.remove();
-                                delete flag.room.memory.panicFlag;
-                            }
-
                         }
                     }
                 }
@@ -653,16 +632,23 @@ module.exports.loop = function() {
                 }
             }
             else if (Game.time % DELAYSPAWNING == 0 && Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
-                moduleSpawnCreeps.run(Game.rooms[r], allies);
+                moduleSpawnCreeps.run(Game.rooms[r]);
             }
 
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting tower code: " + Game.cpu.getUsed())}
 
 
             // Tower code
+            var towers = [];
+            for (let t in Game.rooms[r].memory.roomArrayTowers) {
+                towers.push(Game.getObjectById(Game.rooms[r].memory.roomArrayTowers[t]));
+            }
+
             if (Game.rooms[r].memory.hostiles.length > 0) {
-                var towers = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
-                var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
+                let hostiles = [];
+                for (let h in Game.rooms[r].memory.hostiles) {
+                    hostiles.push(Game.getObjectById(Game.rooms[r].memory.hostiles[h]));
+                }
 
                 for (var tower in towers) {
                     // Tower attack code
@@ -686,47 +672,53 @@ module.exports.loop = function() {
                     }
 
                     if (hostiles.length > 0) {
-                        if (attackingInvader != undefined) {
-                            hostiles[0] = Game.getObjectById(attackingInvader);
-                        }
-                        var username = hostiles[0].owner.username;
-                        if (allies.indexOf(username) == -1) {
-                            if (Game % 3 == 0) {
-                                console.log("Hostile creep " + username + " spotted in room " + Game.rooms[r].name + "!");
-                            }
-                            towers.forEach(tower => tower.attack(hostiles[0]));
+                        let towerTarget = towers[tower].pos.findClosestByRange(hostiles);
+                        if (towerTarget != null) {
+                            towers[tower].attack(towerTarget);
                         }
                     }
-                    else {
-                        // Tower healing code
-                        var wounded = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (s) => s.hits < s.hitsMax});
-                        if (wounded.length > 0) {
-                            towers[tower].heal(wounded[0]);
-                        }
+                }
+            }
+            else {
+                var wounded = Game.rooms[r].find(FIND_CREEPS, {filter: (s) => s.hits < s.hitsMax && isHostile(s) == false});
+                if (wounded.length > 0) {
+                    // Tower healing code
+                    for (var tower in towers) {
+                        let towerTarget = towers[tower].pos.findClosestByRange(wounded);
+                        towers[tower].heal(towerTarget);
                     }
                 }
             }
 
             // Search for dropped energy
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
-            var energies = Game.rooms[r].find(FIND_DROPPED_ENERGY);
-            for (var energy in energies) {
-                var energyID = energies[energy].id;
-                var energyAmount = energies[energy].amount;
+            if (Game.time % DELAYDROPPEDENERGY == 0) {
+                var energies = Game.rooms[r].find(FIND_DROPPED_ENERGY);
+                let lastPos;
+                for (var energy in energies) {
+                    if (energies[energy] != undefined && energies[energy].pos.isEqualTo(lastPos) == false || energies[energy].pos.findInRange(FIND_HOSTILE_CREEPS, {filter: (h) => isHostile(h) == true}).length == 0) {
+                        lastPos = energies[energy].pos;
 
-                if (energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArrayLairs.length > 0)) {
-                    var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
-                            filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true});
+                        var energyID = energies[energy].id;
+                        var energyAmount = energies[energy].amount;
+                        let busyCollectors = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == "pickUpEnergy" && c.memory.jobQueueObject == energyID});
+                        if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArrayLairs.length > 0)) {
+                            var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
+                                filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true
+                            });
 
-                    if (collector == null) {
-                        collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
-                                filter: (s) => (s.carryCapacity - _.sum(s.carry)) > 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true});
-                    }
+                            if (collector == null) {
+                                collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
+                                    filter: (s) => (s.carryCapacity - _.sum(s.carry)) > 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.role != "SKHarvester" && s.memory.dropEnergy != true
+                                });
+                            }
 
-                    if (collector != null) {
-                        // Creep found to pick up dropped energy
-                        collector.memory.jobQueueObject = energyID;
-                        collector.memory.jobQueueTask = "pickUpEnergy";
+                            if (collector != null) {
+                                // Creep found to pick up dropped energy
+                                collector.memory.jobQueueObject = energyID;
+                                collector.memory.jobQueueTask = "pickUpEnergy";
+                            }
+                        }
                     }
                 }
             }
@@ -745,12 +737,14 @@ module.exports.loop = function() {
                 }
 
                 for (var link in Game.rooms[r].memory.roomArrayLinks) {
-                    if (Game.rooms[r].memory.linksEmpty == undefined || Game.rooms[r].memory.linksEmpty.indexOf(Game.rooms[r].memory.roomArrayLinks[link]) == -1) {
-                        fillLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
-                        targetLevel += Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]).energy;
-                    }
-                    else {
-                        emptyLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
+                    if (Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]) != undefined) {
+                        if (Game.rooms[r].memory.linksEmpty == undefined || Game.rooms[r].memory.linksEmpty.indexOf(Game.rooms[r].memory.roomArrayLinks[link]) == -1) {
+                            fillLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
+                            targetLevel += Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]).energy;
+                        }
+                        else {
+                            emptyLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
+                        }
                     }
                 }
                 targetLevel = Math.ceil(targetLevel / fillLinks.length / 100); //Targetlevel is now 0 - 8
@@ -1103,7 +1097,7 @@ module.exports.loop = function() {
             }
             else
             { // Check for sleeping creeps
-                if (creep.memory.sleep != undefined) {
+                if (creep.memory.sleep != undefined && creep.memory.jobQueueTask == undefined) {
                     creep.memory.sleep--;
                     //creep.say("Zzz: " + creep.memory.sleep);
                     if (creep.memory.sleep < 1) {
@@ -1178,13 +1172,31 @@ module.exports.loop = function() {
                         //Job queue pending
                         switch (creep.memory.jobQueueTask) {
                             case "pickUpEnergy": //Dropped energy to be picked up
-                                let source = creep.pos.findClosestByPath(FIND_DROPPED_ENERGY);
-                                //let enemy = creep.pos.findClosestByPath(creep.room.memory.hostiles);
-
-                                if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(source, {reusePath: moveReusePath()});
+                                if (_.sum(creep.carry) == creep.carryCapacity) {
+                                    //creep full
+                                    delete creep.memory.myDroppedEnergy;
+                                    delete creep.memory.jobQueueObject;
+                                    delete creep.memory.jobQueueTask;
                                 }
-                                creep.memory.jobQueueTask = undefined;
+                                else {
+                                    if (creep.memory.myDroppedEnergy == undefined) {
+                                        let source = creep.pos.findClosestByPath(FIND_DROPPED_ENERGY);
+                                        if (source != null) {
+                                            creep.memory.myDroppedEnergy = source.id;
+                                        }
+                                    }
+
+                                    let source = Game.getObjectById(creep.memory.myDroppedEnergy);
+
+                                    if (source == null) {
+                                        delete creep.memory.myDroppedEnergy;
+                                        delete creep.memory.jobQueueObject;
+                                        delete creep.memory.jobQueueTask;
+                                    }
+                                    else if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
+                                        creep.moveTo(source, {reusePath: moveReusePath()});
+                                    }
+                                }
                                 break;
 
                             case "prepareBoost": //Creep boost to be prepared
@@ -1314,6 +1326,12 @@ module.exports.loop = function() {
                             }
                             else if (creep.memory.role == 'bigUpgrader') {
                                 roleUpgrader.run(creep);
+                            }
+                            else if (creep.memory.role == 'SKHarvester') {
+                                roleSKHarvester.run(creep);
+                            }
+                            else if (creep.memory.role == 'SKHauler') {
+                                roleSKHauler.run(creep);
                             }
                         }
                     }

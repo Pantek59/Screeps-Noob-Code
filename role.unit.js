@@ -18,23 +18,18 @@ module.exports = {
             else {
                 // Creep still on route, attack within 4 range
                 creep.memory.strategy = false;
-                let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4, function (c) { return isHostile(c)});
-                if (nearTargets.length > 0) {
-                    target = creep.pos.findClosestByPath(nearTargets);
-                    if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(target);
+                if (creep.room.memory.hostiles.length > 0) {
+                    let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4, function (c) { return isHostile(c)});
+                    if (nearTargets.length > 0) {
+                        let target = creep.pos.findClosestByPath(nearTargets);
+                        if (creep.attack(target) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(target);
+                        }
                     }
                 }
                 else {
                     creep.moveTo(groupFlag, {reusePath: moveReusePath()});
                 }
-            }
-        }
-        else if (groupFlag != undefined && groupFlag != null) {
-            //Move to flag if not in target room yet
-            var range = creep.pos.getRangeTo(groupFlag);
-            if (range > 5) {
-                creep.moveTo(groupFlag, {reusePath: moveReusePath()});
             }
         }
         else {

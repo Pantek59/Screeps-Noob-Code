@@ -38,10 +38,22 @@ module.exports = {
                         }
                     }
                     else if (creep.room.memory.roomArraySpawns.length > 0) {
-                        // find closest structure with less than max hits, exclude walls
-                        var structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART) || (s.structureType == STRUCTURE_RAMPART && s.hits < 100000)});
-                        // if we find one
+                        let structure;
+                        if (creep.memory.myStructure != undefined) {
+                            structure = Game.getObjectById(creep.memory.myStructure);
+                            if (structure != null && structure.hits < structure.hitsMax && structure.structureType != STRUCTURE_WALL && structure.structureType != STRUCTURE_RAMPART || (structure.structureType == STRUCTURE_RAMPART && structure.hits < 100000)) {
+                                creep.memory.myStructure = structure.id;
+                            }
+                            else {
+                                delete creep.memory.myStructure;
+                            }
+                        }
+
+                        if (creep.memory.myStructure == undefined) {
+                            structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.hits < s.hitsMax && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_RAMPART) || (s.structureType == STRUCTURE_RAMPART && s.hits < 100000)});
+                        }
                         if (structure != undefined) {
+                            creep.memory.myStructure = structure.id;
                             var result = creep.repair(structure);
                             if (result == ERR_NOT_IN_RANGE) {
                                 creep.moveTo(structure, {reusePath: moveReusePath()});

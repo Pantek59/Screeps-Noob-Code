@@ -14,6 +14,7 @@ module.exports = {
             else if (creep.pos.getRangeTo(homespawn) > 5) {
                 creep.moveTo(homespawn), {reusePath: moveReusePath()};
             }
+            creep.memory.fleeing = true;
             return;
         }
 
@@ -76,14 +77,14 @@ module.exports = {
             //TODO Several demolishers per spawn; use creep.findMyFlag()
             //Find something to demolish
 
-            var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
+            demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
             if (demolishFlag.length > 0) {
                 // Find exit to target room
                 demolishFlag = demolishFlag[0];
 
                 if (creep.room.name != demolishFlag.pos.roomName) {
                     //still in old room, go out
-                    if (creep.moveTo(demolishFlag) == ERR_NO_PATH) {
+                    if (creep.moveTo(demolishFlag, {reusePath: moveReusePath()}) == ERR_NO_PATH) {
                         delete creep.memory._move;
                         delete creep.memory.path;
                     }
@@ -91,7 +92,6 @@ module.exports = {
                 }
 
                 if (creep.room.name == demolishFlag.pos.roomName) {
-
                     if (creep.room.memory.hostiles.length == 0) {
                         if (creep.memory.statusDemolishing == undefined) {
                             //new room reached, start demolishing

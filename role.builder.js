@@ -33,12 +33,24 @@ module.exports = {
                 }
                 else {
                     // find closest constructionSite
-                    var constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
-                    if (constructionSite == null) {
-                        constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_EXTENSION});
+                    var constructionSite;
+                    if (creep.memory.myConstructionSite == undefined) {
+                        constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
+                        if (constructionSite == null) {
+                            constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_EXTENSION});
+                        }
+                        if (constructionSite == null) {
+                            constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, {filter: (s) => s.structureType != STRUCTURE_RAMPART});
+                        }
+                        if (constructionSite != null && constructionSite != undefined) {
+                            creep.memory.myConstructionSite = constructionSite.id;
+                        }
                     }
-                    if (constructionSite == null) {
-                        constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, {filter: (s) => s.structureType != STRUCTURE_RAMPART});
+                    else {
+                        constructionSite = Game.getObjectById(creep.memory.myConstructionSite);
+                        if (constructionSite == null) {
+                            delete creep.memory.myConstructionSite;
+                        }
                     }
                     // if one is found
                     if (constructionSite != undefined) {

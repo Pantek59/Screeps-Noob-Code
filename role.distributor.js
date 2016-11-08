@@ -10,7 +10,7 @@ module.exports = {
             if (_.sum(creep.carry) > 0) {
                 //Creep full
                 if (creep.pos.getRangeTo(creep.room.terminal) > 1) {
-                    creep.moveTo(creep.room.terminal);
+                    creep.moveTo(creep.room.terminal, {reusePath: moveReusePath()});
                 }
                 else {
                     // Dump everything into terminal
@@ -55,14 +55,14 @@ module.exports = {
                             energyCost = creep.carryCapacity;
                         }
                         if(creep.withdraw(creep.room.storage, RESOURCE_ENERGY, energyCost) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(creep.room.storage);
+                            creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                         }
                     }
                 }
                 else {
                     // Get transfer resource
                     if(creep.withdraw(creep.room.storage, transferResource, packageVolume) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(creep.room.storage);
+                        creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                     }
                 }
             }
@@ -169,7 +169,7 @@ module.exports = {
                                 }
 
                                 if (creep.withdraw(creep.room.storage, res, load) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(creep.room.storage);
+                                    creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                                 }
                                 breaker = true;
                                 break;
@@ -179,7 +179,21 @@ module.exports = {
 
                         if (breaker == false && _.sum(creep.carry) == 0) {
                             //Look for minerals in containers
-                            var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
+                            let container;
+                            if (creep.memory.myMineralContainer == undefined) {
+                                container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
+                                if (container != null) {
+                                    creep.memory.myMineralContainer = container.id;
+                                }
+                            }
+                            else {
+                                container = Game.getObjectById(creep.memory.myMineralContainer);
+                                if (_.sum(container.store) == container.store[RESOURCE_ENERGY]) {
+                                    delete creep.memory.myMineralContainer;
+                                    container = null;
+                                }
+                            }
+
                             var containerResource = undefined;
 
                             if (container != undefined && container != null && creep.room.storage != undefined) {
@@ -193,7 +207,7 @@ module.exports = {
                                     }
                                 }
                                 if (containerResource != undefined && creep.withdraw(container, containerResource) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(container);
+                                    creep.moveTo(container, {reusePath: moveReusePath()});
                                 }
                             }
                         }
