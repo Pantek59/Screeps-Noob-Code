@@ -1,9 +1,4 @@
 module.exports = function() {
-    //Memory.wayFinder.roomname.targetFlagName.pos
-    //Memory.wayFinder.roomname.targetFlagName.start
-    //Memory.wayFinder.roomname.targetFlagName.way
-    //Memory.wayFinder.roomname.realmExists.exitFlagName.pos
-
     Creep.prototype.MoveToRemoteFlag = function(targetFlagName) {
         if (Game.flags[targetFlagName] != undefined && Game.flags[targetFlagName].pos != undefined) {
             if (Memory.wayFinder == undefined) {
@@ -40,11 +35,11 @@ module.exports = function() {
             if (init == true) {
                 console.log("New path calculation");
                 //Path to flag unknown -> find correct realmExit for target flag
-                var exitFlags = this.room.find(FIND_FLAGS, {filter: (s) => (s.memory.function == "realmExit")});
+                let exitFlags = this.room.find(FIND_FLAGS, {filter: (s) => (s.memory.function == "realmExit")});
                 if (exitFlags.length > 0) {
                     //TODO Find correct realmExit flag
                     //var realmExitFlag = Game.flags[targetFlagName].pos.findClosestByPath(exitFlags);
-                    var realmExitFlag = Game.flags["W18S44_Exit_East"];
+                    let realmExitFlag = Game.flags["W18S44_Exit_East"];
                     if (realmExitFlag != null) {
                         Memory.wayFinder[this.room.name][targetFlagName].start = realmExitFlag.name;
                         Memory.wayFinder[this.room.name][targetFlagName].way = realmExitFlag.pos.findPathTo(Game.flags[targetFlagName], {ignoreCreeps: true});
@@ -95,7 +90,13 @@ module.exports = function() {
                         this.moveTo(Game.getObjectById(this.memory.spawn));
                     }
                     else {
-                        var freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+                        let freeContainer;
+                        if (this.room.storage == undefined) {
+                            freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
+                        }
+                        else {
+                            freeContainer = this.room.storage;
+                        }
                         if (this.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
                             this.moveTo(freeContainer, {reusePath: moveReusePath()});
                         }
@@ -180,5 +181,57 @@ module.exports = function() {
         }
         var flightPath = PathFinder.search(this.pos, hostilesMarker, {flee: true}).path;
         this.moveByPath(flightPath);
+    };
+
+    Creep.prototype.gotoFlag = function (flag) {
+        if (flag.memory.waypoints == undefined) {
+            // No waypoints set -> proceed directly to flag
+            this.moveTo(flag, {reusePath: moveReusePath()});
+        }
+        else {
+            // Target flag has waypoints set
+            if (this.memory.waypointFlag != flag.name) {
+                // New flag target -> reset counter;
+                this.memory.waypointCounter = 0;
+                this.memory.waypointFlag = flag.name;
+            }
+
+            if (flag.memory.waypoints.length == this.memory.waypointCounter) {
+                // Last waypoint reached -> go to final destination
+                if (this.pos.getRangeTo(flag) > 2) {
+                    this.moveTo(flag, {reusePath: moveReusePath()});
+                }
+                else {
+                    this.memory.sleep = 3;
+                }
+            }
+            else {
+                //Go to waypoint
+                let waypointFlag = Game.flags[flag.memory.waypoints[this.memory.waypointCounter]];
+
+                if (waypointFlag == null) {
+                    //Waypoint flag does not exist
+                    console.log("Flag " + flag.name + " in room " + flag.pos.roomName + " has an invalid way-point #" + this.memory.waypointCounter);
+                    return false;
+                }
+                else {
+                    //Waypoint is valid
+                    if (this.room.name == waypointFlag.pos.roomName) {
+                        // Creep is in waypoint room
+                        if (this.pos.getRangeTo(waypointFlag) < 2) {
+                            // Waypoint reached
+                            this.memory.waypointCounter++;
+                        }
+                        else {
+                            this.moveTo(waypointFlag, {reusePath: moveReusePath()});
+                        }
+                    }
+                    else {
+                        // Creep not in waypoint room
+                        this.moveTo(waypointFlag, {reusePath: moveReusePath()});
+                    }
+                }
+            }
+        }
     }
 };

@@ -67,13 +67,21 @@ module.exports = {
                     // if no constructionSite is found
                     else {
                         // go upgrading the controller
-                        roleUpgrader.run(creep);
+                        if (creep.room.controller.level < 8) {
+                            roleUpgrader.run(creep);
+                        }
+                        else {
+                            let spawn = Game.getObjectById(creep.memory.spawn);
+                            if (spawn.recycleCreep(creep) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(spawn, {reusePath: moveReusePath()});
+                            }
+                        }
                     }
                 }
             }
             // if creep is supposed to harvest energy from source
             else {
-                roleCollector.run(creep);
+                    roleCollector.run(creep);
             }
         }
     }

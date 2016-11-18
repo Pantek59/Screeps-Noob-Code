@@ -25,10 +25,9 @@ module.exports = {
         else {
             //No flag for protector anymore
             if (creep.goToHomeRoom() == true) {
-                var spawn = Game.getObjectById(creep.memory.spawn);
                 var range = creep.pos.getRangeTo(creep.room.controller);
                 if (range > 1) {
-                    creep.moveTo(creep.room.controller, {reusePath: moveReusePath()});
+                    creep.moveTo(creep.room.controller, {reusePath: moveReusePath(), ignoreCreeps: true});
                 }
             }
         }

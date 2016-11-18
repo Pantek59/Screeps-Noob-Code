@@ -2,29 +2,30 @@ module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
         // Find exit to target room
-        var remoteController = Game.flags[creep.findMyFlag("remoteController")];
-        if (remoteController != undefined) {
-            creep.memory.currentFlag = remoteController.name;
+        var remoteControllerFlag;
+        if (creep.memory.currentFlag == undefined) {
+            remoteControllerFlag = Game.flags[creep.findMyFlag("remoteController")];
+        }
+        else {
+            remoteControllerFlag = Game.flags[creep.memory.currentFlag];
         }
 
-        if (remoteController != undefined && (remoteController.room == undefined || creep.room.name != remoteController.pos.roomName)) {
-            //still in wrong room, go out
-            if (!creep.memory.path) {
-                creep.memory.path = creep.pos.findPathTo(remoteController);
-            }
-            if (creep.moveByPath(creep.memory.path) == ERR_NOT_FOUND) {
-                creep.memory.path = creep.pos.findPathTo(remoteController);
-                creep.moveByPath(creep.memory.path)
-            }
+        if (remoteControllerFlag != undefined) {
+            creep.memory.currentFlag = remoteControllerFlag.name;
         }
-        else if (remoteController != undefined) {
+
+        if (remoteControllerFlag != undefined && creep.room.name != remoteControllerFlag.pos.roomName) {
+            //still in wrong room, go out
+            creep.gotoFlag(remoteControllerFlag);
+        }
+        else if (remoteControllerFlag != undefined) {
             //new room reached, start reserving / claiming
             var returncode;
 
             if (creep.room.memory.hostiles.length == 0) {
                 // try to claim the controller
                 if (creep.room.controller.owner == undefined) {
-                    if (remoteController.memory.claim == 1) {
+                    if (remoteControllerFlag.memory.claim == 1) {
                         returncode = creep.claimController(creep.room.controller);
                     }
                     else {
@@ -43,9 +44,11 @@ module.exports = {
                     //Roomed successfully claimed, now build spawn and remove spawns and extensions from previous owner
                     var spawns = creep.room.find(FIND_MY_SPAWNS).length;
                     if (spawns == 0) {
+
                         var spawnConstructionsites = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
                         if (spawnConstructionsites == 0) {
-                            remoteController.pos.createConstructionSite(STRUCTURE_SPAWN);
+
+                            remoteControllerFlag.pos.createConstructionSite(STRUCTURE_SPAWN);
                         }
                     }
 

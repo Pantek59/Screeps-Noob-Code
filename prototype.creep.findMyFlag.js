@@ -6,7 +6,6 @@ module.exports = function() {
         var flag;
         var flagCreeps;
         var volume;
-        //TODO Claimers should only get flag if the reservation ticker is below 3000
 
 		if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
 		    // static volumes
@@ -15,7 +14,7 @@ module.exports = function() {
 
         if (this.memory.currentFlag != undefined && this.memory.currentFlag != -1) {
             // There is a current flag
-            if (Game.time % 3 == 0) {
+            if (Game.time % DELAYFLAGFINDING == 0) {
                 flag = Game.flags[this.memory.currentFlag];
                 if (flag == undefined) {
                     volume = 0;

@@ -178,10 +178,7 @@ module.exports = {
         // Upgrader
         if (spawnRoom.controller.level == 8) {
             minimumSpawnOf.upgrader = 0;
-            if (spawnRoom.storage.store[RESOURCE_ENERGY] > 300000) {
-                minimumSpawnOf.upgrader = 2;
-            }
-            else if (spawnRoom.storage.store[RESOURCE_ENERGY] > 200000) {
+            if (spawnRoom.storage.store[RESOURCE_ENERGY] > 200000) {
                 minimumSpawnOf.upgrader = 1;
             }
         }
@@ -340,6 +337,9 @@ module.exports = {
         else if (numberOf.remoteHarvester < Math.floor(minimumSpawnOf.remoteHarvester) && (buildingPlans.remoteHarvester[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.remoteHarvester[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'remoteHarvester';
         }
+        else if (numberOf.builder < minimumSpawnOf.builder && (buildingPlans.builder[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.builder[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
+            var rolename = 'builder';
+        }
         else if (numberOf.distributor < minimumSpawnOf.distributor && (buildingPlans.distributor[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.distributor[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'distributor';
         }
@@ -357,9 +357,6 @@ module.exports = {
         }
         else if (numberOf.miner < minimumSpawnOf.miner && (buildingPlans.miner[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.miner[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'miner';
-        }
-        else if (numberOf.builder < minimumSpawnOf.builder && (buildingPlans.builder[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.builder[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
-            var rolename = 'builder';
         }
         else if (numberOf.wallRepairer < minimumSpawnOf.wallRepairer && (buildingPlans.wallRepairer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.wallRepairer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             var rolename = 'wallRepairer';

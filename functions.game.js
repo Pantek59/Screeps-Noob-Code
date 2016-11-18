@@ -380,7 +380,7 @@ global.checkTerminalLimits = function (room, resource) {
         delta.amount = 0
     }
 
-    //Check market selling orders
+    //Check market selling orders to add minerals to terminal
     if (Object.keys(Game.market.orders).length > 0) {
         //Look through orders to determine whether additional material is needed in terminal
 
@@ -392,13 +392,29 @@ global.checkTerminalLimits = function (room, resource) {
         if (relevantOrders.length > 0) {
             for (let o in relevantOrders) {
                 if (relevantOrders[o].remainingAmount > TERMINALMARKETSTORE) {
-                    uplift = TERMINALMARKETSTORE;
+                    uplift += TERMINALMARKETSTORE;
                 }
                 else {
                     uplift += relevantOrders[o].remainingAmount;
                 }
             }
             delta.amount -= uplift;
+        }
+    }
+
+    //Check single buying orders to add energy to terminal
+    if (Memory.buyOrder != undefined && Memory.buyRoom == room.name && resource == RESOURCE_ENERGY) {
+        let info = Memory.buyOrder.split(":");
+        let order = Game.market.getOrderById(info[1]);
+        if (order != null) {
+            if (info[0] > 500) {
+                info[0] = 500;
+            }
+            if (info[0] > order.amount) {
+                info[0] = order.amount;
+            }
+            let plusEnergy = Game.market.calcTransactionCost(info[0], Memory.buyRoom, order.roomName);
+            delta.amount -= plusEnergy;
         }
     }
 
@@ -477,7 +493,7 @@ global.buy = function (orderID, amount) {
         return "Invalid order ID!"
     }
 
-    if (order.amount < amount) {
+    if (order.remainingAmount < amount) {
         return "Order does not contain enough material!"
     }
 
@@ -621,25 +637,40 @@ global.listBoost = function (roomName) {
     if (arguments.length == 0) {
         return "listBoost (roomName)";
     }
-    var roles = [];
-    var boostMinerals = [];
-    var volumes = [];
-    for (let e in myRooms[roomName].memory.boostList) {
-        if (roles.indexOf(Game.rooms[roomName].memory.boostList[e].role) == -1) {
-            roles.push(Game.rooms[roomName].memory.boostList[e].role);
-            boostMinerals.push(Game.rooms[roomName].memory.boostList[e].mineralType);
-            volumes.push(Game.rooms[roomName].memory.boostList[e].volume);
-
+    var roomList = [];
+    if (roomName == "*") {
+        for (let u in myRooms) {
+            roomList.push(u);
         }
     }
-
-    var returnstring = "<table><tr><th>Entry  </th><th>Role  </th><th>Boost  </th><th>Volume  </th></tr>";
-    for (let r in roles) {
-        returnstring = returnstring.concat("<tr><td>" + r + ":  </td>");
-        returnstring = returnstring.concat("<td>" + roles[r] + "  </td><td>" + boostMinerals[r] + "  </td><td>" + volumes[r] + "  </td>");
-        returnstring = returnstring.concat("</tr>");
+    else {
+        roomList.push(roomName)
     }
-    returnstring = returnstring.concat("</table>");
+    var returnstring = "";
+
+    for (roomName in roomList) {
+        var roles = [];
+        var boostMinerals = [];
+        var volumes = [];
+        for (let e in myRooms[roomList[roomName]].memory.boostList) {
+            if (roles.indexOf(Game.rooms[roomList[roomName]].memory.boostList[e].role) == -1) {
+                roles.push(Game.rooms[roomList[roomName]].memory.boostList[e].role);
+                boostMinerals.push(Game.rooms[roomList[roomName]].memory.boostList[e].mineralType);
+                volumes.push(Game.rooms[roomList[roomName]].memory.boostList[e].volume);
+
+            }
+        }
+
+        if (boostMinerals.length > 0) {
+            returnstring = returnstring.concat(roomList[roomName] + ":<br><table><tr><th>Entry  </th><th>Role  </th><th>Boost  </th><th>Volume  </th></tr>");
+            for (let r in roles) {
+                returnstring = returnstring.concat("<tr><td>" + r + ":  </td>");
+                returnstring = returnstring.concat("<td>" + roles[r] + "  </td><td>" + boostMinerals[r] + "  </td><td>" + volumes[r] + "  </td>");
+                returnstring = returnstring.concat("</tr>");
+            }
+            returnstring = returnstring.concat("</table><br>");
+        }
+    }
     return returnstring;
 };
 

@@ -130,9 +130,31 @@ module.exports = {
 
                         case "running":
                         default:
-                            delete creep.memory.targetBuffer;
-                            delete creep.memory.resourceBuffer;
-                            roleEnergyTransporter.run(creep);
+                            let mineralsContainers = creep.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && (_.sum(s.store) > s.store[RESOURCE_ENERGY] || (_.sum(s.store) > 0 && s.store[RESOURCE_ENERGY == 0]))});
+                            if (mineralsContainers.length == 0) {
+                                delete creep.memory.targetBuffer;
+                                delete creep.memory.resourceBuffer;
+                                roleEnergyTransporter.run(creep);
+                            }
+                            else {
+                                //get minerals from container
+                                if (creep.memory.tidyFull == undefined && _.sum(creep.carry) < creep.carryCapacity) {
+                                    //creep not full
+                                    for (let e in mineralsContainers[0].store){
+                                        if (e != "energy" && creep.withdraw(mineralsContainers[0],e) == ERR_NOT_IN_RANGE) {
+                                            creep.moveTo(mineralsContainers[0],{reusePath: moveReusePath()});
+                                        }
+                                    }
+                                }
+                                else {
+                                    //creep full
+                                    creep.memory.tidyFull = true;
+                                    creep.storeAllBut();
+                                    if (_.sum(creep.carry) == 0) {
+                                        delete creep.memory.tidyFull;
+                                    }
+                                }
+                            }
                             break;
                     }
                 }

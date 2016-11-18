@@ -19,6 +19,7 @@ module.exports = {
                 // Creep still on route, attack within 4 range
                 creep.memory.strategy = false;
                 if (creep.room.memory.hostiles.length > 0) {
+                    //Enemy creeps around
                     let nearTargets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4, function (c) { return isHostile(c)});
                     if (nearTargets.length > 0) {
                         let target = creep.pos.findClosestByPath(nearTargets);
@@ -28,7 +29,7 @@ module.exports = {
                     }
                 }
                 else {
-                    creep.moveTo(groupFlag, {reusePath: moveReusePath()});
+                    creep.gotoFlag(groupFlag);
                 }
             }
         }

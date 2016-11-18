@@ -27,7 +27,7 @@ module.exports = function() {
                 //Creep should get boost entry
                 let boostEntry = this.room.memory.boostList[l];
                 boost.push(boostEntry.mineralType);
-                if (boostEntry.volume >= 0) {
+                if (parseInt(boostEntry.volume) >= 0) {
                     boostEntry.volume--;
                     if (boostEntry.volume == 0) {
                         delBoost(this.room.name, l);
