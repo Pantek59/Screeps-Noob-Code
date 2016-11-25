@@ -1,5 +1,4 @@
-require ("globals");
-
+//require ("globals");
 module.exports = {
     // state working = Returning minerals to structure
     run: function(creep) {

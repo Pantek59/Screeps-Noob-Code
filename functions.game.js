@@ -1,5 +1,3 @@
-require ("globals");
-
 global.getMasterSpawn = function (roomName) {
     return Game.rooms[roomName].memory.masterSpawn;
 };

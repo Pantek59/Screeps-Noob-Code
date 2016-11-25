@@ -1,6 +1,5 @@
 module.exports = {
     // manages spawning in indicated room
-    
     run: function (spawnRoom) {
         var globalSpawningStatus = false;
 

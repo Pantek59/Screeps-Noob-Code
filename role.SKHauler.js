@@ -1,6 +1,4 @@
-require("globals");
-var roleCollector = require('role.collector');
-
+//require("globals");
 module.exports = {
     // state working = Returning energy to structure
     run: function(creep) {

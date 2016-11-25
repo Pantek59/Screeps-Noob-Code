@@ -1,8 +1,6 @@
-var roleCollector = require('role.collector');
-
 module.exports = {
-    // a function to run the logic for this role
     run: function(creep) {
+        var roleCollector = require('role.collector');
         if (creep.goToHomeRoom() == true) {
             // if creep is bringing energy to the controller but has no energy left
             if (creep.memory.working == true && creep.carry.energy == 0) {
@@ -23,7 +21,17 @@ module.exports = {
                 }
                 else if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
                     // try to upgrade the controller, if not in range, move towards the controller
-                    creep.moveTo(creep.room.controller, {reusePath: moveReusePath()});
+                    let path = creep.pos.findPathTo(creep.room.controller, {ignoreCreeps: false});
+                    if (path.length == 0) {
+                        path = creep.pos.findPathTo(creep.room.controller, {ignoreCreeps: true});
+                    }
+                    creep.moveByPath(path);
+                }
+
+                if (Game.time % 11 == 0) {
+                    if (creep.pos.getRangeTo(creep.room.controller) > 1) {
+                        creep.moveTo(creep.room.controller, {reusePath: moveReusePath(), ignoreCreeps: true});
+                    }
                 }
             }
             // if creep is supposed to harvest energy from source

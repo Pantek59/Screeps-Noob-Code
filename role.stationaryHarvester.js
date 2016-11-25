@@ -2,8 +2,6 @@ module.exports = {
     // state working = Returning energy to structure
 
     run: function(creep) {
-        //console.log(creep.name + ": " + creep.memory.statusHarvesting);
-
         if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false || creep.carry.energy == creep.carryCapacity) {
             //Look for vacant source marked as narrowSource
             if (creep.memory.currentFlag == undefined) {

@@ -3,7 +3,7 @@ DELAYMARKETBUY = 3;
 DELAYFLAGCOLORS = 31;
 DELAYRESOURCEBALANCING = 27;
 DELAYROOMSCANNING = 50;
-DELAYFLAGFINDING = 200;
+DELAYFLAGFINDING = 20;
 DELAYRESOURCEFINDING = 3;
 DELAYPANICFLAG = 5;
 DELAYSPAWNING = 13;
@@ -14,14 +14,13 @@ DELAYRCL8INSTALLATION = 100;
 DELAYDROPPEDENERGY = 3;
 RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
-TERMINALMAXFILLING = 290000;
 TERMINALMARKETSTORE = 50000;
 RBS_PACKETSIZE = 5000;
-CPU_THRESHOLD = 2500;
+CPU_THRESHOLD = 1500;
 WALLMAX = 5500000
 
 playerUsername = "Pantek59";
-allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima"];
+allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima", "ChaosDMG", "Kenshi", "Maxion", "Trepidimous", "Calame"];
 myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
 myRooms = {};
 for (let m in myroomlist) {

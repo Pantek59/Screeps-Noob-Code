@@ -1,10 +1,8 @@
-
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
         var nameFlag = creep.findMyFlag("protector");
-        var protectorFlag = _.filter(Game.flags,{ name: nameFlag})[0];
-
+        var protectorFlag = Game.flags[nameFlag];
         if (creep.room.memory.hostiles.length > 0) {
             // Attack code
             var hostiles = _.filter(creep.room.find(FIND_HOSTILE_CREEPS), function (c) { return isHostile(c)});
@@ -15,9 +13,8 @@ module.exports = {
             }
         }
         else if (protectorFlag != undefined) {
-
             //Move to flag if not there
-            var range = creep.pos.getRangeTo(protectorFlag);
+            let range = creep.pos.getRangeTo(protectorFlag);
             if (range > 5) {
                 creep.moveTo(protectorFlag, {ignoreCreeps: false, reusePath: moveReusePath()});
             }
@@ -25,7 +22,7 @@ module.exports = {
         else {
             //No flag for protector anymore
             if (creep.goToHomeRoom() == true) {
-                var range = creep.pos.getRangeTo(creep.room.controller);
+                let range = creep.pos.getRangeTo(creep.room.controller);
                 if (range > 1) {
                     creep.moveTo(creep.room.controller, {reusePath: moveReusePath(), ignoreCreeps: true});
                 }

@@ -1,9 +1,8 @@
-var roleUpgrader = require('role.upgrader');
-var roleCollector = require('role.collector');
-
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
+        var roleCollector = require('role.collector');
+
         // check for home room
         if (creep.room.name != creep.memory.homeroom && creep.memory.role != "remoteHarvester" && creep.memory.role != "energyHauler") {
             //return to home room
@@ -68,7 +67,7 @@ module.exports = {
                     else {
                         // go upgrading the controller
                         if (creep.room.controller.level < 8) {
-                            roleUpgrader.run(creep);
+                            creep.roleUpgrader();
                         }
                         else {
                             let spawn = Game.getObjectById(creep.memory.spawn);

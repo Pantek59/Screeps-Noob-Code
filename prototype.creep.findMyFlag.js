@@ -2,10 +2,10 @@ module.exports = function() {
     // find unoccupied flag and return flag name
 	Creep.prototype.findMyFlag =
 	function(flagFunction) {
-	    var flagList;
-        var flag;
-        var flagCreeps;
-        var volume;
+	    let flagList;
+        let flag;
+        let flagCreeps;
+        let volume;
 
 		if (flagFunction == "narrowSource" || flagFunction == "remoteController") {
 		    // static volumes
@@ -111,8 +111,8 @@ module.exports = function() {
                 });
             }
 
-            for (var flag in flagList) {
-                this.memory.currentFlag = flagList[flag].name;
+            for (let fl in flagList) {
+                this.memory.currentFlag = flagList[fl].name;
 
                 // Flags with homogeneous volume
                 flagCreeps = _.filter(Game.creeps, {memory: {currentFlag: this.memory.currentFlag}});
@@ -127,7 +127,7 @@ module.exports = function() {
                         }
                         else if (this.memory.role == "energyHauler") {
                             var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', currentFlag: this.memory.currentFlag}});
-                            if (peers.length <= (flagList[flag].memory.volume - 1)) {
+                            if (peers.length <= (flagList[fl].memory.volume - 1)) {
                                 return this.memory.currentFlag;
                             }
                         }
@@ -142,7 +142,7 @@ module.exports = function() {
                         }
                         else if (this.memory.role == "SKHauler") {
                             var peers = _.filter(flagCreeps,{ memory: { role: 'SKHauler', currentFlag: this.memory.currentFlag}});
-                            if (peers.length <= (flagList[flag].memory.volume - 1)) {
+                            if (peers.length <= (flagList[fl].memory.volume - 1)) {
                                 return this.memory.currentFlag;
                             }
                         }
@@ -150,7 +150,7 @@ module.exports = function() {
 
                     case "unitGroup":
                         var peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
-                        if (peers.length <= flagList[flag].memory[this.memory.role]) {
+                        if (peers.length <= flagList[fl].memory[this.memory.role]) {
                             return this.memory.currentFlag;
                         }
                         break;
@@ -168,7 +168,7 @@ module.exports = function() {
                             volume = 1;
                         }
                         else {
-                            volume = flagList[flag].memory.volume;
+                            volume = flagList[fl].memory.volume;
                         }
 
                         if (flagCreeps.length <= volume) {

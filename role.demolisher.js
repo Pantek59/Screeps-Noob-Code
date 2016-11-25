@@ -1,7 +1,4 @@
-require ("globals");
-
-var roleHarvester = require('role.harvester');
-
+//require ("globals");
 module.exports = {
     run: function(creep) {
         var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
@@ -174,7 +171,7 @@ module.exports = {
                 }
             }
             else {
-                roleHarvester.run(creep);
+                creep.roleHarvester();
             }
         }
     }

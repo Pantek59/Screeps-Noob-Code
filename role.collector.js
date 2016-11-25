@@ -1,5 +1,4 @@
-require ("globals");
-
+//require ("globals");
 module.exports = {
     run: function(creep) {
 		// check for picked up minerals

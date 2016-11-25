@@ -1,11 +1,8 @@
-require ("globals");
-
-var roleCollector = require('role.collector');
-
+//require ("globals");
 module.exports = {
-    // state working = Returning energy to structure
-	
     run: function(creep) {
+        var roleCollector = require('role.collector');
+
         if (creep.goToHomeRoom() == true) {
             if (creep.carry.energy == 0) {
                 // if creep is bringing energy to a structure but has no energy left
@@ -25,8 +22,6 @@ module.exports = {
             // if creep is supposed to transfer energy to a structure
             if (creep.memory.working == true) {
                 // find closest spawn, extension or tower which is not full
-                var numberOfHarvesters = creep.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "harvester")}).length;
-                var numberOfTransporters = creep.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "energyTransporter")}).length;
                 var structure;
 
                 if (creep.room.memory.hostiles.length > 0 && creep.room.find(FIND_MY_CREEPS, {filter: (s) => (s.memory.role == "protector")}).length == 0) {

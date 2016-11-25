@@ -1,11 +1,10 @@
-require ("globals");
-var roleEnergyTransporter = require('role.energyTransporter');
-
+//require ("globals");
 module.exports = {
     run: function(creep) {
+        var roleEnergyTransporter = require('role.energyTransporter');
         var nuker = Game.getObjectById(creep.room.memory.roomArrayNukers[0]);
 
-        if (creep.room.memory.terminalTransfer != undefined && _.sum(creep.room.terminal.store) < TERMINALMAXFILLING) {
+        if (creep.room.memory.terminalTransfer != undefined) {
             //ongoing terminal transfer
             if (_.sum(creep.carry) > 0) {
                 //Creep full
@@ -55,6 +54,12 @@ module.exports = {
                             energyCost = creep.carryCapacity;
                         }
                         if(creep.withdraw(creep.room.storage, RESOURCE_ENERGY, energyCost) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
+                        }
+                    }
+                    else if (creep.room.terminal.store[transferResource] < packageVolume) {
+                        // Get transfer resource
+                        if(creep.withdraw(creep.room.storage, transferResource, packageVolume) == ERR_NOT_IN_RANGE) {
                             creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
                         }
                     }
@@ -113,22 +118,19 @@ module.exports = {
                 if (_.sum(creep.carry) > 0) {
                     //Creep full
                     var terminalResources = [];
-                    if (_.sum(creep.room.terminal.store) < TERMINALMAXFILLING) {
-
-                        for (var res in creep.carry) {
-                            delta = creep.checkTerminalLimits(res);
-                            if (delta.amount < 0 && creep.carry[res] > 0) {
-                                //Terminal needs material
-                                var load = Math.abs(delta.amount);
-                                if (load > creep.carry[res]) {
-                                    load = creep.carry[res];
-                                }
-                                if (creep.transfer(creep.room.terminal, res, load) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(creep.room.terminal);
-                                }
-                                terminalResources.push(res);
-                                break;
+                    for (var res in creep.carry) {
+                        delta = creep.checkTerminalLimits(res);
+                        if (delta.amount < 0 && creep.carry[res] > 0) {
+                            //Terminal needs material
+                            var load = Math.abs(delta.amount);
+                            if (load > creep.carry[res]) {
+                                load = creep.carry[res];
                             }
+                            if (creep.transfer(creep.room.terminal, res, load) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(creep.room.terminal);
+                            }
+                            terminalResources.push(res);
+                            break;
                         }
                     }
                     if (terminalResources.length == 0) {

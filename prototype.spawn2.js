@@ -6,7 +6,7 @@ module.exports = function() {
         bodyInfo.role = roleName;
 
         let rcl = this.room.controller.level;
-        if (buildingPlans[roleName][rcl - 1].minEnergy > energy) {
+        if (buildingPlans[roleName][rcl - 1].minEnergy > energy && rcl > 1) {
             if (buildingPlans[roleName][rcl - 2].minEnergy > energy) {
                 return null;
             }

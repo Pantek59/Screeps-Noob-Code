@@ -1,9 +1,7 @@
-var roleBuilder = require('role.builder');
-var roleCollector = require('role.collector');
-
 module.exports = {
-    // a function to run the logic for this role
     run: function(creep) {
+        var roleBuilder = require('role.builder');
+        var roleCollector = require('role.collector');
         // check for home room
         if (creep.room.name != creep.memory.homeroom) {
             //return to home room

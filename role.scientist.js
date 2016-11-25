@@ -1,9 +1,8 @@
-require ("globals");
-var roleEnergyTransporter = require("role.energyTransporter");
-
+//require ("globals");
 module.exports = {
     // prepares ingredients and performs the reaction
     run: function(creep) {
+        var roleEnergyTransporter = require("role.energyTransporter");
         if (Game.cpu.bucket > CPU_THRESHOLD) {
             if (creep.ticksToLive < 50 && _.sum(creep.carry) == 0) {
                 //Scientist will die soon and possibly drop precious material

@@ -1,11 +1,9 @@
-require ("globals");
-
-var roleCollector = require('role.collector');
-var roleBuilder = require('role.builder');
-
+//require ("globals");
 module.exports = {
     // state working = Returning energy to structure
     run: function(creep) {
+        var roleCollector = require('role.collector');
+        var roleBuilder = require('role.builder');
         // check for picked up minerals
         if (creep.getRidOfMinerals() == false) { // if creep is bringing energy to a structure but has no energy left
             if (_.sum(creep.carry) == 0) {
@@ -77,7 +75,6 @@ module.exports = {
                             }
                             else {
                                 creep.say("No Structure!");
-                                //roleUpgrader.run(creep);
                             }
                         }
                     }

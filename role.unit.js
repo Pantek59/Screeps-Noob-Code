@@ -1,8 +1,7 @@
-var strategies = require('strategies');
-
 module.exports = {
     // a function to run the logic for this role
     run: function(creep) {
+        var strategies = require('strategies');
         var group = creep.findMyFlag("unitGroup");
         var groupFlag = _.filter(Game.flags,{ name: group})[0];
 
