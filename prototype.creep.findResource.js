@@ -1,5 +1,3 @@
-require ("globals");
-
 module.exports = function() {
     // find nearest requested resource and return object, otherwise return null
 
@@ -41,7 +39,7 @@ module.exports = function() {
                 switch (arguments[argcounter]) {
                     case FIND_SOURCES:
                         if (resource == RESOURCE_ENERGY) {
-                            tempArray = this.room.memory.roomArraySources;
+                            tempArray = this.room.memory.roomArray.sources;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]).energy > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
@@ -52,7 +50,7 @@ module.exports = function() {
 
                     case STRUCTURE_EXTENSION:
                         if (resource == RESOURCE_ENERGY) {
-                            tempArray = this.room.memory.roomArrayExtensions;
+                            tempArray = this.room.memory.roomArray.extensions;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).energy > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
@@ -61,7 +59,7 @@ module.exports = function() {
                         }
                         else if (resource == RESOURCE_SPACE) {
                             // Look for links with space left
-                            tempArray = this.room.memory.roomArrayExtensions;
+                            tempArray = this.room.memory.roomArray.extensions;
                             for (var s in tempArray) {
                                 let container = Game.getObjectById(tempArray[s]);
                                 if (Game.getObjectById(tempArray[s]) != null && container.energy < container.energyCapacity) {
@@ -73,7 +71,7 @@ module.exports = function() {
 
                     case STRUCTURE_SPAWN:
                         if (resource == RESOURCE_ENERGY) {
-                            tempArray = this.room.memory.roomArraySpawns;
+                            tempArray = this.room.memory.roomArray.spawns;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).energy > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
@@ -82,7 +80,7 @@ module.exports = function() {
                         }
                         else if (resource == RESOURCE_SPACE) {
                             // Look for spawns with space left
-                            tempArray = this.room.memory.roomArraySpawns;
+                            tempArray = this.room.memory.roomArray.spawns;
                             for (var s in tempArray) {
                                 let container = Game.getObjectById(tempArray[s]);
                                 if (container.energy < container.energyCapacity) {
@@ -94,7 +92,7 @@ module.exports = function() {
 
                     case STRUCTURE_LINK:
                         if (resource == RESOURCE_ENERGY) {
-                            tempArray = this.room.memory.roomArrayLinks;
+                            tempArray = this.room.memory.roomArray.links;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).energy > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
@@ -103,7 +101,7 @@ module.exports = function() {
                         }
                         else if (resource == RESOURCE_SPACE) {
                             // Look for links with space left
-                            tempArray = this.room.memory.roomArrayLinks;
+                            tempArray = this.room.memory.roomArray.links;
                             for (var s in tempArray) {
                                 let container = Game.getObjectById(tempArray[s]);
                                 if (Game.getObjectById(tempArray[s]) != null && container.energy < container.energyCapacity) {
@@ -115,7 +113,7 @@ module.exports = function() {
 
                     case STRUCTURE_TOWER:
                         if (resource == RESOURCE_ENERGY) {
-                            tempArray = this.room.memory.roomArrayTowers;
+                            tempArray = this.room.memory.roomArray.towers;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).energy > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
@@ -124,7 +122,7 @@ module.exports = function() {
                         }
                         else if (resource == RESOURCE_SPACE) {
                             // Look for links with space left
-                            tempArray = this.room.memory.roomArrayTowers;
+                            tempArray = this.room.memory.roomArray.towers;
                             for (var s in tempArray) {
                                 let container = Game.getObjectById(tempArray[s]);
                                 if (Game.getObjectById(tempArray[s]) != null && container.energy < container.energyCapacity) {
@@ -137,7 +135,7 @@ module.exports = function() {
                     case STRUCTURE_CONTAINER:
                         if (resource == RESOURCE_SPACE) {
                             // Look for containers with space left
-                            tempArray = this.room.memory.roomArrayContainers;
+                            tempArray = this.room.memory.roomArray.containers;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).storeCapacity - _.sum(Game.getObjectById(tempArray[s]).store) > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));
@@ -146,7 +144,7 @@ module.exports = function() {
                         }
                         else {
                             // Look for containers with resource
-                            tempArray = this.room.memory.roomArrayContainers;
+                            tempArray = this.room.memory.roomArray.containers;
                             for (var s in tempArray) {
                                 if (Game.getObjectById(tempArray[s]) != null && Game.getObjectById(tempArray[s]).store[resource] > 0) {
                                     IDBasket.push(Game.getObjectById(tempArray[s]));

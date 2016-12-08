@@ -1,139 +1,119 @@
-//require ("globals");
-module.exports = {
-    // state working = Returning energy to structure
-    run: function(creep) {
-        var roleCollector = require('role.collector');
-        var roleBuilder = require('role.builder');
-        // check for picked up minerals
-        if (creep.getRidOfMinerals() == false) { // if creep is bringing energy to a structure but has no energy left
-            if (_.sum(creep.carry) == 0) {
-                // switch state to harvesting
-                if (creep.memory.working == true) {
-                    delete creep.memory.path;
-                    delete creep.memory._move;
-                }
-                creep.memory.working = false;
+Creep.prototype.roleRemoteHarvester = function() {
+    if (this.getRidOfMinerals() == false) { // if creep is bringing energy to a structure but has no energy left
+        if (_.sum(this.carry) == 0) {
+            // switch state to harvesting
+            if (this.memory.working == true) {
+                delete this.memory.path;
+                delete this.memory._move;
             }
-            // if creep is harvesting energy but is full
-            else if (_.sum(creep.carry) == creep.carryCapacity  || (creep.room.name == creep.memory.homeroom && _.sum(creep.carry) > 0)) {
-                if (creep.memory.working == false) {
-                    delete creep.memory.path;
-                    delete creep.memory._move;
-                }
-                creep.memory.working = true;
+            this.memory.working = false;
+        }
+        // if creep is harvesting energy but is full
+        else if (_.sum(this.carry) == this.carryCapacity  || (this.room.name == this.memory.homeroom && _.sum(this.carry) > 0)) {
+            if (this.memory.working == false) {
+                delete this.memory.path;
+                delete this.memory._move;
             }
+            this.memory.working = true;
+        }
 
-            // if creep is supposed to transfer energy to a structure
-            if (creep.memory.working == true) {
-                //Find construction sites
-                var constructionSites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
+        // if creep is supposed to transfer energy to a structure
+        if (this.memory.working == true) {
+            //Find construction sites
+            var constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
 
-                if (constructionSites.length > 0 && creep.room.name != creep.memory.homeroom) {
-                    // Construction sites found, build them!
-                    roleBuilder.run(creep);
-                }
-                else {
-                    var road = creep.pos.lookFor(LOOK_STRUCTURES);
-
-                    if (creep.room.controller != undefined && (creep.room.controller.owner == undefined || creep.room.controller.owner.username != Game.getObjectById(creep.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && creep.room.name != creep.memory.homeroom) {
-                        // Found road to repair
-                        creep.repair(road[0]);
-                    }
-                    else {
-                        // Find exit to spawn room
-                        var spawn = Game.getObjectById(creep.memory.spawn);
-                        if (creep.room.name != creep.memory.homeroom) {
-                            //still in new room, go out
-                            if (!creep.memory.path) {
-                                creep.memory.path = creep.pos.findPathTo(spawn, {
-                                    heuristicWeight: 1000,
-                                    ignoreCreeps: false
-                                });
-                            }
-                            if (creep.moveByPath(creep.memory.path) == ERR_NOT_FOUND) {
-                                creep.memory.path = creep.pos.findPathTo(spawn, {
-                                    heuristicWeight: 1000,
-                                    ignoreCreeps: false
-                                });
-                                creep.moveByPath(creep.memory.path);
-                            }
-                        }
-                        else {
-                            // back in spawn room
-
-                            delete creep.memory.path;
-                            // find closest spawn, extension, tower or container which is not full
-                            var structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_EXTENSION);
-
-                            // if we found one
-                            if (structure != null) {
-                                // try to transfer energy, if it is not in range
-                                if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                    // move towards it
-                                    creep.moveTo(structure, {reusePath: moveReusePath(), ignoreCreeps: false});
-                                }
-                            }
-                            else {
-                                creep.say("No Structure!");
-                            }
-                        }
-                    }
-                }
-            }
-            // if creep is supposed to harvest energy from source
-            else if (creep.memory.statusHarvesting == false || creep.memory.statusHarvesting == undefined) {
-                //Find remote source
-                var remoteSource = Game.flags[creep.findMyFlag("remoteSource")];
-                if (remoteSource != -1 && remoteSource != undefined) {
-
-                    // Find exit to target room
-                    if (remoteSource.room == undefined || creep.room.name != remoteSource.room.name) {
-                        //still in old room, go out
-                        if (!creep.memory.path) {
-                            creep.memory.path = creep.pos.findPathTo(remoteSource, {ignoreCreeps: false});
-                        }
-                        if (creep.moveByPath(creep.memory.path) != OK) {
-                            creep.memory.path = creep.pos.findPathTo(remoteSource, {ignoreCreeps: false});
-                            creep.moveByPath(creep.memory.path)
-                        }
-                    }
-                    else {
-                        //new room reached, start harvesting
-                        if (creep.room.memory.hostiles.length == 0) {
-                            //No enemy creeps
-                            if (roleCollector.run(creep) != OK) {
-                                creep.moveTo(remoteSource, {reusePath: moveReusePath()});
-                            }
-                        }
-                        else {
-                            if (remoteSource.memory.skr == true) {
-                                // SourceKeeper Room
-                                let sourceKeeper = remoteSource.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
-                                if (sourceKeeper.length > 0) {
-                                    //Source is guarded by source keeper -> retreat
-                                    if (creep.pos.getRangeTo(remoteSource) < 6) {
-                                        creep.moveTo(remoteSource, {flee: true, reusePath: moveReusePath()});
-                                    }
-                                    else {
-                                        creep.memory.sleep = 20;
-                                    }
-                                }
-                            }
-                            else {
-                                //Hostiles creeps in new room
-                                creep.memory.fleeing = true;
-                                creep.goToHomeRoom();
-                            }
-                        }
-                    }
-                }
+            if (constructionSites.length > 0 && this.room.name != this.memory.homeroom) {
+                // Construction sites found, build them!
+                this.roleBuilder();
             }
             else {
-                // Creep is harvesting, try to keep harvesting
-                if (creep.harvest(Game.getObjectById(creep.memory.statusHarvesting)) != OK) {
-                    console.log(creep.harvest(Game.getObjectById(creep.memory.statusHarvesting)));
-                    delete creep.memory.statusHarvesting;
+                var road = this.pos.lookFor(LOOK_STRUCTURES);
+
+                if (this.room.controller != undefined && (this.room.controller.owner == undefined || this.room.controller.owner.username != Game.getObjectById(this.memory.spawn).room.controller.owner.username ) && road[0] != undefined && road[0].hits < road[0].hitsMax && road[0].structureType == STRUCTURE_ROAD && this.room.name != this.memory.homeroom) {
+                    // Found road to repair
+                    this.repair(road[0]);
                 }
+                else {
+                    // Find exit to spawn room
+                    var spawn = Game.getObjectById(this.memory.spawn);
+                    if (this.room.name != this.memory.homeroom) {
+                        //still in new room, go out
+                        this.moveTo(spawn, {reusePath: moveReusePath()});
+                    }
+                    else {
+                        // back in spawn room
+                        // find closest spawn, extension, tower or container which is not full
+                        var structure = this.findResource(RESOURCE_SPACE, STRUCTURE_SPAWN, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_EXTENSION);
+
+                        // if we found one
+                        if (structure != null) {
+                            // try to transfer energy, if it is not in range
+                            if (this.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                // move towards it
+                                this.moveTo(structure, {reusePath: moveReusePath(), ignoreCreeps: false});
+                            }
+                        }
+                        else {
+                            this.say("No Structure!");
+                        }
+                    }
+                }
+            }
+        }
+        // if creep is supposed to harvest energy from source
+        else if (this.memory.statusHarvesting == false || this.memory.statusHarvesting == undefined) {
+            //Find remote source
+            var remoteSource = Game.flags[this.findMyFlag("remoteSource")];
+            if (remoteSource != -1 && remoteSource != undefined) {
+
+                // Find exit to target room
+                if (remoteSource.room == undefined || this.room.name != remoteSource.room.name) {
+                    //still in old room, go out
+                    if (!this.memory.path) {
+                        this.memory.path = this.pos.findPathTo(remoteSource, {ignoreCreeps: false});
+                    }
+                    if (this.moveByPath(this.memory.path) != OK) {
+                        this.memory.path = this.pos.findPathTo(remoteSource, {ignoreCreeps: false});
+                        this.moveByPath(this.memory.path)
+                    }
+                }
+                else {
+                    //new room reached, start harvesting
+                    if (this.room.memory.hostiles.length == 0) {
+                        //No enemy creeps
+                        if (this.roleCollector() != OK) {
+                            this.moveTo(remoteSource, {reusePath: moveReusePath()});
+                        }
+                    }
+                    else {
+                        //Hostiles found
+                        if (remoteSource.memory.skr == true) {
+                            // SourceKeeper Room
+                            let sourceKeeper = remoteSource.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
+                            if (sourceKeeper.length > 0) {
+                                //Source is guarded by source keeper -> retreat
+                                if (this.pos.getRangeTo(remoteSource) < 6) {
+                                    this.moveTo(remoteSource, {flee: true, reusePath: moveReusePath()});
+                                }
+                                else {
+                                    this.memory.sleep = 20;
+                                }
+                            }
+                        }
+                        else {
+                            //Hostiles creeps in new room
+                            this.memory.fleeing = true;
+                            this.goToHomeRoom();
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            // Creep is harvesting, try to keep harvesting
+            if (this.harvest(Game.getObjectById(this.memory.statusHarvesting)) != OK) {
+                console.log(this.harvest(Game.getObjectById(this.memory.statusHarvesting)));
+                delete this.memory.statusHarvesting;
             }
         }
     }

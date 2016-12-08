@@ -1,3 +1,12 @@
+require('prototype.spawn2')();
+require('prototype.creep.findMyFlag')();
+require('prototype.creep.findResource')();
+require('functions.creeps')();
+require('functions.game');
+require('functions.roles');
+require('test.flowPath');
+
+
 DELAYMARKETAUTOSELL = 31;
 DELAYMARKETBUY = 3;
 DELAYFLAGCOLORS = 31;
@@ -17,11 +26,18 @@ TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 TERMINALMARKETSTORE = 50000;
 RBS_PACKETSIZE = 5000;
 CPU_THRESHOLD = 1500;
-WALLMAX = 5500000
+WALLMAX = 5500000;
+LOG_TERMINAL = false;
+LOG_MARKET = false;
+LOG_SPAWN = false;
+LOG_EXPIRE = false;
+LOG_PANICFLAG = false;
+LOG_INFO = false;
 
 playerUsername = "Pantek59";
 allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima", "ChaosDMG", "Kenshi", "Maxion", "Trepidimous", "Calame"];
-myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
+//myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
+myroomlist = _.values(Game.rooms).filter (r => _.get(r, ['controller','owner','username'],undefined) === playerUsername);
 myRooms = {};
 for (let m in myroomlist) {
     myRooms[myroomlist[m].name] = myroomlist[m];
@@ -746,18 +762,18 @@ buildingPlans = {
         },
         {
             //Level 6 (max 2300)
-            minEnergy: 1400,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 1850,
+            body: [MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY]
         },
         {
             //Level 7 (max 5600)
-            minEnergy: 1400,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 2700,
+            body: [MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY]
         },
         {
             //Level 8 (max 12900)
-            minEnergy: 1400,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+            minEnergy: 2700,
+            body: [MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY]
         }],
 
     remoteStationaryHarvester: [

@@ -1,19 +1,26 @@
+let cpu = Game.cpu.getUsed();
+//console.log("CPU@Start: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
 const CPUdebug = false;
+
 require("globals");
-require('prototype.spawn2')();
-require('prototype.creep.findMyFlag')();
-require('prototype.creep.findResource')();
-require('functions.creeps')();
-require('functions.game');
-require('functions.roles');
 var moduleSpawnCreeps = require('module.spawnCreeps');
+
+global.reqCPU = Game.cpu.getUsed();
+//console.log('CPU@Initialization: ' + (global.reqCPU - cpu) + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
+global.start = Game.time;
 
 //const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
 //profiler.enable();
 module.exports.loop = function() {
+    //console.log("CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
     //profiler.wrap(function() {
     let cpu = Game.cpu.getUsed();
-    if (cpu > Game.cpu.limit) {console.log("CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket)}
+    if (Game.time == global.start) { cpu -= global.reqCPU; }
+    if (cpu > Game.cpu.limit) {
+        console.log("CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
+        return;
+    }
+    //return;
 
     var CPUdebugString = "CPU Debug<br><br>";
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
@@ -27,17 +34,16 @@ module.exports.loop = function() {
                 }
             }
         }
-        // same for flags
-        //memCleanFlags(); //Flags do not count as memory (yet), therefore not necessary (yet)
-    
+
         var senex = _.filter(Game.creeps,{ ticksToLive: 1});
-        for (var ind in senex) {
-            console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
+        if (LOG_EXPIRE == true) {
+            for (var ind in senex) {
+                console.log("<font color=#ffffff type='highlight'>Creep expired: " + senex[ind].name + " the \"" + senex[ind].memory.role + "\" in room " + senex[ind].room.name + ".</font>");
+            }
         }
 
         /*Observer Code
         //TODO: Scan rooms in 10 rooms distance for room info and save it in an object
-        var observerRooms = _.filter(Game.rooms, function(room) {return room.memory.roomArrayObservers != undefined && room.memory.roomArrayObservers.length > 0;});
         */
 
         // Flag colors
@@ -123,8 +129,9 @@ module.exports.loop = function() {
                 var returnCode = Game.market.deal(order.id, left, bestRoom.name);
                 if (returnCode == OK) {
                     info[0] -= left;
-                    console.log("<font color=#fe2ec8 type='highlight'>" + left + " " + order.resourceType + " bought in room " + bestRoom.name + " for " + (left * order.price) + " credits.</font>");
-
+                    if (LOG_MARKET == true) {
+                        console.log("<font color=#fe2ec8 type='highlight'>" + left + " " + order.resourceType + " bought in room " + bestRoom.name + " for " + (left * order.price) + " credits.</font>");
+                    }
                     if (info[0] > 0) {
                         Memory.buyOrder = info.join(":");
                     }
@@ -138,7 +145,9 @@ module.exports.loop = function() {
             else {
                 delete Memory.buyOrder;
                 delete Memory.buyRoom;
-                console.log("<font color=#fe2ec8 type='highlight'>Buy order cancelled since it disappeared from market.</font>");
+                if (LOG_MARKET == true) {
+                    console.log("<font color=#fe2ec8 type='highlight'>Buy order cancelled since it disappeared from market.</font>");
+                }
             }
         }
     // Market Auto Selling Code
@@ -156,7 +165,7 @@ module.exports.loop = function() {
             var surplusMinerals;
 
             for (var r in myRooms) {
-                if (Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
+                if (Game.rooms[r] != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
                     for (var resource in Game.rooms[r].memory.resourceLimits) {
                         if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket && Game.rooms[r].memory.resourceLimits[resource] != undefined) {
 
@@ -298,7 +307,6 @@ module.exports.loop = function() {
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start cycling through rooms: " + Game.cpu.getUsed())}
         // Cycle through rooms
         for (var r in Game.rooms) {
-
             //Save hostile creeps in room
             var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
             let enemies = _.filter(hostiles, function (e) {return (isHostile(e))});
@@ -309,27 +317,22 @@ module.exports.loop = function() {
 
             //Manage ramparts
             if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
-                if (Game.rooms[r].memory.rampPublic == undefined) {
-                    Game.rooms[r].memory.rampPublic = false;
-                }
-                if (hostiles.length > 0 && enemies.length == 0 && Game.rooms[r].memory.rampPublic == false) {
+                if (Game.rooms[r].memory.roomArray != undefined && enemies.length == 0) {
                     //Allied creeps in room and no hostile creeps
-                    for (let x in Game.rooms[r].memory.roomArrayRamparts) {
-                        let ramp = Game.getObjectById(Game.rooms[r].memory.roomArrayRamparts[x]);
+                    for (let x in Game.rooms[r].memory.roomArray.ramparts) {
+                        let ramp = Game.getObjectById(Game.rooms[r].memory.roomArray.ramparts[x]);
                         if (ramp != null) {
                             ramp.setPublic(true)
                         }
                     }
-                    Game.rooms[r].memory.rampPublic = true;
                 }
-                else if (Game.rooms[r].memory.rampPublic == true) {
-                    for (let x in Game.rooms[r].memory.roomArrayRamparts) {
-                        let ramp = Game.getObjectById(Game.rooms[r].memory.roomArrayRamparts[x]);
+                else if (Game.rooms[r].memory.roomArray != undefined) {
+                    for (let x in Game.rooms[r].memory.roomArray.ramparts) {
+                        let ramp = Game.getObjectById(Game.rooms[r].memory.roomArray.ramparts[x]);
                         if (ramp != null) {
                             ramp.setPublic(false)
                         }
                     }
-                    Game.rooms[r].memory.rampPublic = false;
                 }
             }
 
@@ -339,7 +342,7 @@ module.exports.loop = function() {
                 var limit;
                 for (var res in RESOURCES_ALL) {
                     roomLimits[RESOURCES_ALL[res]] = {};
-                    if (Game.rooms[r].memory.roomArrayMinerals != undefined && Game.getObjectById(Game.rooms[r].memory.roomArrayMinerals[0]).mineralType == RESOURCES_ALL[res]) {
+                    if (Game.rooms[r].memory.roomArray.minerals != undefined && Game.getObjectById(Game.rooms[r].memory.roomArray.minerals[0]).mineralType == RESOURCES_ALL[res]) {
                         //Room mineral
                         limit = {minTerminal:0, maxStorage:6000, minMarket:500000, minProduction: 600000};
                     }
@@ -365,15 +368,14 @@ module.exports.loop = function() {
                     let ramparts = _.filter(foundStructures, function (s) { return s.structureType == STRUCTURE_RAMPART});
                     if (ramparts.length == 0) {
                         structures[s].pos.createConstructionSite(STRUCTURE_RAMPART);
-                        console.log("built");
                     }
                 }
             }
 
             //  Refresher (will be executed every few ticks)
             var searchResult;
-            if (Game.time % DELAYROOMSCANNING == 0) {
-                // Preloading room structure
+            if (Game.time % DELAYROOMSCANNING == 0 || Game.rooms[r].memory.roomArray == undefined) {
+                // Determining whether room secure
                 var defenseObjects = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                 defenseObjects = _.sortBy(defenseObjects,"hits");
 
@@ -384,116 +386,150 @@ module.exports.loop = function() {
                     delete Game.rooms[r].memory.roomSecure;
                 }
 
-                if (Game.rooms[r].memory.roomArraySources == undefined) {
-                    var sourceIDs = [];
-                    searchResult = Game.rooms[r].find(FIND_SOURCES);
-                    for (let s in searchResult) {
-                        sourceIDs.push(searchResult[s].id);
-                    }
-                    Game.rooms[r].memory.roomArraySources = sourceIDs;
+                if (Game.rooms[r].memory.roomArray == undefined) {
+                    Game.rooms[r].memory.roomArray = {};
                 }
 
-                if (Game.rooms[r].memory.roomArrayMinerals == undefined) {
-                    var sourceIDs = [];
-                    searchResult = Game.rooms[r].find(FIND_MINERALS);
-                    for (let s in searchResult) {
-                        sourceIDs.push(searchResult[s].id);
-                    }
-                    Game.rooms[r].memory.roomArrayMinerals = sourceIDs;
+                // Preloading room structure
+                if (Game.rooms[r].memory.roomArraySources != undefined) {
+                    delete Game.rooms[r].memory.roomArraySources;
                 }
+                var sourceIDs = [];
+                searchResult = Game.rooms[r].find(FIND_SOURCES);
+                for (let s in searchResult) {
+                    sourceIDs.push(searchResult[s].id);
+                }
+                Game.rooms[r].memory.roomArray.sources = sourceIDs;
 
+                if (Game.rooms[r].memory.roomArrayMinerals != undefined) {
+                    delete Game.rooms[r].memory.roomArrayMinerals;
+                }
+                var mineralIDs = [];
+                searchResult = Game.rooms[r].find(FIND_MINERALS);
+                for (let s in searchResult) {
+                    sourceIDs.push(searchResult[s].id);
+                }
+                Game.rooms[r].memory.roomArray.minerals = mineralIDs;
+
+                if (Game.rooms[r].memory.roomArrayContainers != undefined) {
+                    delete Game.rooms[r].memory.roomArrayContainers;
+                }
                 var containerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER});
                 for (let s in searchResult) {
                     containerIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayContainers = containerIDs;
+                Game.rooms[r].memory.roomArray.containers = containerIDs;
 
+                if (Game.rooms[r].memory.roomArrayPowerSpawns != undefined) {
+                    delete Game.rooms[r].memory.roomArrayPowerSpawns;
+                }
                 var powerSpawnIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_POWER_SPAWN});
                 for (let s in searchResult) {
                     powerSpawnIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayPowerSpawns = powerSpawnIDs;
+                Game.rooms[r].memory.roomArray.powerSpawns = powerSpawnIDs;
 
+                if (Game.rooms[r].memory.roomArraySpawns != undefined) {
+                    delete Game.rooms[r].memory.roomArraySpawns;
+                }
                 var spawnIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
                 for (let s in searchResult) {
                     spawnIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArraySpawns = spawnIDs;
+                Game.rooms[r].memory.roomArray.spawns = spawnIDs;
 
+                if (Game.rooms[r].memory.roomArrayExtensions != undefined) {
+                    delete Game.rooms[r].memory.roomArrayExtensions;
+                }
                 var extensionIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_EXTENSION});
                 for (let s in searchResult) {
                     extensionIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayExtensions = extensionIDs;
+                Game.rooms[r].memory.roomArray.extensions = extensionIDs;
 
+                if (Game.rooms[r].memory.roomArrayLinks != undefined) {
+                    delete Game.rooms[r].memory.roomArrayLinks;
+                }
                 var LinkIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_LINK});
                 for (let s in searchResult) {
                     LinkIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayLinks = LinkIDs;
+                Game.rooms[r].memory.roomArray.links = LinkIDs;
 
+                if (Game.rooms[r].memory.roomArrayLabs != undefined) {
+                    delete Game.rooms[r].memory.roomArrayLabs;
+                }
                 var LabIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_LAB});
                 for (let s in searchResult) {
                     LabIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayLabs = LabIDs;
+                Game.rooms[r].memory.roomArray.labs = LabIDs;
 
+                if (Game.rooms[r].memory.roomArrayExtractors != undefined) {
+                    delete Game.rooms[r].memory.roomArrayExtractors;
+                }
                 var ExtractorIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_EXTRACTOR});
                 for (let s in searchResult) {
                     ExtractorIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayExtractors = ExtractorIDs;
+                Game.rooms[r].memory.roomArray.extractors = ExtractorIDs;
 
+                if (Game.rooms[r].memory.roomArrayRamparts != undefined) {
+                    delete Game.rooms[r].memory.roomArrayRamparts;
+                }
                 var rampartIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART});
                 for (let s in searchResult) {
                     rampartIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayRamparts = rampartIDs;
+                Game.rooms[r].memory.roomArray.ramparts = rampartIDs;
 
+                if (Game.rooms[r].memory.roomArrayNukers != undefined) {
+                    delete Game.rooms[r].memory.roomArrayNukers;
+                }
                 var nukerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_NUKER});
                 for (let s in searchResult) {
                     nukerIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayNukers = nukerIDs;
+                Game.rooms[r].memory.roomArray.nukers = nukerIDs;
 
+                if (Game.rooms[r].memory.roomArrayObservers != undefined) {
+                    delete Game.rooms[r].memory.roomArrayObservers;
+                }
                 var observerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_OBSERVER});
                 for (let s in searchResult) {
                     observerIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayObservers = observerIDs;
+                Game.rooms[r].memory.roomArray.observers = observerIDs;
 
+                if (Game.rooms[r].memory.roomArrayTowers != undefined) {
+                    delete Game.rooms[r].memory.roomArrayTowers;
+                }
                 var towerIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MY_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_TOWER});
                 for (let s in searchResult) {
                     towerIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayTowers = towerIDs;
+                Game.rooms[r].memory.roomArray.towers = towerIDs;
 
+                if (Game.rooms[r].memory.roomArrayLairs != undefined) {
+                    delete Game.rooms[r].memory.roomArrayLairs;
+                }
                 var lairIDs = [];
                 searchResult = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_KEEPER_LAIR});
                 for (let s in searchResult) {
                     lairIDs.push(searchResult[s].id);
                 }
-                Game.rooms[r].memory.roomArrayLairs = lairIDs;
-
-                if (Game.rooms[r].memory.roomArrayConstructionSites == undefined) {
-                    var constructionIDs = [];
-                    searchResult = Game.rooms[r].find(FIND_MY_CONSTRUCTION_SITES);
-                    for (let s in searchResult) {
-                        constructionIDs.push(searchResult[s].id);
-                    }
-                    Game.rooms[r].memory.roomArrayConstructionSites = constructionIDs;
-                }
+                Game.rooms[r].memory.roomArray.lairs = lairIDs;
             }
 
             //Check master spawn
@@ -501,15 +537,15 @@ module.exports.loop = function() {
                 delete Game.rooms[r].memory.masterSpawn;
             }
 
-            if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArraySpawns != undefined) {
-                if (Game.rooms[r].memory.roomArraySpawns.length == 1) {
-                    Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[0];
+            if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArray.spawns != undefined) {
+                if (Game.rooms[r].memory.roomArray.spawns.length == 1) {
+                    Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArray.spawns[0];
                 }
-                else if (Game.rooms[r].memory.roomArraySpawns.length > 1) {
-                    for (var id in Game.rooms[r].memory.roomArraySpawns) {
-                        var testSpawn = Game.getObjectById(Game.rooms[r].memory.roomArraySpawns[id]);
+                else if (Game.rooms[r].memory.roomArray.spawns.length > 1) {
+                    for (var id in Game.rooms[r].memory.roomArray.spawns) {
+                        var testSpawn = Game.getObjectById(Game.rooms[r].memory.roomArray.spawns[id]);
                         if (testSpawn.memory.spawnRole == 1) {
-                            Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArraySpawns[id];
+                            Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArray.spawns[id];
                         }
                     }
                 }
@@ -546,7 +582,9 @@ module.exports.loop = function() {
                             panicFlag.memory.spawn = flag.memory.spawn;
                             panicFlag.memory.panic = true;
 
-                            console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
+                            if (LOG_PANICFLAG == true) {
+                                console.log("<font color=#ff0000 type='highlight'>Panic flag has been set in room " + flag.room.name + " for room " + Game.getObjectById(panicFlag.memory.spawn).room.name + "</font>");
+                            }
                         }
                         else if (flag.room.memory.hostiles.length == 0 && flag.room.memory.panicFlag != undefined) {
                             // No hostiles present in room with remote harvesters
@@ -560,7 +598,7 @@ module.exports.loop = function() {
 
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
             // Spawn code
-            if (Game.rooms[r].memory.roomArraySpawns == undefined || Game.rooms[r].memory.roomArraySpawns.length == 0) {
+            if (Game.rooms[r].memory.roomArray.spawns == undefined || Game.rooms[r].memory.roomArray.spawns.length == 0) {
                 //room has no spawn yet
                 if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                     //room is owned and should be updated
@@ -639,8 +677,8 @@ module.exports.loop = function() {
 
             // Tower code
             var towers = [];
-            for (let t in Game.rooms[r].memory.roomArrayTowers) {
-                towers.push(Game.getObjectById(Game.rooms[r].memory.roomArrayTowers[t]));
+            for (let t in Game.rooms[r].memory.roomArray.towers) {
+                towers.push(Game.getObjectById(Game.rooms[r].memory.roomArray.towers[t]));
             }
 
             if (Game.rooms[r].memory.hostiles.length > 0) {
@@ -701,7 +739,7 @@ module.exports.loop = function() {
                         var energyID = energies[energy].id;
                         var energyAmount = energies[energy].amount;
                         let busyCollectors = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == "pickUpEnergy" && c.memory.jobQueueObject == energyID});
-                        if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArrayLairs.length > 0)) {
+                        if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArray.lairs.length > 0)) {
                             var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
                                 filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true
                             });
@@ -723,7 +761,7 @@ module.exports.loop = function() {
             }
 
             // Link code
-            if (Game.time % DELAYLINK == 0 && Game.rooms[r].memory.roomArrayLinks != undefined && Game.rooms[r].memory.roomArrayLinks.length > 1) {
+            if (Game.time % DELAYLINK == 0 && Game.rooms[r].memory.roomArray.links != undefined && Game.rooms[r].memory.roomArray.links.length > 1) {
                 var fillLinks = [];
                 var emptyLinks = [];
                 var targetLevel = 0;
@@ -735,14 +773,14 @@ module.exports.loop = function() {
                     Game.rooms[r].memory.linksEmpty = emptyArray;
                 }
 
-                for (var link in Game.rooms[r].memory.roomArrayLinks) {
-                    if (Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]) != undefined) {
-                        if (Game.rooms[r].memory.linksEmpty == undefined || Game.rooms[r].memory.linksEmpty.indexOf(Game.rooms[r].memory.roomArrayLinks[link]) == -1) {
-                            fillLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
-                            targetLevel += Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]).energy;
+                for (var link in Game.rooms[r].memory.roomArray.links) {
+                    if (Game.getObjectById(Game.rooms[r].memory.roomArray.links[link]) != undefined) {
+                        if (Game.rooms[r].memory.linksEmpty == undefined || Game.rooms[r].memory.linksEmpty.indexOf(Game.rooms[r].memory.roomArray.links[link]) == -1) {
+                            fillLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArray.links[link]));
+                            targetLevel += Game.getObjectById(Game.rooms[r].memory.roomArray.links[link]).energy;
                         }
                         else {
-                            emptyLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArrayLinks[link]));
+                            emptyLinks.push(Game.getObjectById(Game.rooms[r].memory.roomArray.links[link]));
                         }
                     }
                 }
@@ -820,7 +858,9 @@ module.exports.loop = function() {
                                 if (terminal.send(resource, 500, targetRoom, comment) == OK) {
                                     info[1] -= 500;
                                     Game.rooms[r].memory.terminalTransfer = info.join(":");
-                                    console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": 500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + stdEnergyCost + " energy: " + comment + "</font>");
+                                    if (LOG_TERMINAL == true) {
+                                        console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": 500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + stdEnergyCost + " energy: " + comment + "</font>");
+                                    }
                                 }
                                 else {
                                     console.log("<font color=#ff0000 type='highlight'>Terminal transfer error (" + Game.rooms[r].name + "): " + terminal.send(resource, 500, targetRoom, comment) + "</font>");
@@ -832,7 +872,9 @@ module.exports.loop = function() {
                                 if (terminal.send(resource, amount, targetRoom, comment) == OK) {
                                     delete Game.rooms[r].memory.terminalTransfer;
                                     delete Game.rooms[r].memory.terminalEnergyCost;
-                                    console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment + "</font>");
+                                    if (LOG_TERMINAL == true) {
+                                        console.log("<font color=#009bff type='highlight'>" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + energyCost + " energy: " + comment + "</font>");
+                                    }
                                 }
                                 else {
                                     if (amount < 100) {
@@ -859,11 +901,15 @@ module.exports.loop = function() {
                                         resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
                                         //Do the deal!
                                         if (parseInt(info[1]) <= 500 && Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
-                                            console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                            if (LOG_MARKET == true) {
+                                                console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                            }
                                             delete Game.rooms[r].memory.terminalTransfer;
                                         }
                                         else if (Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
-                                            console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                            if (LOG_MARKET == true) {
+                                                console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
+                                            }
                                             info[1] -= amount;
                                             Game.rooms[r].memory.terminalTransfer = info.join(":");
                                         }
@@ -916,7 +962,9 @@ module.exports.loop = function() {
                                             reactionAmount = genuineDelta;
                                         }
                                         Game.rooms[r].memory.labTarget = reactionAmount + ":" + productionTarget.resource;
-                                        console.log("<font color=#ffca33 type='highlight'>Room " + Game.rooms[r].name + " started auto production of " + reactionAmount + " " + productionTarget.resource + ".</font>");
+                                        if (LOG_INFO == true) {
+                                            console.log("<font color=#ffca33 type='highlight'>Room " + Game.rooms[r].name + " started auto production of " + reactionAmount + " " + productionTarget.resource + ".</font>");
+                                        }
                                     }
                                     else if (Game.rooms[r].storage.store[mineralDescriptions[productionTarget].component1] < minProductionPacketSize) {
                                         resource = mineralDescriptions[productionTarget].component1;
@@ -945,7 +993,6 @@ module.exports.loop = function() {
                 var origResource = labString[1];
                 if (mineralDescriptions[labString[1]].tier == 0) {
                     delete Game.rooms[r].memory.labTarget;
-                    console.log("Removed " + Game.rooms[r].name + ".labTarget as it indicated a tier 0 resource.");
                 }
                 else {
                     while (mineralDescriptions[labString[1]] != undefined && mineralDescriptions[labString[1]].tier > 0) {
@@ -1037,11 +1084,11 @@ module.exports.loop = function() {
                             }
                             if (labOrder[3] == "running") {
                                 // Reaction can be started
-                                for (var lab in Game.rooms[r].memory.roomArrayLabs) {
-                                    if ((Game.rooms[r].memory.boostLabs == undefined || Game.rooms[r].memory.boostLabs.indexOf(Game.rooms[r].memory.roomArrayLabs[lab]) == -1) && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArrayLabs[lab] != innerLabs[1].labID) {
+                                for (var lab in Game.rooms[r].memory.roomArray.labs) {
+                                    if ((Game.rooms[r].memory.boostLabs == undefined || Game.rooms[r].memory.boostLabs.indexOf(Game.rooms[r].memory.roomArray.labs[lab]) == -1) && Game.rooms[r].memory.roomArray.labs[lab] != innerLabs[0].labID && Game.rooms[r].memory.roomArray.labs[lab] != innerLabs[1].labID) {
                                         if (Game.getObjectById(innerLabs[0].labID).mineralAmount > 4 && Game.getObjectById(innerLabs[1].labID).mineralAmount > 4) {
                                             //Still enough material to do a reaction
-                                            var currentLab = Game.getObjectById(Game.rooms[r].memory.roomArrayLabs[lab]);
+                                            var currentLab = Game.getObjectById(Game.rooms[r].memory.roomArray.labs[lab]);
                                             if (currentLab.cooldown == 0) {
                                                 currentLab.runReaction(Game.getObjectById(innerLabs[0].labID), Game.getObjectById(innerLabs[1].labID));
                                             }
@@ -1076,7 +1123,7 @@ module.exports.loop = function() {
             //Check for fleeing creeps
             if (creep.room.memory.hostiles.length == 0 && creep.memory.fleeing == true) {
                 //Get away from the exit
-                if ((creep.pos.x < 5 || creep.pos.x > 45) || (creep.pos.y < 5 || creep.pos.y > 45)) {
+                if ((creep.pos.x < 10 || creep.pos.x > 40) || (creep.pos.y < 10 || creep.pos.y > 40)) {
 
                     var area = creep.room.lookAtArea(20, 20, 40, 40, true);
                     area = _.filter(area, function (a) { return (a.terrain != "wall")});
@@ -1135,7 +1182,9 @@ module.exports.loop = function() {
                                             butler.memory.jobQueueTask = "prepareBoost";
                                             butler.memory.jobQueueObject = creep.id;
                                             creep.memory.myButler = butler.id;
-                                            console.log(creep.room.name + ": " + creep.name + " has taken " + butler.name + " as a butler.");
+                                            if (LOG_INFO == true) {
+                                                console.log(creep.room.name + ": " + creep.name + " has taken " + butler.name + " as a butler.");
+                                            }
                                         }
                                     }
                                     else {

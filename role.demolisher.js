@@ -1,178 +1,182 @@
-//require ("globals");
-module.exports = {
-    run: function(creep) {
-        var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
-        // if creep is bringing energy to a structure but has no energy left
-        if (creep.room.memory.hostiles.length > 0) {
-            var homespawn = Game.getObjectById(creep.memory.spawn);
-            if (creep.room.name != creep.memory.homeroom) {
-                creep.moveTo(homespawn), {reusePath: moveReusePath()};
-            }
-            else if (creep.pos.getRangeTo(homespawn) > 5) {
-                creep.moveTo(homespawn), {reusePath: moveReusePath()};
-            }
-            creep.memory.fleeing = true;
-            return;
+Creep.prototype.roleDemolisher = function() {
+    var demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: this.memory.spawn}});
+    demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: this.memory.spawn}});
+    if (demolishFlag.length > 0) {
+        demolishFlag = demolishFlag[0];
+    }
+    // if creep is bringing energy to a structure but has no energy left
+    if (this.room.memory.hostiles.length > 0) {
+        var homespawn = Game.getObjectById(this.memory.spawn);
+        if (this.room.name != this.memory.homeroom) {
+            this.moveTo(homespawn), {reusePath: moveReusePath()};
         }
+        else if (this.pos.getRangeTo(homespawn) > 5) {
+            this.moveTo(homespawn), {reusePath: moveReusePath()};
+        }
+        this.memory.fleeing = true;
+        return;
+    }
 
-        if (creep.carry.energy == 0) {
-            // switch state to demolishing
-            creep.memory.working = false;
+    if (this.carry.energy == 0) {
+        // switch state to demolishing
+        this.memory.working = false;
+    }
+    else if (this.carry.energy == this.carryCapacity) {
+        // if creep is demolishing but is full
+        demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: this.memory.spawn}});
+        if (demolishFlag.length > 0) {
+            demolishFlag = demolishFlag[0];
+            if (demolishFlag.memory.dropEnergy == true) {
+                this.drop(RESOURCE_ENERGY);
+                this.memory.dropEnergy = true;
+            }
+            else {
+                this.memory.working = true;
+                delete this.memory.path;
+            }
         }
-        else if (creep.carry.energy == creep.carryCapacity) {
-            // if creep is demolishing but is full
-            demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
-            if (demolishFlag.length > 0) {
-                demolishFlag = demolishFlag[0];
-                if (demolishFlag.memory.dropEnergy == true) {
-                    creep.drop(RESOURCE_ENERGY);
-                    creep.memory.dropEnergy = true;
-                }
-                else {
-                    creep.memory.working = true;
-                    delete creep.memory.path;
+    }
+
+    // if creep is supposed to transfer energy to a structure
+    if (this.memory.working == true) {
+        // Find exit to spawn room
+        var spawn = Game.getObjectById(this.memory.spawn);
+        if (this.room.name != this.memory.homeroom) {
+            //still in new room, go out
+            if(!this.memory.path) {
+                this.memory.path = this.pos.findPathTo(spawn);
+            }
+            if(this.moveByPath(this.memory.path) == ERR_NOT_FOUND) {
+                this.memory.path = this.pos.findPathTo(spawn);
+                this.moveByPath(this.memory.path);
+            }
+        } //TODO: Check demolishFlag.pos
+        else if (demolishFlag.pos != undefined) {
+            // back in spawn room
+            let structure;
+            if (demolishFlag.pos.roomName == this.memory.homeroom) {
+                //Demolisher flag is in creep's home room -> energy will only be stored in containers and in the storage
+                structure = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE) && s.storeCapacity > _.sum(s.store) && s.pos.isEqualTo(demolishFlag.pos) == false});
+            }
+            else {
+                structure = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK, STRUCTURE_TOWER, STRUCTURE_STORAGE, STRUCTURE_SPAWN);
+            }
+            if (structure != null) {
+                // try to transfer energy, if it is not in range
+
+                if (this.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    // move towards it
+                    this.moveTo(structure, {reusePath: moveReusePath()});
                 }
             }
         }
-
-        // if creep is supposed to transfer energy to a structure
-        if (creep.memory.working == true) {
-            // Find exit to spawn room
-            var spawn = Game.getObjectById(creep.memory.spawn);
-            if (creep.room.name != creep.memory.homeroom) {
-                //still in new room, go out
-                if(!creep.memory.path) {
-                    creep.memory.path = creep.pos.findPathTo(spawn);
-                }
-                if(creep.moveByPath(creep.memory.path) == ERR_NOT_FOUND) {
-                    creep.memory.path = creep.pos.findPathTo(spawn);
-                    creep.moveByPath(creep.memory.path);
-                }
-            } //TODO: Check demolishFlag.pos
-            else if (demolishFlag.pos != undefined) {
-                // back in spawn room
-                let structure;
-                if (demolishFlag.pos.roomName == creep.memory.homeroom) {
-                    //Demolisher flag is in creep's home room -> energy will only be stored in containers and in the storage
-                    structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE) && s.storeCapacity > _.sum(s.store) && s.pos.isEqualTo(demolishFlag.pos) == false});
-                }
-                else {
-                    structure = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK, STRUCTURE_TOWER, STRUCTURE_STORAGE, STRUCTURE_SPAWN);
-                }
-
-                if (structure != null) {
-                    // try to transfer energy, if it is not in range
-                    if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                        // move towards it
-                        creep.moveTo(structure, {reusePath: moveReusePath()});
-                    }
-                }
-            }
-        }
-        // if creep is supposed to demolish
         else {
-            //TODO Several demolishers per spawn; use creep.findMyFlag()
-            //Find something to demolish
+            this.roleUpgrader();
+        }
+    }
+    // if creep is supposed to demolish
+    else {
+        //TODO Several demolishers per spawn; use creep.findMyFlag()
+        //Find something to demolish
+        demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: this.memory.spawn}});
+        if (demolishFlag.length > 0) {
+            // Find exit to target room
+            demolishFlag = demolishFlag[0];
 
-            demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: creep.memory.spawn}});
-            if (demolishFlag.length > 0) {
-                // Find exit to target room
-                demolishFlag = demolishFlag[0];
-
-                if (creep.room.name != demolishFlag.pos.roomName) {
-                    //still in old room, go out
-                    if (creep.moveTo(demolishFlag, {reusePath: moveReusePath()}) == ERR_NO_PATH) {
-                        delete creep.memory._move;
-                        delete creep.memory.path;
-                    }
-                    creep.memory.oldRoom = true;
+            if (this.room.name != demolishFlag.pos.roomName) {
+                //still in old room, go out
+                if (this.moveTo(demolishFlag, {reusePath: moveReusePath()}) == ERR_NO_PATH) {
+                    delete this.memory._move;
+                    delete this.memory.path;
                 }
+                this.memory.oldRoom = true;
+            }
 
-                if (creep.room.name == demolishFlag.pos.roomName) {
-                    if (creep.room.memory.hostiles.length == 0) {
-                        if (creep.memory.statusDemolishing == undefined) {
-                            //new room reached, start demolishing
-                            if (creep.memory.oldRoom == true) {
-                                delete creep.memory.targetBuffer;
-                                delete creep.memory.oldRoom;
-                                delete creep.memory._move;
-                                delete creep.memory.path;
-                            }
-                            var targetlist;
+            if (this.room.name == demolishFlag.pos.roomName) {
+                if (this.room.memory.hostiles.length == 0) {
+                    let foreignConstructionSites = this.room.find(FIND_HOSTILE_CONSTRUCTION_SITES);
+                    if (foreignConstructionSites.length > 0) {
+                        this.moveTo(foreignConstructionSites[0], {reusePath: moveReusePath(), ignoreCreeps: false});
+                    }
+                    else if (this.memory.statusDemolishing == undefined) {
+                        //new room reached, start demolishing
+                        if (this.memory.oldRoom == true) {
+                            delete this.memory.targetBuffer;
+                            delete this.memory.oldRoom;
+                            delete this.memory._move;
+                            delete this.memory.path;
+                        }
+                        var targetlist;
 
-                            if (demolishFlag.memory.target == "object") {
-                                //demolish flag position structures
-                                targetlist = demolishFlag.pos.lookFor(LOOK_STRUCTURES);
-                                // Go through target list
-                                for (var i in targetlist) {
-                                    if (targetlist[i].structureType != undefined) {
-                                        if ((targetlist[i].store != undefined && targetlist[i].store[RESOURCE_ENERGY] > 0) || (targetlist[i].energy != undefined && targetlist[i].energy > 0)) {
-                                            //empty structure of energy first
-                                            if (creep.withdraw(targetlist[i], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(targetlist[i], {reusePath: moveReusePath()});
-                                            }
-                                        }
-                                        else if (creep.dismantle(targetlist[i]) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(targetlist[i], {reusePath: moveReusePath()});
-                                        }
-                                        break;
-                                    }
-                                }
-                                if (targetlist.length == 0) {
-                                    Game.notify("Demolition flag in room " + demolishFlag.pos.roomName + " is placed in empty square!")
-                                }
-                            }
-                            else if (demolishFlag.memory.target == "room") {
-                                //demolish all structures in room
-                                // find structures with energy
-                                var target = creep.findResource(RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TERMINAL, STRUCTURE_STORAGE, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_LAB);
-                                if (target == null) {
-                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_CONTAINER && s.structureType != STRUCTURE_CONTROLLER});
-                                }
-                                if (target == null) {
-                                    target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_CONTAINER && s.structureType != STRUCTURE_CONTROLLER});
-                                }
-                                if (target != null) {
-                                    if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || target.energy != undefined && target.energy > 20) {
+                        if (demolishFlag.memory.target == "object") {
+                            //demolish flag position structures
+                            targetlist = demolishFlag.pos.lookFor(LOOK_STRUCTURES);
+                            // Go through target list
+                            for (var i in targetlist) {
+                                if (targetlist[i].structureType != undefined) {
+                                    if ((targetlist[i].store != undefined && targetlist[i].store[RESOURCE_ENERGY] > 0) || (targetlist[i].energy != undefined && targetlist[i].energy > 0)) {
                                         //empty structure of energy first
-                                        if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: moveReusePath()});
-                                        }
-                                        else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: moveReusePath()});
+                                        if (this.withdraw(targetlist[i], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                            this.moveTo(targetlist[i], {reusePath: moveReusePath()});
                                         }
                                     }
-                                    else {
-                                        var result = creep.dismantle(target);
-                                        if (result == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: moveReusePath()});
-                                        }
-                                        else if (result == OK) {
-                                            creep.memory.statusDemolishing = target.id;
-                                        }
+                                    else if (this.dismantle(targetlist[i]) == ERR_NOT_IN_RANGE) {
+                                        this.moveTo(targetlist[i], {reusePath: moveReusePath()});
                                     }
+                                    break;
                                 }
+                            }
+                            if (targetlist.length == 0) {
+                                console.log("Demolition flag in room " + demolishFlag.pos.roomName + " is placed in empty square!")
                             }
                         }
-                        else {
-                            if (creep.dismantle(Game.getObjectById(creep.memory.statusDemolishing)) != OK) {
-                                delete creep.memory.statusDemolishing;
-                                delete creep.memory.path;
-                                delete creep.memory._move;
-                                delete creep.memory.targetBuffer;
+                        else if (demolishFlag.memory.target == "room") {
+                            //demolish all structures in room
+                            // find structures with energy
+                            var target = this.findResource(RESOURCE_ENERGY, STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TERMINAL, STRUCTURE_STORAGE, STRUCTURE_TOWER, STRUCTURE_LINK, STRUCTURE_LAB);
+                            if (target == null) {
+                                target = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_WALL && s.structureType != STRUCTURE_CONTAINER && s.structureType != STRUCTURE_CONTROLLER});
+                            }
+                            if (target == null) {
+                                target = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_CONTAINER && s.structureType != STRUCTURE_CONTROLLER});
+                            }
+                            if (target != null) {
+                                if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || target.energy != undefined && target.energy > 20) {
+                                    //empty structure of energy first
+                                    if (this.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                        this.moveTo(target, {reusePath: moveReusePath()});
+                                    }
+                                }
+                                else {
+                                    var result = this.dismantle(target);
+                                    if (result == ERR_NOT_IN_RANGE) {
+                                        this.moveTo(target, {reusePath: moveReusePath()});
+                                    }
+                                    else if (result == OK) {
+                                        this.memory.statusDemolishing = target.id;
+                                    }
+                                }
                             }
                         }
                     }
                     else {
-                        //Hostiles creeps in new room
-                        creep.memory.fleeing = true;
-                        creep.goToHomeRoom();
+                        if (this.dismantle(Game.getObjectById(this.memory.statusDemolishing)) != OK) {
+                            delete this.memory.statusDemolishing;
+                            delete this.memory.path;
+                            delete this.memory._move;
+                            delete this.memory.targetBuffer;
+                        }
                     }
                 }
+                else {
+                    //Hostiles creeps in new room
+                    this.memory.fleeing = true;
+                    this.goToHomeRoom();
+                }
             }
-            else {
-                creep.roleHarvester();
-            }
+        }
+        else {
+            this.roleHarvester();
         }
     }
 };

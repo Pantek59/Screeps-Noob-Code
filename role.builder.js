@@ -1,87 +1,82 @@
-module.exports = {
-    // a function to run the logic for this role
-    run: function(creep) {
-        var roleCollector = require('role.collector');
-
-        // check for home room
-        if (creep.room.name != creep.memory.homeroom && creep.memory.role != "remoteHarvester" && creep.memory.role != "energyHauler") {
-            //return to home room
-            var hometarget = Game.getObjectById(creep.memory.spawn);
-            creep.moveTo(hometarget, {reusePath: moveReusePath()});
+Creep.prototype.roleBuilder = function () {
+    // check for home room
+    if (this.room.name != this.memory.homeroom && this.memory.role != "remoteHarvester" && this.memory.role != "energyHauler") {
+        //return to home room
+        var hometarget = Game.getObjectById(this.memory.spawn);
+        this.moveTo(hometarget, {reusePath: moveReusePath()});
+    }
+    else {
+        if (this.memory.statusBuilding != undefined) {
+            if (this.build(Game.getObjectById(this.memory.statusBuilding)) != OK) {
+                delete this.memory.statusBuilding;
+            }
         }
-        else {
-            if (creep.memory.statusBuilding != undefined) {
-                if (creep.build(Game.getObjectById(creep.memory.statusBuilding)) != OK) {
-                    delete creep.memory.statusBuilding;
-                }
+        // if creep is trying to complete a constructionSite but has no energy left
+        if (this.carry.energy == 0) {
+            // switch state
+            this.memory.working = false;
+        }
+        // if creep is harvesting energy but is full
+        else if (this.memory.working == false && this.carry.energy == this.carryCapacity) {
+            // switch state
+            this.memory.working = true;
+        }
+        // if creep is supposed to complete a constructionSite
+        if (this.memory.working == true) {
+            if (this.room.memory.hostiles.length > 0) {
+                this.towerEmergencyFill();
             }
-            // if creep is trying to complete a constructionSite but has no energy left
-            if (creep.carry.energy == 0) {
-                // switch state
-                creep.memory.working = false;
-            }
-            // if creep is harvesting energy but is full
-            else if (creep.memory.working == false && creep.carry.energy == creep.carryCapacity) {
-                // switch state
-                creep.memory.working = true;
-            }
-            // if creep is supposed to complete a constructionSite
-            if (creep.memory.working == true) {
-                if (creep.room.memory.hostiles.length > 0) {
-                    creep.towerEmergencyFill();
+            else {
+                // find closest constructionSite
+                var constructionSite;
+                if (this.memory.myConstructionSite == undefined) {
+                    constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
+                    if (constructionSite == null) {
+                        constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_EXTENSION});
+                    }
+                    if (constructionSite == null) {
+                        constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType != STRUCTURE_RAMPART});
+                    }
+                    if (constructionSite != null && constructionSite != undefined) {
+                        this.memory.myConstructionSite = constructionSite.id;
+                    }
                 }
                 else {
-                    // find closest constructionSite
-                    var constructionSite;
-                    if (creep.memory.myConstructionSite == undefined) {
-                        constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
-                        if (constructionSite == null) {
-                            constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_EXTENSION});
-                        }
-                        if (constructionSite == null) {
-                            constructionSite = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, {filter: (s) => s.structureType != STRUCTURE_RAMPART});
-                        }
-                        if (constructionSite != null && constructionSite != undefined) {
-                            creep.memory.myConstructionSite = constructionSite.id;
-                        }
+                    constructionSite = Game.getObjectById(this.memory.myConstructionSite);
+                    if (constructionSite == null) {
+                        delete this.memory.myConstructionSite;
+                    }
+                }
+                // if one is found
+                if (constructionSite != undefined) {
+                    // try to build, if the constructionSite is not in range
+                    var result = this.build(constructionSite);
+                    if (result == ERR_NOT_IN_RANGE) {
+                        // move towards the constructionSite
+                        this.moveTo(constructionSite, {reusePath: moveReusePath()});
+                    }
+                    else if (result == OK) {
+                        this.memory.statusBuilding = constructionSite.id;
+                    }
+                }
+                // if no constructionSite is found
+                else {
+                    // go upgrading the controller
+                    if (this.room.controller.level < 8) {
+                        this.roleUpgrader();
                     }
                     else {
-                        constructionSite = Game.getObjectById(creep.memory.myConstructionSite);
-                        if (constructionSite == null) {
-                            delete creep.memory.myConstructionSite;
-                        }
-                    }
-                    // if one is found
-                    if (constructionSite != undefined) {
-                        // try to build, if the constructionSite is not in range
-                        var result = creep.build(constructionSite);
-                        if (result == ERR_NOT_IN_RANGE) {
-                            // move towards the constructionSite
-                            creep.moveTo(constructionSite, {reusePath: moveReusePath()});
-                        }
-                        else if (result == OK) {
-                            creep.memory.statusBuilding = constructionSite.id;
-                        }
-                    }
-                    // if no constructionSite is found
-                    else {
-                        // go upgrading the controller
-                        if (creep.room.controller.level < 8) {
-                            creep.roleUpgrader();
-                        }
-                        else {
-                            let spawn = Game.getObjectById(creep.memory.spawn);
-                            if (spawn.recycleCreep(creep) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(spawn, {reusePath: moveReusePath()});
-                            }
+                        let spawn = Game.getObjectById(this.memory.spawn);
+                        if (spawn.recycleCreep(this) == ERR_NOT_IN_RANGE) {
+                            this.moveTo(spawn, {reusePath: moveReusePath()});
                         }
                     }
                 }
             }
-            // if creep is supposed to harvest energy from source
-            else {
-                    roleCollector.run(creep);
-            }
+        }
+        // if creep is supposed to harvest energy from source
+        else {
+            this.roleCollector();
         }
     }
 };

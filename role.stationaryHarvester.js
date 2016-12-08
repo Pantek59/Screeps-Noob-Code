@@ -1,76 +1,72 @@
-module.exports = {
-    // state working = Returning energy to structure
+Creep.prototype.roleStationaryHarvester = function() {
+    if (this.memory.statusHarvesting == undefined || this.memory.statusHarvesting == false || this.carry.energy == this.carryCapacity) {
+        //Look for vacant source marked as narrowSource
+        if (this.memory.currentFlag == undefined) {
+            this.memory.currentFlag = this.findMyFlag("narrowSource");
+        }
 
-    run: function(creep) {
-        if (creep.memory.statusHarvesting == undefined || creep.memory.statusHarvesting == false || creep.carry.energy == creep.carryCapacity) {
-            //Look for vacant source marked as narrowSource
-            if (creep.memory.currentFlag == undefined) {
-                creep.memory.currentFlag = creep.findMyFlag("narrowSource");
-            }
-
-            if (creep.memory.currentFlag == undefined) {
-                console.log(creep.name + " has no source to stationary harvest in room " + creep.room.name + ".");
-            }
-            else {
-                var flag = Game.flags[creep.memory.currentFlag];
-                if (creep.pos.isEqualTo(flag)) {
-                    // Harvesting position reached
-                    if (creep.carry.energy == creep.carryCapacity) {
-                        //Identify and save container
-                        if (creep.memory.narrowContainer == undefined) {
-                            var container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER && s.storeCapacity - _.sum(s.store) > 0) || (s.structureType == STRUCTURE_LINK && s.energyCapacity - s.energy) > 0});
-                            if (container != null) {
-                                creep.memory.narrowContainer = container.id;
-                            }
-                        }
-                        else {
-                            container = Game.getObjectById(creep.memory.narrowContainer);
-                        }
-                        if (creep.transfer(container, RESOURCE_ENERGY) != OK) {
-                            delete creep.memory.narrowContainer;
-                        }
-                    }
-
-                    if (creep.carry.energy < creep.carryCapacity) {
-                        //Time to refill
-                        //Identify and save source
-                        if (creep.memory.narrowSource == undefined) {
-                            var source = creep.pos.findClosestByRange(FIND_SOURCES);
-                            creep.memory.narrowSource = source.id;
-                        }
-                        else {
-                            var source = Game.getObjectById(creep.memory.narrowSource);
-                        }
-
-                        if (source.energy == 0) {
-                            creep.memory.sleep = source.ticksToRegeneration;
-                        }
-                        else {
-                            if (creep.harvest(source) != OK) {
-                                creep.memory.statusHarvesting = false;
-                                delete creep.memory.narrowSource;
-                            }
-                            else {
-                                creep.memory.statusHarvesting = source.id;
-                            }
-                        }
-                    }
-                }
-                else if (flag != undefined) {
-                    // Move to harvesting point
-                    creep.moveTo(flag, {reusePath:moveReusePath()});
-                }
-                else {
-                    console.log(creep.name + " in room " + creep.room.name + " has a problem.");
-                }
-            }
+        if (this.memory.currentFlag == undefined) {
+            console.log(this.name + " has no source to stationary harvest in room " + this.room.name + ".");
         }
         else {
-            // Creep is harvesting, try to keep harvesting
-            var result = creep.harvest(Game.getObjectById(creep.memory.statusHarvesting));
-            if (result != OK) {
-                creep.memory.statusHarvesting = false;
+            var flag = Game.flags[this.memory.currentFlag];
+            if (this.pos.isEqualTo(flag)) {
+                // Harvesting position reached
+                if (this.carry.energy == this.carryCapacity) {
+                    //Identify and save container
+                    if (this.memory.narrowContainer == undefined) {
+                        var container = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => (s.structureType == STRUCTURE_CONTAINER && s.storeCapacity - _.sum(s.store) > 0) || (s.structureType == STRUCTURE_LINK && s.energyCapacity - s.energy) > 0});
+                        if (container != null) {
+                            this.memory.narrowContainer = container.id;
+                        }
+                    }
+                    else {
+                        container = Game.getObjectById(this.memory.narrowContainer);
+                    }
+                    if (this.transfer(container, RESOURCE_ENERGY) != OK) {
+                        delete this.memory.narrowContainer;
+                    }
+                }
+
+                if (this.carry.energy < this.carryCapacity) {
+                    //Time to refill
+                    //Identify and save source
+                    if (this.memory.narrowSource == undefined) {
+                        var source = this.pos.findClosestByRange(FIND_SOURCES);
+                        this.memory.narrowSource = source.id;
+                    }
+                    else {
+                        var source = Game.getObjectById(this.memory.narrowSource);
+                    }
+
+                    if (source.energy == 0) {
+                        this.memory.sleep = source.ticksToRegeneration;
+                    }
+                    else {
+                        if (this.harvest(source) != OK) {
+                            this.memory.statusHarvesting = false;
+                            delete this.memory.narrowSource;
+                        }
+                        else {
+                            this.memory.statusHarvesting = source.id;
+                        }
+                    }
+                }
             }
+            else if (flag != undefined) {
+                // Move to harvesting point
+                this.moveTo(flag, {reusePath:moveReusePath()});
+            }
+            else {
+                console.log(this.name + " in room " + this.room.name + " has a problem.");
+            }
+        }
+    }
+    else {
+        // Creep is harvesting, try to keep harvesting
+        var result = this.harvest(Game.getObjectById(this.memory.statusHarvesting));
+        if (result != OK) {
+            this.memory.statusHarvesting = false;
         }
     }
 };

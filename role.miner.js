@@ -1,106 +1,102 @@
-//require ("globals");
-module.exports = {
-    // state working = Returning minerals to structure
-    run: function(creep) {
-        if (creep.room.name != creep.memory.homeroom) {
-            //return to home room
-            var hometarget = Game.getObjectById(creep.memory.spawn);
-            creep.moveTo(hometarget, {reusePath: moveReusePath()});
-        }
-        else {
-            if (creep.memory.statusHarvesting != undefined && creep.memory.statusHarvesting != false) {
-                // Creep is mining, try to keep mining
-                if (creep.harvest(Game.getObjectById(creep.memory.statusHarvesting)) != OK || _.sum(creep.carry) == creep.carryCapacity) {
-                    creep.memory.statusHarvesting = false;
-                }
+Creep.prototype.roleMiner = function() {
+    if (this.room.name != this.memory.homeroom) {
+        //return to home room
+        var hometarget = Game.getObjectById(this.memory.spawn);
+        this.moveTo(hometarget, {reusePath: moveReusePath()});
+    }
+    else {
+        if (this.memory.statusHarvesting != undefined && this.memory.statusHarvesting != false) {
+            // Creep is mining, try to keep mining
+            if (this.harvest(Game.getObjectById(this.memory.statusHarvesting)) != OK || _.sum(this.carry) == this.carryCapacity) {
+                this.memory.statusHarvesting = false;
             }
-            else if (creep.room.memory.roomArrayMinerals != undefined) {
-                // if creep is bringing minerals to a structure but is empty now
-                if (_.sum(creep.carry) == 0) {
-                    // switch state to harvesting
-                    creep.memory.working = false;
-                }
-                // if creep is harvesting minerals but is full
-                else if (_.sum(creep.carry) == creep.carryCapacity || creep.carry[RESOURCE_ENERGY] > 0) {
-                    // switch state
-                    creep.memory.working = true;
-                }
-                var storage = creep.room.storage;
-                var resource;
+        }
+        else if (this.room.memory.roomArrayMinerals != undefined) {
+            // if creep is bringing minerals to a structure but is empty now
+            if (_.sum(this.carry) == 0) {
+                // switch state to harvesting
+                this.memory.working = false;
+            }
+            // if creep is harvesting minerals but is full
+            else if (_.sum(this.carry) == this.carryCapacity || this.carry[RESOURCE_ENERGY] > 0) {
+                // switch state
+                this.memory.working = true;
+            }
+            var storage = this.room.storage;
+            var resource;
 
-                // if creep is supposed to transfer minerals to a structure
-                if (creep.memory.working == true) {
-                    if (creep.carry[RESOURCE_ENERGY] > 0) {
-                        //somehow picked up energy
-                        if (creep.room.storage == undefined) {
-                            var container = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK)
-                        }
-                        else {
-                            var container = creep.room.storage;
-                        }
-
-                        if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(container, {reusePath: moveReusePath()});
-                        }
+            // if creep is supposed to transfer minerals to a structure
+            if (this.memory.working == true) {
+                if (this.carry[RESOURCE_ENERGY] > 0) {
+                    //somehow picked up energy
+                    if (this.room.storage == undefined) {
+                        var container = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_LINK)
                     }
                     else {
-                        for (var t in creep.carry) {
-                            if (t != "energy") {
-                                resource = t;
-                                break;
-                            }
-                        }
-                        if (storage == null) {
-                            //No storage found in room
-                            var container = creep.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
-                            if (creep.transfer(container, resource) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(container, {reusePath: moveReusePath()});
-                            }
-                        }
-                        else {
-                            //storage found
-                            if (creep.transfer(storage, resource) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(storage, {reusePath: moveReusePath()});
-                            }
-                        }
+                        var container = this.room.storage;
+                    }
+
+                    if (this.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                        this.moveTo(container, {reusePath: moveReusePath()});
                     }
                 }
                 else {
-                    //creep is supposed to harvest minerals from source or containers
-                    let container = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
-                    var containerResource;
-
-                    if (container != undefined && storage != undefined) {
-                        //minerals waiting in containers
-                        //analyzing storage of container
-                        var store = container.store;
-                        for (var s in store) {
-                            if (s != RESOURCE_ENERGY) {
-                                // mineral found in container
-                                containerResource = s;
-                            }
-                        }
-                        if (creep.withdraw(container, containerResource) != OK) {
-                            creep.moveTo(container);
+                    for (var t in this.carry) {
+                        if (t != "energy") {
+                            resource = t;
+                            break;
                         }
                     }
-                    else if (Game.getObjectById(creep.room.memory.roomArrayMinerals[0]).mineralAmount > 0) {
-                        //minerals waiting at source
-                        var mineral = creep.pos.findClosestByPath(FIND_MINERALS, {filter: (s) => s.mineralAmount > 0});
-                        var result = creep.harvest(mineral);
-                        if (mineral != null && result == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(mineral);
-                            creep.memory.statusHarvesting = false;
+                    if (storage == null) {
+                        //No storage found in room
+                        var container = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
+                        if (this.transfer(container, resource) == ERR_NOT_IN_RANGE) {
+                            this.moveTo(container, {reusePath: moveReusePath()});
                         }
-                        else if (mineral != null && result == OK) {
-                            creep.memory.statusHarvesting = mineral.id;
+                    }
+                    else {
+                        //storage found
+                        if (this.transfer(storage, resource) == ERR_NOT_IN_RANGE) {
+                            this.moveTo(storage, {reusePath: moveReusePath()});
                         }
-                        else if (mineral != null && result == ERR_TIRED) {
-                            creep.memory.sleep = 3;
+                    }
+                }
+            }
+            else {
+                //creep is supposed to harvest minerals from source or containers
+                let container = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] < _.sum(s.store)});
+                var containerResource;
+
+                if (container != undefined && storage != undefined) {
+                    //minerals waiting in containers
+                    //analyzing storage of container
+                    var store = container.store;
+                    for (var s in store) {
+                        if (s != RESOURCE_ENERGY) {
+                            // mineral found in container
+                            containerResource = s;
                         }
-                        else {
-                            creep.memory.statusHarvesting = false;
-                        }
+                    }
+                    if (this.withdraw(container, containerResource) != OK) {
+                        this.moveTo(container);
+                    }
+                }
+                else if (Game.getObjectById(this.room.memory.roomArrayMinerals[0]).mineralAmount > 0) {
+                    //minerals waiting at source
+                    var mineral = this.pos.findClosestByPath(FIND_MINERALS, {filter: (s) => s.mineralAmount > 0});
+                    var result = this.harvest(mineral);
+                    if (mineral != null && result == ERR_NOT_IN_RANGE) {
+                        this.moveTo(mineral);
+                        this.memory.statusHarvesting = false;
+                    }
+                    else if (mineral != null && result == OK) {
+                        this.memory.statusHarvesting = mineral.id;
+                    }
+                    else if (mineral != null && result == ERR_TIRED) {
+                        this.memory.sleep = 3;
+                    }
+                    else {
+                        this.memory.statusHarvesting = false;
                     }
                 }
             }
