@@ -16,9 +16,9 @@ module.exports.loop = function() {
     //profiler.wrap(function() {
     let cpu = Game.cpu.getUsed();
     if (Game.time == global.start) { cpu -= global.reqCPU; }
-    if (cpu > Game.cpu.limit) {
+    if (cpu > 30) {
         console.log("CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
-        return;
+        //return;
     }
     //return;
 
@@ -407,7 +407,7 @@ module.exports.loop = function() {
                 var mineralIDs = [];
                 searchResult = Game.rooms[r].find(FIND_MINERALS);
                 for (let s in searchResult) {
-                    sourceIDs.push(searchResult[s].id);
+                    mineralIDs.push(searchResult[s].id);
                 }
                 Game.rooms[r].memory.roomArray.minerals = mineralIDs;
 
@@ -573,7 +573,7 @@ module.exports.loop = function() {
                         // We have visibility in room
                         if (flag.room.memory.hostiles.length > 0 && flag.room.memory.panicFlag == undefined && flag.memory.skr == undefined) {
                             //Hostiles present in room with remote harvesters
-                            let panicName="PanicFlag_" + flag.pos.roomName;
+                            let panicName = "PanicFlag_" + flag.pos.roomName;
                             var panicFlag = flag.pos.createFlag(panicName); // create white panic flag to attract protectors
                             flag.room.memory.panicFlag = panicFlag;
                             panicFlag = _.filter(Game.flags, {name: panicFlag})[0];
@@ -591,6 +591,36 @@ module.exports.loop = function() {
                             var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
                             tempFlag.remove();
                             delete flag.room.memory.panicFlag;
+                        }
+
+                        if (Memory.flowPath[flag.pos.roomName] != undefined && (Memory.flowPath[flag.pos.roomName].roomHash == undefined || Game.time % DELAYFLOWROOMCHECK == 0)) {
+                            //Save flow path markers
+                            let markerString = "";
+                            let flowMarker = flag.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_ROAD || s.structureType == STRUCTURE_WALL});
+                            for (m in flowMarker) {
+                                if (flowMarker[m].pos.x < 10) {
+                                    markerString = markerString + "0";
+                                }
+                                markerString = markerString + flowMarker[m].pos.x;
+
+                                if (flowMarker[m].pos.y < 10) {
+                                    markerString = markerString + "0";
+                                }
+                                markerString = markerString + flowMarker[m].pos.y;
+                            }
+                            if (Memory.flowPath[flag.pos.roomName].roomHash == undefined) {
+                                //First hash of the room
+                                Memory.flowPath[flag.pos.roomName].roomHash = markerString.hashCode();
+                            }
+                            else {
+                                //Compare with existing hash
+                                let newHash = markerString.hashCode();
+                                if (newHash != Memory.flowPath[flag.pos.roomName].roomHash) {
+                                    console.log(flag.room.name + ": FlowPaths will be recalculated!")
+                                    Memory.flowPath[flag.pos.roomName].roomHash = newHash;
+                                    delete Memory.flowPath[flag.pos.roomName];
+                                }
+                            }
                         }
                     }
                 }

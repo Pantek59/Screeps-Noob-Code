@@ -81,9 +81,19 @@ Creep.prototype.roleRemoteHarvester = function() {
                     //new room reached, start harvesting
                     if (this.room.memory.hostiles.length == 0) {
                         //No enemy creeps
+                        let mySource = remoteSource.pos.findClosestByRange(FIND_SOURCES);
+                        let returnCode = this.harvest(mySource);
+                        if (returnCode == ERR_NOT_IN_RANGE) {
+                            this.useFlowPathTo(mySource.pos);
+                        }
+                        else if (returnCode == OK) {
+                            this.memory.statusHarvesting = mySource.id;
+                        }
+                        /*
                         if (this.roleCollector() != OK) {
                             this.moveTo(remoteSource, {reusePath: moveReusePath()});
                         }
+                        */
                     }
                     else {
                         //Hostiles found
@@ -112,7 +122,7 @@ Creep.prototype.roleRemoteHarvester = function() {
         else {
             // Creep is harvesting, try to keep harvesting
             if (this.harvest(Game.getObjectById(this.memory.statusHarvesting)) != OK) {
-                console.log(this.harvest(Game.getObjectById(this.memory.statusHarvesting)));
+                //console.log(this.harvest(Game.getObjectById(this.memory.statusHarvesting)));
                 delete this.memory.statusHarvesting;
             }
         }

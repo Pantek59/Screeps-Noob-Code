@@ -1,5 +1,6 @@
 Creep.prototype.useFlowPathTo = function (targetPosition) {
     // Data structure: Memory.flowPath.room.target x/y.source x/y = direction
+    // flowMarker Hash: Memory.flowPath.room.roomHash
     if (targetPosition.roomName != this.room.name) {
         return false;
     }

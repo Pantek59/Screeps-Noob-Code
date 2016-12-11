@@ -268,7 +268,7 @@ module.exports = {
         let numberOf = counter;
         numberOf.claimer = 0; //minimumSpawnOf only contains claimer delta. Hence numberOf.claimer is always 0
 
-        //console.log(spawnRoom + ": " + minimumSpawnOf.claimer);
+        //console.log(spawnRoom + ": " + minimumSpawnOf.harvester);
 
         // Role selection
         let energy = spawnRoom.energyCapacityAvailable;
