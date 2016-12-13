@@ -30,14 +30,14 @@ Creep.prototype.roleHarvester = function() {
             }
             var nuker;
             var powerSpawn;
-            if (this.room.memory.roomArrayNukers != undefined) {
-                nuker = Game.getObjectById(this.room.memory.roomArrayNukers[0]);
+            if (this.room.memory.roomArray.nukers != undefined) {
+                nuker = Game.getObjectById(this.room.memory.roomArray.nukers[0]);
             }
             else {
                 nuker = null;
             }
-            if (this.room.memory.roomArrayPowerSpawns != undefined) {
-                powerSpawn = Game.getObjectById(this.room.memory.roomArrayPowerSpawns[0]);
+            if (this.room.memory.roomArray.powerSpawns != undefined) {
+                powerSpawn = Game.getObjectById(this.room.memory.roomArray.powerSpawns[0]);
             }
             else {
                 powerSpawn = null;

@@ -1,5 +1,5 @@
 Creep.prototype.roleScientist = function() {
-    if (Game.cpu.bucket > CPU_THRESHOLD) {
+    if (1 == 1 || Game.cpu.bucket > CPU_THRESHOLD) {
         if (this.ticksToLive < 50 && _.sum(this.carry) == 0) {
             //Scientist will die soon and possibly drop precious material
             let spawn = Game.getObjectById(this.memory.spawn);
@@ -78,18 +78,16 @@ Creep.prototype.roleScientist = function() {
                         //Empty all labs to storage
                         var emptylabs = 0;
                         var lab;
-                        for (var c in this.room.memory.labs) {
+                        for (var c in this.room.memory.roomArray.labs) {
                             lab = Game.getObjectById(this.room.memory.roomArray.labs[c]);
                             if ((this.room.memory.boostLabs == undefined || this.room.memory.boostLabs.indexOf(lab.id) == -1) && lab.mineralAmount > 0 && lab.id != innerLabs[0].labID && lab.id != innerLabs[1].labID) {
-                                {
-                                    if (_.sum(this.carry) < this.carryCapacity) {
-                                        if (this.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
-                                            this.moveTo(lab, {reusePath: moveReusePath()});
-                                        }
+                                if (_.sum(this.carry) < this.carryCapacity) {
+                                    if (this.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
+                                        this.moveTo(lab, {reusePath: moveReusePath()});
                                     }
-                                    else {
-                                        this.storeAllBut();
-                                    }
+                                }
+                                else {
+                                    this.storeAllBut();
                                 }
                             }
                             else if ((this.room.memory.boostLabs == undefined || this.room.memory.boostLabs.indexOf(lab.id) == -1) && lab.energy > 0)

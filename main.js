@@ -1,22 +1,20 @@
 let cpu = Game.cpu.getUsed();
-//console.log("CPU@Start: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
+console.log("CPU@Start: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
 const CPUdebug = false;
 
 require("globals");
 var moduleSpawnCreeps = require('module.spawnCreeps');
-
 global.reqCPU = Game.cpu.getUsed();
-//console.log('CPU@Initialization: ' + (global.reqCPU - cpu) + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
 global.start = Game.time;
+console.log('CPU@Initialization: ' + (global.reqCPU - cpu) + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
 
 //const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
-//profiler.enable();
+//profiler.enable() ;
 module.exports.loop = function() {
-    //console.log("CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
     //profiler.wrap(function() {
     let cpu = Game.cpu.getUsed();
     if (Game.time == global.start) { cpu -= global.reqCPU; }
-    if (cpu > 30) {
+    if (cpu >= 35) {
         console.log("CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
         //return;
     }
