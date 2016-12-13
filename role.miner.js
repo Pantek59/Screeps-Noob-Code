@@ -11,7 +11,7 @@ Creep.prototype.roleMiner = function() {
                 this.memory.statusHarvesting = false;
             }
         }
-        else if (this.room.memory.roomArrayMinerals != undefined) {
+        else if (this.room.memory.roomArray.minerals != undefined) {
             // if creep is bringing minerals to a structure but is empty now
             if (_.sum(this.carry) == 0) {
                 // switch state to harvesting
@@ -81,7 +81,7 @@ Creep.prototype.roleMiner = function() {
                         this.moveTo(container);
                     }
                 }
-                else if (Game.getObjectById(this.room.memory.roomArrayMinerals[0]).mineralAmount > 0) {
+                else if (Game.getObjectById(this.room.memory.roomArray.minerals[0]).mineralAmount > 0) {
                     //minerals waiting at source
                     var mineral = this.pos.findClosestByPath(FIND_MINERALS, {filter: (s) => s.mineralAmount > 0});
                     var result = this.harvest(mineral);

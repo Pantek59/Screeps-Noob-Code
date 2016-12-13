@@ -216,7 +216,7 @@ module.exports = {
         /** Rest **/
         // Miner
         minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
-        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]) == null|| Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]).mineralAmount == 0 || spawnRoom.memory.resourceLimits[roomMineralType] == undefined || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.resourceLimits[roomMineralType].minProduction)) {
+        if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]) == null || Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]).mineralAmount == 0 || spawnRoom.memory.resourceLimits[roomMineralType] == undefined || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.resourceLimits[roomMineralType].minProduction)) {
             minimumSpawnOf.miner = 0;
         }
 
@@ -268,7 +268,7 @@ module.exports = {
         let numberOf = counter;
         numberOf.claimer = 0; //minimumSpawnOf only contains claimer delta. Hence numberOf.claimer is always 0
 
-        //console.log(spawnRoom + ": " + minimumSpawnOf.harvester);
+        //console.log(spawnRoom + ": " + minimumSpawnOf.miner);
 
         // Role selection
         let energy = spawnRoom.energyCapacityAvailable;

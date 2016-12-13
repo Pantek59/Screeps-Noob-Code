@@ -156,7 +156,7 @@ Creep.prototype.roleScientist = function() {
                 var emptylabs = 0;
                 var lab;
                 for (var c in this.room.memory.roomArray.labs) {
-                    lab = Game.getObjectById(this.room.memory.roomArrayLabs[c]);
+                    lab = Game.getObjectById(this.room.memory.roomArray.labs[c]);
                     if (lab.mineralAmount > 0) {
                         if (this.storeAllBut() == true) {
                             if (this.withdraw(lab, lab.mineralType) == ERR_NOT_IN_RANGE) {
