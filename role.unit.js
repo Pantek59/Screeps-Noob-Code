@@ -12,6 +12,10 @@ Creep.prototype.roleUnit = function() {
             this.memory.strategy = true;
             strategies.run(this, groupFlag);
         }
+        else if (groupFlag.memory.strategy == "remoteDrain" && this.memory.strategy == true) {
+            this.memory.strategy = true;
+            strategies.run(this, groupFlag);
+        }
         else {
             // Creep still on route, attack within 4 range
             this.memory.strategy = false;

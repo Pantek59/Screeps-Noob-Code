@@ -11,7 +11,7 @@ module.exports = {
                 switch (creep.memory.role) {
                     case "attacker":
                     case "einarr":
-                        if (creep.memory.role == "einarr" && creep.hits < creep.hitsMax) {
+                        if (creep.memory.role == "einarr" && creep.hits < creep.hitsMax * 0.5) {
                             //Self-heal
                             creep.heal(creep);
                         }
@@ -52,10 +52,9 @@ module.exports = {
                         }
                         else {
                             // Attacker in target room
-                            if (creep.hits < creep.hitsMax * 0.3) {
+                            if (creep.hits < creep.hitsMax * 0.8) {
                                 //Attacker damaged enough to withdraw
-                                let exitToHome = creep.pos.findClosestByRange(directionToHomeRoom);
-                                creep.moveTo(exitToHome, {reusePath: moveReusePath()});
+                                creep.moveTo(flag, {reusePath: moveReusePath()});
                             }
                             else {
                                 if (creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49) {
@@ -67,7 +66,7 @@ module.exports = {
                         break;
 
                     case "healer":
-                        if (creep.hits < creep.hitsMax) {
+                        if (creep.hits < creep.hitsMax * 0.6) {
                             //Self-heal
                             creep.heal(creep);
                         }
@@ -88,11 +87,10 @@ module.exports = {
                                         creep.moveTo(patient, {reusePath: moveReusePath()});
                                     }
                                 }
-                            }
-
-                            if (creep.pos.getRangeTo(flag) > 2) {
-                                // Go to flag and wait
-                                creep.moveTo(flag, {reusePath: moveReusePath()});
+                                else {
+                                    // Go to flag and wait
+                                    creep.moveTo(flag, {reusePath: moveReusePath()});
+                                }
                             }
                         }
                         break;
@@ -287,7 +285,7 @@ module.exports = {
                             creep.heal(creep);
                         }
 
-                        var danger = creep.pos.findInRange(hostileCreeps, 2);
+                        var danger = creep.pos.findInRange(hostileCreeps, 1);
                         if (danger.length > 0) {
                             creep.flee(danger, 3)
                         }

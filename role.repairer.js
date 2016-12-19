@@ -1,9 +1,7 @@
 Creep.prototype.roleRepairer = function() {
     // check for home room
     if (this.room.name != this.memory.homeroom && this.memory.role != "remoteHarvester") {
-        //return to home room
-        var hometarget = Game.getObjectById(this.memory.spawn);
-        this.moveTo(hometarget, {reusePath: moveReusePath()});
+        this.goToHomeRoom();
     }
     else {
         // if creep is trying to repair something but has no energy left

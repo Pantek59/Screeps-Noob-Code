@@ -63,8 +63,16 @@ module.exports = function() {
     Creep.prototype.goToHomeRoom = function() {
         // send creep back to room indicated in creep.memory.homeroom. Returns true if creep is in homeroom, false otherwise
         if (this.room.name != this.memory.homeroom) {
-            var controller = Game.rooms[this.memory.homeroom].controller;
-            this.moveTo(controller, {reusePath: moveReusePath()});
+            let waypointFlag =  Game.rooms[this.memory.homeroom].find(FIND_FLAGS, {filter: (f) => f.memory.waypoints != undefined && this.memory.spawn == Game.rooms[f.pos.roomName].controller.id});
+            //console.log(this.room.name + ", " + this.name + ": " + waypointFlag.length);
+            if (waypointFlag.length > 0) {
+                //Waypoint flag found!
+                this.gotoFlag(waypointFlag[0]);
+            }
+            else {
+                let controller = Game.rooms[this.room.name].controller;
+                this.moveTo(controller, {reusePath: moveReusePath()});
+            }
             return false;
         }
         else {return true;}

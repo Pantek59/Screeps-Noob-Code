@@ -38,10 +38,10 @@ Creep.prototype.roleClaimer = function() {
 
             if (this.room.controller.owner != undefined && this.room.controller.owner.username == playerUsername) {
                 //Roomed successfully claimed, now build spawn and remove spawns and extensions from previous owner
-                let spawns = creep.room.find(FIND_MY_SPAWNS).length;
+                let spawns = this.room.find(FIND_MY_SPAWNS).length;
                 if (spawns == 0) {
 
-                    var spawnConstructionsites = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
+                    var spawnConstructionsites = this.room.find(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => (s.structureType == STRUCTURE_SPAWN)}).length;
                     if (spawnConstructionsites == 0) {
                         remoteControllerFlag.pos.createConstructionSite(STRUCTURE_SPAWN);
                     }

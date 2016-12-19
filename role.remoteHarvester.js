@@ -89,11 +89,6 @@ Creep.prototype.roleRemoteHarvester = function() {
                         else if (returnCode == OK) {
                             this.memory.statusHarvesting = mySource.id;
                         }
-                        /*
-                        if (this.roleCollector() != OK) {
-                            this.moveTo(remoteSource, {reusePath: moveReusePath()});
-                        }
-                        */
                     }
                     else {
                         //Hostiles found
