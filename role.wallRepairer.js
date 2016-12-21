@@ -74,10 +74,14 @@ Creep.prototype.roleWallRepairer = function() {
                 }
             }
             else {
-                if (this.repair(Game.getObjectById(this.memory.statusRepairing)) != OK) {
+                let status = this.repair(Game.getObjectById(this.memory.statusRepairing));
+                if (status == ERR_NOT_IN_RANGE) {
                     if (this.moveTo(Game.getObjectById(this.memory.statusRepairing), {reusePath: moveReusePath()}) != OK) {
                         delete this.memory.statusRepairing;
                     }
+                }
+                else if (status != OK) {
+                    delete this.memory.statusRepairing;
                 }
             }
         }

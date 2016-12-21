@@ -92,24 +92,8 @@ Creep.prototype.roleRemoteHarvester = function() {
                     }
                     else {
                         //Hostiles found
-                        if (remoteSource.memory.skr == true) {
-                            // SourceKeeper Room
-                            let sourceKeeper = remoteSource.pos.findInRange(FIND_HOSTILE_CREEPS, 5, function (c) { return isHostile(c)});
-                            if (sourceKeeper.length > 0) {
-                                //Source is guarded by source keeper -> retreat
-                                if (this.pos.getRangeTo(remoteSource) < 6) {
-                                    this.moveTo(remoteSource, {flee: true, reusePath: moveReusePath()});
-                                }
-                                else {
-                                    this.memory.sleep = 20;
-                                }
-                            }
-                        }
-                        else {
-                            //Hostiles creeps in new room
-                            this.memory.fleeing = true;
-                            this.goToHomeRoom();
-                        }
+                        this.memory.fleeing = true;
+                        this.goToHomeRoom();
                     }
                 }
             }

@@ -70,7 +70,7 @@ module.exports = function() {
                 this.gotoFlag(waypointFlag[0]);
             }
             else {
-                let controller = Game.rooms[this.room.name].controller;
+                let controller = Game.rooms[this.memory.homeroom].controller;
                 this.moveTo(controller, {reusePath: moveReusePath()});
             }
             return false;

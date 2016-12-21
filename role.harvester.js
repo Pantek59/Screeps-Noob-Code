@@ -89,7 +89,12 @@ Creep.prototype.roleHarvester = function() {
                         container = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
                     }
 
-                    if (this.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    if (container == null || container == undefined && this.getActiveBodyparts(WORK) > 0) {
+                        if (this.upgradeController(this.room.controller) == ERR_NOT_IN_RANGE) {
+                            this.moveTo(this.room.controller, {reusePath: moveReusePath()});
+                        }
+                    }
+                    else if (this.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         this.moveTo(container, {reusePath: moveReusePath()});
                     }
                 }

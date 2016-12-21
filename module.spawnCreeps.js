@@ -268,7 +268,7 @@ module.exports = {
         let numberOf = counter;
         numberOf.claimer = 0; //minimumSpawnOf only contains claimer delta. Hence numberOf.claimer is always 0
 
-        //console.log(spawnRoom + ": " + minimumSpawnOf.miner);
+        //console.log(spawnRoom + ": " + minimumSpawnOf.claimer);
 
         // Role selection
         let energy = spawnRoom.energyCapacityAvailable;
@@ -381,14 +381,14 @@ module.exports = {
             }
             if (hostiles == 0 && containerEnergie > spawnRoom.energyAvailable * 2.5 && spawnRoom.controller.level < 8) {
                 if (numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
-                    let rolename = 'upgrader';
+                    rolename = 'upgrader';
                 }
                 else {
-                    let rolename = "---";
+                    rolename = "---";
                 }
             }
             else {
-                let rolename = "---";
+                rolename = "---";
             }
         }
 

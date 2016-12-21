@@ -6,7 +6,7 @@ require('functions.game');
 require('functions.roles');
 require('test.flowPath');
 
-DELAYFLOWROOMCHECK = 57;
+DELAYFLOWROOMCHECK = 73;
 DELAYMARKETAUTOSELL = 31;
 DELAYMARKETBUY = 3;
 DELAYFLAGCOLORS = 31;
@@ -25,7 +25,7 @@ RESOURCE_SPACE = "space";
 TERMINAL_PACKETSIZE = 500; //Size of packets in resource balancing system
 TERMINALMARKETSTORE = 50000;
 RBS_PACKETSIZE = 5000;
-CPU_THRESHOLD = 50;
+CPU_THRESHOLD = 500;
 WALLMAX = 5500000;
 LOG_TERMINAL = false;
 LOG_MARKET = false;

@@ -9,7 +9,7 @@ global.start = Game.time;
 console.log('CPU@Initialization: ' + (global.reqCPU - cpu) + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket);
 
 //const profiler = require('screeps-profiler'); // cf. https://www.npmjs.com/package/screeps-profiler
-//profiler.enable();
+//profiler.enable() ;
 module.exports.loop = function() {
     //profiler.wrap(function() {
     let cpu = Game.cpu.getUsed();
