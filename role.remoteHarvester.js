@@ -38,7 +38,7 @@ Creep.prototype.roleRemoteHarvester = function() {
                     var spawn = Game.getObjectById(this.memory.spawn);
                     if (this.room.name != this.memory.homeroom) {
                         //still in new room, go out
-                        this.moveTo(spawn, {reusePath: moveReusePath()});
+                        this.useFlowPathTo(spawn.pos);
                     }
                     else {
                         // back in spawn room

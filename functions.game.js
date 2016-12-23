@@ -720,31 +720,44 @@ global.activeLabs = function () {
     return returnString;
 };
 
-function roomCallback(roomName) {
+global.roomCallback = function (roomName) {
     let room = Game.rooms[roomName];
     if (!room) {
         return;
     }
     let costs = new PathFinder.CostMatrix();
-    room.find(FIND_STRUCTURES)
-        .forEach(structure => {
-            if (structure.structureType === STRUCTURE_ROAD) {
-                costs.set(structure.pos.x, structure.pos.y, 1);
-            } else if (structure.structureType !== STRUCTURE_CONTAINER && structure.structureType !== STRUCTURE_RAMPART) {
-                costs.set(structure.pos.x, structure.pos.y, 0xff);
+
+    //Set costs for structures
+    let structures = room.find(FIND_STRUCTURES);
+    for (let s in structures) {
+        if (structures[s].structureType == STRUCTURE_ROAD) {
+            costs.set(structures[s].pos.x, structures[s].pos.y, 1);
+        }
+        else if (structures[s].structureType == STRUCTURE_CONTROLLER || structures[s].structureType == STRUCTURE_EXTRACTOR) {
+            //Find squares around controllers (claimers) and extractors (miners)
+
+            let top = structures[s].pos.y - 1;
+            let bottom = structures[s].pos.y + 1;
+            let right = structures[s].pos.x - 1;
+            let left = structures[s].pos.x + 1;
+            let areaInfo = room.lookForAtArea(LOOK_TERRAIN, top, left, bottom, right, true);
+            for (let a in areaInfo) {
+                //Check if square is walkable. If it is, set costs to 0xcc. If it isn't, leave the costs be
+                if (areaInfo[a].structure != "wall") {
+                    costs.set(areaInfo[a].x, areaInfo[a].y, 0xcc)
+                }
             }
-        });
+        }
+        else if (structures[s].structureType != STRUCTURE_CONTAINER && structure.structureType != STRUCTURE_RAMPART) {
+            costs.set(structures[s].pos.x, structures[s].pos.y, 0xff);
+        }
+    }
 
     //Find flags for stationaryRemoteHarvesters, stationaryHarvesters
-
-    //Find squares around controllers (claimers) and extractors (miners)
-    _.forEach(['harvester', 'upgrader', 'builder','secondHarvester','repairer','reserver','extractor'],
-        creepType => _.forEach(room.getCreeps(creepType), creep => costs.set(creep.pos.x, creep.pos.y, 0xff))
-    );
-
-
-
+    let flags = room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "haulEnergy" || f.memory.function == "narrowSource"});
+    for (let f in flags) {
+        costs.set(flags[f].pos.x, flags[f].pos.y, 0xdd);
+    }
     room.costMatrix = room.costMatrix || costs;
-
     return room.costMatrix;
 }

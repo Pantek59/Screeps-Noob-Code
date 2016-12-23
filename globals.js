@@ -1,10 +1,9 @@
 require('prototype.spawn2')();
 require('prototype.creep.findMyFlag')();
 require('prototype.creep.findResource')();
-require('functions.creeps')();
+require('functions.creeps');
 require('functions.game');
 require('functions.roles');
-require('test.flowPath');
 
 DELAYFLOWROOMCHECK = 73;
 DELAYMARKETAUTOSELL = 31;
@@ -39,9 +38,6 @@ allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "As
 //myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
 myroomlist = _.values(Game.rooms).filter (r => _.get(r, ['controller','owner','username'],undefined) === playerUsername);
 myRooms = {};
-for (let m in myroomlist) {
-    myRooms[myroomlist[m].name] = myroomlist[m];
-}
 
 mineralDescriptions = {};
 mineralDescriptions.H = {tier: 0, component1: false, component2: false };

@@ -41,7 +41,7 @@ module.exports = function() {
                 }
             }
         }
-        let body = this.getBodyInfo(roleName, this.room.energyAvailable);
+        let body = this.getBodyInfo(roleName, this.room.energyCapacityAvailable);
 
         if (roleName == "miniharvester") {
             roleName = "harvester";

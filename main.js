@@ -18,7 +18,11 @@ module.exports.loop = function() {
         console.log("<font color=#ff0000 type='highlight'>CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket +"</font>");
         //return;
     }
-    //return;
+
+    //Fill myRooms
+    for (let m in myroomlist) {
+        myRooms[myroomlist[m].name] = myroomlist[m];
+    }
 
     var CPUdebugString = "CPU Debug<br><br>";
     if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start: " + Game.cpu.getUsed())}
@@ -614,7 +618,7 @@ module.exports.loop = function() {
                                 //Compare with existing hash
                                 let newHash = markerString.hashCode();
                                 if (newHash != Memory.flowPath[flag.pos.roomName].roomHash) {
-                                    console.log(flag.room.name + ": FlowPaths will be recalculated!")
+                                    console.log("<font color=#ffff00 type='highlight'>" + flag.room.name + ": FlowPaths will be recalculated!</font>");
                                     Memory.flowPath[flag.pos.roomName].roomHash = newHash;
                                     delete Memory.flowPath[flag.pos.roomName];
                                 }

@@ -83,6 +83,9 @@ Creep.prototype.roleWallRepairer = function() {
                 else if (status != OK) {
                     delete this.memory.statusRepairing;
                 }
+                else if (Game.getObjectById(this.memory.statusRepairing).structureType == STRUCTURE_RAMPART && Game.time % 25 == 0) {
+                    delete this.memory.statusRepairing;
+                }
             }
         }
         // if creep is supposed to harvest energy from source
