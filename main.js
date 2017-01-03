@@ -598,7 +598,7 @@ module.exports.loop = function() {
                         if (Memory.flowPath[flag.pos.roomName] != undefined && (Memory.flowPath[flag.pos.roomName].roomHash == undefined || Game.time % DELAYFLOWROOMCHECK == 0)) {
                             //Save flow path markers
                             let markerString = "";
-                            let flowMarker = flag.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_ROAD || s.structureType == STRUCTURE_WALL});
+                            let flowMarker = flag.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_ROAD || s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_CONTAINER});
                             for (m in flowMarker) {
                                 if (flowMarker[m].pos.x < 10) {
                                     markerString = markerString + "0";
@@ -1358,7 +1358,7 @@ module.exports.loop = function() {
                         }
                         if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
                             // Minerals found in creep
-                            creep.getRidOfMinerals();
+                            creep.storeAllBut(RESOURCE_ENERGY);
                         }
                         else {
                             if (creep.memory.role == 'harvester') {

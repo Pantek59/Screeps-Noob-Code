@@ -1,45 +1,9 @@
 Creep.prototype.roleBigClaimer = function() {
     // Find exit to target room
-    var targetControllers = _.filter(Game.flags,{ memory: { function: 'attackController', spawn: this.memory.spawn}});
-    var targetController;
-    var busyCreeps;
-    if (this.memory.attackControllerFlag != undefined) {
-        //Check whether claiming this flag is this OK
-        busyCreeps = _.filter(Game.creeps,{ memory: { remoteControllerFlag: this.memory.attackControllerFlag, spawn: this.memory.spawn}});
-    }
-
-    if (this.memory.attackControllerFlag == undefined || (this.memory.attackControllerFlag != undefined && busyCreeps.length != 1)) {
-        //Flag taken, choose other flag
-        for (var rem in targetControllers) {
-            //Look for unoccupied targetController
-            var flagName = targetControllers[rem].name;
-
-            this.memory.attackControllerFlag = targetControllers[rem].name;
-            busyCreeps = _.filter(Game.creeps,{ memory: { attackControllerFlag: flagName, spawn: this.memory.spawn}});
-
-            if (busyCreeps.length <= targetControllers[rem].memory.volume) {
-                //No other claimer working on this flag
-                targetController = targetControllers[rem];
-                this.memory.attackControllerFlag = targetController.name;
-                break;
-            }
-        }
-    }
-    else {
-        //Load previous flag
-        targetControllers = _.filter(Game.flags,{name: this.memory.attackControllerFlag});
-        targetController = targetControllers[0];
-    }
-
+    let targetController = Game.flags[this.findMyFlag("attackController")];
     if (targetController != undefined && this.room.name != targetController.pos.roomName) {
         //still in wrong room, go out
-        if (!this.memory.path) {
-            this.memory.path = this.pos.findPathTo(targetController);
-        }
-        if (this.moveByPath(this.memory.path) == ERR_NOT_FOUND) {
-            this.memory.path = this.pos.findPathTo(targetController);
-            this.moveByPath(this.memory.path)
-        }
+        this.moveTo(targetController, {reusePath: moveReusePath()});
     }
     else if (targetController != undefined) {
         //new room reached, start reserving / claiming

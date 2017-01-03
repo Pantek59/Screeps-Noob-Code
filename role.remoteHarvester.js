@@ -1,5 +1,5 @@
 Creep.prototype.roleRemoteHarvester = function() {
-    if (this.getRidOfMinerals() == false) { // if creep is bringing energy to a structure but has no energy left
+    if (this.storeAllBut(RESOURCE_ENERGY) == true) { // if creep is bringing energy to a structure but has no energy left
         if (_.sum(this.carry) == 0) {
             // switch state to harvesting
             if (this.memory.working == true) {

@@ -7,56 +7,24 @@ Creep.prototype.towerEmergencyFill = function () {
     }
 };
 
-Creep.prototype.getRidOfMinerals = function() {
-    // check for picked up minerals and transport them to the next container or storage, return true if found
-    // TODO Can this be replace by creep.dropAlltoStorageBut(RESOURCE_ENERGY)?
-    var specialResources = false;
-    for (var resourceType in this.carry) {
-        switch (resourceType) {
-            case RESOURCE_ENERGY:
-                break;
 
-            default:
-                // find closest container with space to get rid of minerals
-                if (this.room.name != this.memory.homeroom) {
-                    this.moveTo(Game.getObjectById(this.memory.spawn));
-                }
-                else {
-                    let freeContainer;
-                    if (this.room.storage == undefined) {
-                        freeContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
-                    }
-                    else {
-                        freeContainer = this.room.storage;
-                    }
-                    if (this.transfer(freeContainer, resourceType) == ERR_NOT_IN_RANGE) {
-                        this.moveTo(freeContainer, {reusePath: moveReusePath()});
-                    }
-                }
-                specialResources = true;
-                break;
-        }
-    }
-    return specialResources;
-};
-
-Creep.prototype.findNearestEnemyAttackerInRange = function(pos, range) {
+Creep.prototype.findNearestAttackerInRange = function(pos, range) {
     // returns object of A) nearest hostile if no argument is given or B) nearest hostile within range when a range is indicated
-    var foreignCreeps;
-    var attackerCreeps = [];
-    foreignCreeps = pos.findInRange(FIND_HOSTILE_CREEPS, range);
-    for (let d in foreignCreeps) {
-        if (isHostile(foreignCreeps[d]) == true && foreignCreeps[d].getActiveBodyparts(ATTACK) > 0) {
-            attackerCreeps.push(foreignCreeps[d]);
+    if (this.room.memory.hostiles.length < 1) {
+        return null
+    }
+    else {
+        var attackerCreeps = [];
+        for (let h in this.room.memory.hostiles) {
+            attackerCreeps.push(Game.getObjectById(this.room.memory.hostiles[h]))
         }
-
+        attackerCreeps = this.pos.findInRange(attackerCreeps, range);
+        let target = pos.findClosestByPath(attackerCreeps);
+        if (target != null) {
+            return target;
+        }
+        return null;
     }
-
-    let target = pos.findClosestByPath(attackerCreeps);
-    if (target != null) {
-        return target;
-    }
-    return null;
 };
 
 Creep.prototype.goToHomeRoom = function() {
@@ -178,7 +146,7 @@ Creep.prototype.gotoFlag = function (flag) {
 Creep.prototype.useFlowPathTo = function (targetPosition) {
     // Data structure: Memory.flowPath.room.target x/y.source x/y = direction
     // flowMarker Hash: Memory.flowPath.room.roomHash
-    let PathFinderDefaults = {plainCost: 1, swampCost: 5, maxOps: 10000, roomCallback, ignoreCreeps: true};
+    let PathFinderDefaults = {plainCost: 1, swampCost: 5, maxOps: 10000, costCallback: roomCallback, ignoreCreeps: true};
 
     let targetXY = targetPosition.roomName + "/" + targetPosition.x + "/" + targetPosition.y;
     let creepXY = this.pos.x + "/" + this.pos.y;

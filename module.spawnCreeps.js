@@ -115,9 +115,12 @@ module.exports = {
                     if (controller.owner == undefined && (controller.reservation == undefined || controller.reservation.ticksToEnd < 3000)) {
                         return true;
                     }
+                    else {
+                        return false;
+                    }
                 }
                 else {
-                    return true;
+                    return false;
                 }
             }
         });

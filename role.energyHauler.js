@@ -89,7 +89,7 @@ Creep.prototype.roleEnergyHauler = function() {
                     //No enemy creeps
                     let container = flag.pos.lookFor(LOOK_STRUCTURES);
                     container = _.filter(container, {structureType: STRUCTURE_CONTAINER});
-                    if (container.length > 0 && _.sum(container[0].store) > 0) {
+                    if (container.length > 0) {
                         for (let s in container[0].store) {
                             if (this.withdraw(container[0], s) == ERR_NOT_IN_RANGE) {
                                 //this.moveTo(container[0], {reusePath: moveReusePath()});

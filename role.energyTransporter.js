@@ -1,5 +1,5 @@
 Creep.prototype.roleEnergyTransporter = function() {
-    if (this.getRidOfMinerals() == false) {
+    if (this.storeAllBut(RESOURCE_ENERGY) == true) {
         // if creep is bringing energy to a structure but has no energy left
         if (this.carry.energy == 0) {
             if (this.memory.working == true) {

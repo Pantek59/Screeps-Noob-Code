@@ -511,7 +511,7 @@ global.sell = function (orderID, amount, roomName) {
     if (arguments.length == 0) {
         return "sell (orderID, amount, roomName)";
     }
-    var order = Game.market.getOrderById(orderID);
+    let order = Game.market.getOrderById(orderID);
 
     if (order == null) {
         return "Invalid order ID!"
@@ -523,6 +523,48 @@ global.sell = function (orderID, amount, roomName) {
     else {
         return "Ongoing terminal transfer found. Try later.";
     }
+};
+
+global.sellBulk = function (amount, resource) {
+    // Sell as much as possible as fast as possible, no matter the energy costs or price
+    if (arguments.length == 0) {
+        return "sellBulk (amount, resource)";
+    }
+    let amountBuffer = amount;
+    let orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
+    if (orders.length > 0) {
+
+
+        orders = _.sortBy(orders, "price");
+        orders = _.sortBy(orders, "amount");
+        orders.reverse();
+
+        let orderIndex = 0;
+        for (let r in myRooms) {
+            if (myRooms[r].terminal != undefined && myRooms[r].memory.terminalTransfer == undefined) {
+                let sellAmount;
+                if (orders[orderIndex].amount > amount) {
+                    sellAmount = amount;
+                }
+                else {
+                    sellAmount = orders[orderIndex].amount;
+                }
+
+                if (sellAmount <= 0) {
+                    break;
+                }
+                else {
+                    sell(orders[orderIndex].id, sellAmount, r);
+                }
+                amount-= sellAmount;
+                orderIndex++;
+            }
+        }
+    }
+    if (amount < 0) {
+        amount = 0;
+    }
+    return (amountBuffer - amount) + " units queued for sale.";
 };
 
 global.sellOrder = function (amount, resource, roomName, price) {
@@ -720,6 +762,42 @@ global.activeLabs = function () {
     return returnString;
 };
 
+moveReusePath = function() {
+    let minSteps = 10, maxSteps = 60;
+    let range = maxSteps - minSteps;
+
+    return minSteps + Math.floor((1 - (Game.cpu.bucket / 10000)) * range);
+};
+
+isHostile = function (creep) {
+    if (allies.indexOf(creep.owner.username) == -1 && creep.owner.username != playerUsername) {
+        //Not own and not allied creep
+        return true;
+    }
+    else {
+        return false;
+    }
+};
+
+String.prototype.hashCode = function(){
+    let hash = 0;
+    if (this.length == 0) {
+        return hash;
+    }
+
+    for (let i = 0; i < this.length; i++) {
+        let char = this.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
+};
+
+global.deleteFlowPath = function () {
+    delete Memory.flowPath;
+    return "OK";
+};
+
 global.roomCallback = function (roomName) {
     let room = Game.rooms[roomName];
     if (!room) {
@@ -748,15 +826,26 @@ global.roomCallback = function (roomName) {
                 }
             }
         }
-        else if (structures[s].structureType != STRUCTURE_CONTAINER && structure.structureType != STRUCTURE_RAMPART) {
+        else if (structures[s].structureType != STRUCTURE_CONTAINER && structures[s].structureType != STRUCTURE_RAMPART) {
             costs.set(structures[s].pos.x, structures[s].pos.y, 0xff);
         }
     }
 
     //Find flags for stationaryRemoteHarvesters, stationaryHarvesters
-    let flags = room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "haulEnergy" || f.memory.function == "narrowSource"});
+    let flags = room.find(FIND_FLAGS, {filter: (f) => f.memory.function == "haulEnergy" || f.memory.function == "narrowSource" || f.memory.function == "remoteController"});
     for (let f in flags) {
+        let top = flags[f].pos.y - 1;
+        let bottom = flags[f].pos.y + 1;
+        let right = flags[f].pos.x - 1;
+        let left = flags[f].pos.x + 1;
         costs.set(flags[f].pos.x, flags[f].pos.y, 0xdd);
+        let areaInfo = room.lookForAtArea(LOOK_TERRAIN, top, left, bottom, right, true);
+        for (let a in areaInfo) {
+            //Check if square is walkable. If it is, set costs to 0xcc. If it isn't, leave the costs be
+            if (areaInfo[a].structure != "wall") {
+                costs.set(areaInfo[a].x, areaInfo[a].y, 0xcc);
+            }
+        }
     }
     room.costMatrix = room.costMatrix || costs;
     return room.costMatrix;

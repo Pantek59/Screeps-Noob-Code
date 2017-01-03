@@ -82,34 +82,6 @@ mineralDescriptions.XZHO2 = {tier: 3, component1: "X", component2: "ZHO2", bodyP
 mineralDescriptions.XGH2O = {tier: 3, component1: "X", component2: "GH2O", bodyPart: WORK };
 mineralDescriptions.XGHO2 = {tier: 3, component1: "X", component2: "GHO2", bodyPart: TOUGH };
 
-moveReusePath = function() {
-    let minSteps = 10, maxSteps = 60;
-    let range = maxSteps - minSteps;
-
-    return minSteps + Math.floor((1 - (Game.cpu.bucket / 10000)) * range);
-};
-
-isHostile = function (creep) {
-    if (allies.indexOf(creep.owner.username) == -1 && creep.owner.username != playerUsername) {
-        //Not own and not allied creep
-        return true;
-    }
-    else {
-        return false;
-    }
-};
-
-String.prototype.hashCode = function(){
-    var hash = 0;
-    if (this.length == 0) return hash;
-    for (i = 0; i < this.length; i++) {
-        char = this.charCodeAt(i);
-        hash = ((hash<<5)-hash)+char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
-}
-
 buildingPlans = {
     miniharvester: [
         {
@@ -564,13 +536,13 @@ buildingPlans = {
         },
         {
             //Level 7 (max 5600)
-            minEnergy: 3250,
-            body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE, MOVE, MOVE, MOVE, MOVE]
+            minEnergy: 6500,
+            body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         },
         {
             //Level 8 (max 12900)
-            minEnergy: 3250,
-            body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE, MOVE, MOVE, MOVE, MOVE]
+            minEnergy: 9750,
+            body: [CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, CLAIM, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
         }],
 
     protector: [
