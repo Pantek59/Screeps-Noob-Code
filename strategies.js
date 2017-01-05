@@ -83,7 +83,7 @@ module.exports = {
                                 else if (creep.hits < creep.hitsMax){
                                     creep.heal(creep);
                                 }
-                                else if (flag.memory.drainTarget != undefined {
+                                else if (flag.memory.drainTarget != undefined) {
                                     //drainTarget auf Flagge gesetzt
                                     let target = Game.getObjectById(flag.memory.drainTarget);
                                     if (target == null) {
