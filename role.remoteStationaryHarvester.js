@@ -63,7 +63,7 @@ Creep.prototype.roleRemoteStationaryHarvester = function() {
                             this.memory.source = source.id;
                         }
                         else {
-                            var source = Game.getObjectById(this.memory.narrowSource);
+                            var source = Game.getObjectById(this.memory.source);
                         }
                         if (source == undefined) {
                             delete this.memory.source;
@@ -74,7 +74,7 @@ Creep.prototype.roleRemoteStationaryHarvester = function() {
                         else {
                             if (this.harvest(source) != OK) {
                                 this.memory.statusHarvesting = false;
-                                delete this.memory.narrowSource;
+                                delete this.memory.source;
                             }
                             else {
                                 this.memory.statusHarvesting = source.id;

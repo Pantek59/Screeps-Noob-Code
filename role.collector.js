@@ -25,7 +25,7 @@ Creep.prototype.roleCollector = function() {
                 }
 
             }
-            else if (this.room.storage != undefined && this.room.storage.storeCapacity - _.sum(this.room.storage.store > 0)) {
+            else if (this.room.storage != undefined && this.room.storage.owner.username == playerUsername && this.room.storage.storeCapacity - _.sum(this.room.storage.store > 0)) {
                 if (this.room.memory.terminalTransfer == undefined && this.checkTerminalLimits(RESOURCE_ENERGY).amount > 0) {
                     //spawn full and storage with space exists or towers need energy
                     if (this.memory.role == "harvester") {
@@ -72,7 +72,7 @@ Creep.prototype.roleCollector = function() {
                 }
                 else {
                     //get minerals from container
-                    if (this.memory.tidyFull == undefined && _.sum(this.carry) < this.carryCapacity) {
+                    if (this.memory.tidyFull == undefined && _.sum(this.carry) < this.carryCapacity && this.room.storage != undefined && this.room.storage.owner.username == playerUsername) {
                         //creep not full
                         for (let e in mineralsContainers[0].store){
                             if (e != "energy" && this.withdraw(mineralsContainers[0],e) == ERR_NOT_IN_RANGE) {
@@ -80,7 +80,7 @@ Creep.prototype.roleCollector = function() {
                             }
                         }
                     }
-                    else {
+                    else if (this.room.storage != undefined && this.room.storage.owner.username == playerUsername){
                         //creep full
                         this.memory.tidyFull = true;
                         this.storeAllBut();

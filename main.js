@@ -13,12 +13,14 @@ console.log('CPU@Initialization: ' + (global.reqCPU - cpu) + " / Tick: " + Game.
 module.exports.loop = function() {
     //profiler.wrap(function() {
     let cpu = Game.cpu.getUsed();
+    //console.log(cpu);
     if (Game.time == global.start) { cpu -= global.reqCPU; }
     if (cpu >= 35) {
         console.log("<font color=#ff0000 type='highlight'>CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket +"</font>");
         //return;
     }
-
+    
+    
     //Fill myRooms
     for (let m in myroomlist) {
         myRooms[myroomlist[m].name] = myroomlist[m];
@@ -763,29 +765,32 @@ module.exports.loop = function() {
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
             if (Game.time % DELAYDROPPEDENERGY == 0) {
                 var energies = Game.rooms[r].find(FIND_DROPPED_RESOURCES);
-                let lastPos;
-                for (var energy in energies) {
-                    if (energies[energy] != undefined && energies[energy].pos.isEqualTo(lastPos) == false || energies[energy].pos.findInRange(FIND_HOSTILE_CREEPS, {filter: (h) => isHostile(h) == true}).length == 0) {
-                        lastPos = energies[energy].pos;
+                if (energies.length > 0) {
+                    let lastPos;
+                    for (var energy in energies) {
+                        if (energies[energy] != undefined && energies[energy].pos.isEqualTo(lastPos) == false && energies[energy].pos.findInRange(FIND_HOSTILE_CREEPS, {filter: (h) => isHostile(h) == true}).length == 0) {
+                            if (energies[energy].resourceType == RESOURCE_ENERGY || (Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername)) {
+                                lastPos = energies[energy].pos;
+                                var energyID = energies[energy].id;
+                                var energyAmount = energies[energy].amount;
+                                let busyCollectors = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == "pickUpEnergy" && c.memory.jobQueueObject == energyID});
+                                if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArray.lairs.length > 0)) {
+                                    var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
+                                        filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true
+                                    });
 
-                        var energyID = energies[energy].id;
-                        var energyAmount = energies[energy].amount;
-                        let busyCollectors = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == "pickUpEnergy" && c.memory.jobQueueObject == energyID});
-                        if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArray.lairs.length > 0)) {
-                            var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
-                                filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true
-                            });
+                                    if (collector == null) {
+                                        collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
+                                            filter: (s) => (s.carryCapacity - _.sum(s.carry)) > 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.role != "SKHarvester" && s.memory.dropEnergy != true
+                                        });
+                                    }
 
-                            if (collector == null) {
-                                collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
-                                    filter: (s) => (s.carryCapacity - _.sum(s.carry)) > 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.role != "SKHarvester" && s.memory.dropEnergy != true
-                                });
-                            }
-
-                            if (collector != null) {
-                                // Creep found to pick up dropped energy
-                                collector.memory.jobQueueObject = energyID;
-                                collector.memory.jobQueueTask = "pickUpEnergy";
+                                    if (collector != null) {
+                                        // Creep found to pick up dropped energy
+                                        collector.memory.jobQueueObject = energyID;
+                                        collector.memory.jobQueueTask = "pickUpEnergy";
+                                    }
+                                }
                             }
                         }
                     }

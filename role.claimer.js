@@ -50,7 +50,7 @@ Creep.prototype.roleClaimer = function() {
                 let oldBuildings = this.room.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_SPAWN || s.structureType == STRUCTURE_EXTENSION});
                 for (var b in oldBuildings) {
                     if (oldBuildings[b].isActive() == false) {
-                        oldBuildings.destroy();
+                        oldBuildings[b].destroy();
                     }
                 }
             }

@@ -111,8 +111,9 @@ module.exports = {
         let vacantFlags = _.filter(myFlags, function (f) {
             if (f.memory.function == "remoteController" && _.filter(Game.creeps, {memory: {currentFlag: f.name}}).length == 0) {
                 if (Game.rooms[f.pos.roomName] != undefined) {
+                    // Sight on room
                     let controller = Game.rooms[f.pos.roomName].controller;
-                    if (controller.owner == undefined && (controller.reservation == undefined || controller.reservation.ticksToEnd < 3000)) {
+                    if (controller.owner == undefined && (controller.reservation == undefined || controller.reservation.ticksToEnd < 3000 || f.memory.claim == 1)) {
                         return true;
                     }
                     else {
@@ -120,7 +121,8 @@ module.exports = {
                     }
                 }
                 else {
-                    return false;
+                    // No sight on room
+                    return true;
                 }
             }
         });
@@ -278,8 +280,15 @@ module.exports = {
         let name = undefined;
         let hostiles = spawnRoom.memory.hostiles.length;
         let rcl = spawnRoom.controller.level;
+        let spawnList = this.getSpawnList(spawnRoom,minimumSpawnOf,numberOf);
 
-        //console.log(this.getNextSpawnRole(minimumSpawnOf, numberOf));
+        if (spawnList != null && spawnList.length > 1) {
+            for (let entry in spawnList) {
+                console.log("Spawn list " + spawnRoom, " "+ spawnList[entry].name + ": " + (spawnList[entry].max - spawnList[entry].min) );
+            }
+        }
+
+        //console.log(this.getSpawnList(minimumSpawnOf, numberOf));
         
         //calc ticks needed to fill the ranks
         let missingBodyParts = 0;
@@ -324,7 +333,7 @@ module.exports = {
             rolename = 'attacker';
         }
         else if (numberOf.apaHatchi < minimumSpawnOf.apaHatchi && (buildingPlans.apaHatchi[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.apaHatchi[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
-            rolename = 'apaHatchi';
+            rolename = 'archer';
         }
         else if (numberOf.healer < minimumSpawnOf.healer && (buildingPlans.healer[rcl-1].minEnergy <= spawnRoom.energyAvailable || buildingPlans.healer[rcl-2].minEnergy <= spawnRoom.energyAvailable)) {
             rolename = 'healer';
@@ -426,7 +435,7 @@ module.exports = {
         }
     },
 
-    getNextSpawnRole: function (spawnRoom, minimumSpawnOf, numberOf) {
+    getSpawnList: function (spawnRoom, minimumSpawnOf, numberOf) {
         var rcl = spawnRoom.controller.level;
         var energyCapacity = spawnRoom.energyCapacityAvailable;
         var storage;
@@ -444,49 +453,63 @@ module.exports = {
                 energyRole: true,
                 min: minimumSpawnOf.harvester,
                 max: numberOf.harvester,
-                bodySize: buildingPlans.harvester[rcl-1].minEnergy
+                minEnergy: buildingPlans.harvester[rcl-1].minEnergy
             },
             stationaryHarvester: {
                 name: "stationaryHarvester",
-                prio: 10,
+                prio: 100,
                 energyRole: true,
                 min: minimumSpawnOf.stationaryHarvester,
                 max: numberOf.stationaryHarvester,
-                bodySize: buildingPlans.stationaryHarvester[rcl-1].minEnergy
+                minEnergy: buildingPlans.stationaryHarvester[rcl-1].minEnergy
             },
-            builder: {name: "builder", prio: 20, energyRole: false, min: minimumSpawnOf.builder, max: numberOf.builder},
+            builder: {
+                name: "builder",
+                prio: 140,
+                energyRole: false,
+                min: minimumSpawnOf.builder,
+                max: numberOf.builder,
+                minEnergy: buildingPlans.builder[rcl-1].minEnergy
+            },
             repairer: {
                 name: "repairer",
-                prio: 10,
+                prio: 170,
                 energyRole: false,
                 min: minimumSpawnOf.repairer,
                 max: numberOf.repairer,
-                bodySize: buildingPlans.builder[rcl-1].minEnergy
+                minEnergy: buildingPlans.repairer[rcl-1].minEnergy
             },
             wallRepairer: {
                 name: "wallRepairer",
-                prio: 20,
+                prio: 210,
                 energyRole: false,
                 min: minimumSpawnOf.wallRepairer,
                 max: numberOf.wallRepairer,
-                bodySize: buildingPlans.wallRepairer[rcl-1].minEnergy
+                minEnergy: buildingPlans.wallRepairer[rcl-1].minEnergy
             },
-            miner: {name: "miner", prio: 30, energyRole: false, min: minimumSpawnOf.miner, max: numberOf.miner},
+            miner: {
+                name: "miner",
+                prio: 200,
+                energyRole: false,
+                min: minimumSpawnOf.miner,
+                max: numberOf.miner,
+                minEnergy: buildingPlans.miner[rcl-1].minEnergy
+            },
             upgrader: {
                 name: "upgrader",
-                prio: 10,
+                prio: 160,
                 energyRole: false,
                 min: minimumSpawnOf.upgrader,
                 max: numberOf.upgrader,
-                bodySize: buildingPlans.upgrader[rcl-1].minEnergy
+                minEnergy: buildingPlans.upgrader[rcl-1].minEnergy
             },
             distributor: {
                 name: "distributor",
-                prio: 20,
+                prio: 150,
                 energyRole: false,
                 min: minimumSpawnOf.distributor,
                 max: numberOf.distributor,
-                bodySize: buildingPlans.distributor[rcl-1].minEnergy
+                minEnergy: buildingPlans.distributor[rcl-1].minEnergy
             },
             energyTransporter: {
                 name: "energyTransporter",
@@ -494,150 +517,119 @@ module.exports = {
                 energyRole: true,
                 min: minimumSpawnOf.energyTransporter,
                 max: numberOf.energyTransporter,
-                bodySize: buildingPlans.energyTransporter[rcl-1].minEnergy
+                minEnergy: buildingPlans.energyTransporter[rcl-1].minEnergy
             },
             scientist: {
                 name: "scientist",
-                prio: 20,
+                prio: 220,
                 energyRole: false,
                 min: minimumSpawnOf.scientist,
                 max: numberOf.scientist,
-                bodySize: buildingPlans.scientist[rcl-1].minEnergy
+                minEnergy: buildingPlans.scientist[rcl-1].minEnergy
             },
             remoteHarvester: {
                 name: "remoteHarvester",
-                prio: 10,
+                prio: 130,
                 energyRole: true,
                 min: minimumSpawnOf.remoteHarvester,
                 max: numberOf.remoteHarvester,
-                bodySize: buildingPlans.remoteHarvester[rcl-1].minEnergy
+                minEnergy: buildingPlans.remoteHarvester[rcl-1].minEnergy
             },
             remoteStationaryHarvester: {
                 name: "remoteStationaryHarvester",
-                prio: 20,
+                prio: 110,
                 energyRole: true,
                 min: minimumSpawnOf.remoteStationaryHarvester,
                 max: numberOf.remoteStationaryHarvester,
-                bodySize: buildingPlans.remoteStationaryHarvester[rcl-1].minEnergy
+                minEnergy: buildingPlans.remoteStationaryHarvester[rcl-1].minEnergy
             },
             claimer: {
                 name: "claimer",
-                prio: 10,
+                prio: 40,
                 energyRole: false,
                 min: minimumSpawnOf.claimer,
                 max: numberOf.claimer,
-                bodySize: buildingPlans.claimer[rcl-1].minEnergy
+                minEnergy: buildingPlans.claimer[rcl-1].minEnergy
             },
             bigClaimer: {
                 name: "bigClaimer",
-                prio: 10,
+                prio: 60,
                 energyRole: false,
                 min: minimumSpawnOf.bigClaimer,
                 max: numberOf.bigClaimer,
-                bodySize: buildingPlans.bigClaimer[rcl-1].minEnergy
+                minEnergy: buildingPlans.bigClaimer[rcl-1].minEnergy
             },
             protector: {
                 name: "protector",
-                prio: 10,
+                prio: 30,
                 energyRole: false,
                 min: minimumSpawnOf.protector,
                 max: numberOf.protector,
-                bodySize: buildingPlans.protector[rcl-1].minEnergy
+                minEnergy: buildingPlans.protector[rcl-1].minEnergy
             },
             demolisher: {
                 name: "demolisher",
-                prio: 30,
+                prio: 230,
                 energyRole: true,
                 min: minimumSpawnOf.demolisher,
                 max: numberOf.demolisher,
-                bodySize: buildingPlans.demolisher[rcl-1].minEnergy
+                minEnergy: buildingPlans.demolisher[rcl-1].minEnergy
             },
             energyHauler: {
                 name: "energyHauler",
-                prio: 20,
+                prio: 120,
                 energyRole: true,
                 min: minimumSpawnOf.energyHauler,
                 max: numberOf.energyHauler,
-                bodySize: buildingPlans.energyHauler[rcl-1].minEnergy
+                minEnergy: buildingPlans.energyHauler[rcl-1].minEnergy
             },
             attacker: {
                 name: "attacker",
-                prio: 10,
+                prio: 80,
                 energyRole: false,
                 min: minimumSpawnOf.attacker,
                 max: numberOf.attacker,
-                bodySize: buildingPlans.attacker[rcl-1].minEnergy
+                minEnergy: buildingPlans.attacker[rcl-1].minEnergy
             },
-            apaHatchi: {
-                name: "apaHatchi",
-                prio: 10,
+            archer: {
+                name: "archer",
+                prio: 80,
                 energyRole: false,
                 min: minimumSpawnOf.apaHatchi,
                 max: numberOf.apaHatchi,
-                bodySize: buildingPlans.apaHatchi[rcl-1].minEnergy
+                minEnergy: buildingPlans.archer[rcl-1].minEnergy
             },
             healer: {
                 name: "healer",
-                prio: 10,
+                prio: 90,
                 energyRole: false,
                 min: minimumSpawnOf.healer,
                 max: numberOf.healer,
-                bodySize: buildingPlans.healer[rcl-1].minEnergy
+                minEnergy: buildingPlans.healer[rcl-1].minEnergy
             },
             einarr: {
                 name: "einarr",
-                prio: 10,
+                prio: 50,
                 energyRole: false,
                 min: minimumSpawnOf.einarr,
                 max: numberOf.einarr,
-                bodySize: buildingPlans.einarr[rcl-1].minEnergy
+                minEnergy: buildingPlans.einarr[rcl-1].minEnergy
             },
             transporter: {
                 name: "transporter",
-                prio: 30,
+                prio: 2400,
                 energyRole: false,
                 min: minimumSpawnOf.transporter,
                 max: numberOf.transporter,
-                bodySize: buildingPlans.transporter[rcl-1].minEnergy
+                minEnergy: buildingPlans.transporter[rcl-1].minEnergy
             }
         };
 
-        // rank =
-        var spawnCandidates = _.filter(tableImportance, function (x) {
-            return (!(x.min == 0 || x.min == x.max))
+        tableImportance = _.filter(tableImportance, function (x) {
+            return (!(x.min == 0 || x.min == x.max || x.max > x.min))
         });
-
-        if (spawnCandidates.length > 0) {
-            spawnCandidates = _.sortBy(spawnCandidates, "prio");
-
-            //Sort Priority 2: Priority/Need Ratio
-            spawnCandidates = _.sortBy(spawnCandidates, function (x) {
-                return (x.min - x.max) * prio;
-            });
-
-            //Sort Priority 1: Energy Role
-            if (storage < energyCapacity) {
-                //Prioritize energy roles
-                spawnCandidates = _.sortBy(spawnCandidates, function (x) {
-                    return (x.energyRole == true)
-                });
-            }
-            else {
-                //Prioritize non-energy roles
-                spawnCandidates = _.sortBy(spawnCandidates, function (x) {
-                    return (x.energyRole == false)
-                });
-            }
-
-            if (spawnCandidates[0].name == "harvester") {
-                if (tableImportance.harvester.max + tableImportance.energyTransporter.max == 0 || energyCapacity < 350) {
-                    return "miniharvester";
-                }
-                return spawnCandidates[0].name;
-            }
-            else {
-                return spawnCandidates[0].name;
-            }
+        if (tableImportance.length > 0) {
+            return _.sortBy(tableImportance, "priority");
         }
         else {
             return null;

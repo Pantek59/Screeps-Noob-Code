@@ -90,8 +90,13 @@ Creep.prototype.roleHarvester = function() {
                     }
 
                     if ((container == null || container == undefined) && this.getActiveBodyparts(WORK) > 0) {
-                        if (this.upgradeController(this.room.controller) == ERR_NOT_IN_RANGE) {
-                            this.moveTo(this.room.controller, {reusePath: moveReusePath()});
+                        if (this.memory.role == "harvester") {
+                            if (this.upgradeController(this.room.controller) == ERR_NOT_IN_RANGE) {
+                                this.moveTo(this.room.controller, {reusePath: moveReusePath()});
+                            }
+                        }
+                        else {
+                            this.memory.sleep = 3;
                         }
                     }
                     else if (this.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
