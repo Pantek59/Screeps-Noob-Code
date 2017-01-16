@@ -1,10 +1,101 @@
 module.exports = {
     // a function to run the logic for this role
+    destroy: function (creep, target) {
+        switch (creep.memory.role) {
+            case "attacker":
+            case "einarr":
+            case "archer":
+                if (creep.memory.role == "einarr" && creep.hits < creep.hitsMax) {
+                    creep.heal(creep);
+                }
+
+                let target;
+
+                let targets = flag.pos.findInRange(hostileCreeps, 3);
+                if (targets.length > 0) {
+                    //Hostile creeps within flag range -> attack
+                    if (creep.memory.role == "archer") {
+                        target = flag.pos.findClosestByRange(targets);
+                    }
+                    else {
+                        target = flag.pos.findClosestByPath(targets);
+                    }
+                    if (target != null && creep.attack(target) == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(target, {reusePath: moveReusePath()});
+                    }
+                    else {
+                        target = undefined;
+                    }
+                }
+
+                if (target == undefined || target == null) {
+                    //No hostile creeps around or not path to them found -> attack structure
+                    targets = flag.pos.lookFor(LOOK_STRUCTURES);
+                    if (targets.length > 0) {
+                        // Structure found
+                        for (let t in targets) {
+                            if (targets[t].structureType != STRUCTURE_CONTROLLER && targets[t].structureType != STRUCTURE_ROAD) {
+                                target = targets[t];
+                            }
+                            break;
+                        }
+
+                        if (target != undefined) {
+                            if (creep.attack(target) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(target, {reusePath: moveReusePath()});
+                            }
+                        }
+                    }
+                    else {
+                        //No structure to attack found
+                        return false;
+                    }
+
+                }
+                break;
+
+            case "healer":
+                if (creep.hits < creep.hitsMax) {
+                    creep.heal(creep);
+                }
+
+                var danger = creep.pos.findInRange(hostileCreeps, 1);
+                if (danger.length > 0) {
+                    creep.flee(danger, 3)
+                }
+                else {
+                    // No hostile creeps around
+                    var patients = flag.pos.findInRange(friendlyCreeps, 5);
+                    if (patients.length > 0) {
+                        //Damaged creeps near flag found
+                        let patient = creep.pos.findClosestByPath(patients, {filter: (s) => s.hits < s.hitsMax});
+                        if (patient != null && creep.heal(patient) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(patient, {reusePath: moveReusePath()});
+                        }
+                        else {
+                            //No path to patient found
+                            if (creep.pos.getRangeTo(flag) > 3) {
+                                creep.moveTo(flag, {reusePath: moveReusePath()});
+                            }
+                        }
+                    }
+                    else {
+                        //No damaged creeps around
+                        if (creep.pos.getRangeTo(flag) > 3) {
+                            creep.moveTo(flag, {reusePath: moveReusePath()});
+                        }
+                    }
+                }
+                break;
+        }
+        return true;
+    },
+
     run: function(creep, flag) {
-        var strategy = flag.memory.strategy;
-        var bunkerDown = false;
-        var hostileCreeps = creep.room.find(FIND_CREEPS, {filter: function (creep) {return isHostile(creep)}});
-        var friendlyCreeps = creep.room.find(FIND_CREEPS, {filter: function (creep) {return !isHostile(creep)}});
+        let strategy = flag.memory.strategy;
+        let bunkerDown = false;
+        let hostileCreeps = creep.room.find(FIND_CREEPS, {filter: function (creep) {return isHostile(creep)}});
+        let friendlyCreeps = creep.room.find(FIND_CREEPS, {filter: function (creep) {return !isHostile(creep)}});
 
         switch (strategy) {
             case "remoteDrain":
@@ -26,8 +117,10 @@ module.exports = {
                                     //creep.rangedHeal(creep);
                                 }
                                 else {
-                                    creep.moveTo(target, {reusePath: moveReusePath()});
-                                    creep.heal(creep);
+                                    creep.moveTo(target, {reusePath: moveReusePath(true)});
+                                    if (creep.memory.role == "einarr") {
+                                        creep.heal(creep);
+                                    }
                                 }
                             }
                             else{
@@ -49,21 +142,31 @@ module.exports = {
                                     }
                                     //Move to target room
                                     let exitToTarget = flag.pos.findClosestByRange(directionToTargetRoom);
-                                    creep.moveTo(exitToTarget, {reusePath: moveReusePath()});
+                                    creep.moveTo(exitToTarget, {reusePath: moveReusePath(true)});
                                 }
-                                else if (creep.pos.getRangeTo(flag) > 1) {
+                                else  {
                                     // Attacker outside room and wounded -> Go to flag and wait
-                                    creep.moveTo(flag, {reusePath: moveReusePath()});
+                                    if (creep.pos.getRangeTo(flag) < 2) {
+                                        let healer = creep.pos.findClosestByPath(FIND_MY_CREEPS, {filter: (c) => c.memory.role == "healer"});
+                                        creep.moveTo(healer, {reusePath: moveReusePath(true)});
+                                    }
+                                    else {
+                                        creep.moveTo(flag, {reusePath: moveReusePath(true)});
+                                    }
                                 }
-                                creep.heal(creep);
+                                if (creep.memory.role == "einarr") {
+                                    creep.heal(creep);
+                                }
                             }
                         }
                         else {
                             // Attacker in target room
                             if (creep.hits < creep.hitsMax * 0.8) {
                                 //Attacker damaged enough to withdraw
-                                creep.moveTo(flag, {reusePath: moveReusePath()});
-                                creep.heal(creep);
+                                creep.moveTo(flag, {reusePath: moveReusePath(true)});
+                                if (creep.memory.role == "einarr") {
+                                    creep.heal(creep);
+                                }
                             }
                             else {
                                 if (creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49) {
@@ -76,22 +179,25 @@ module.exports = {
                                             //creep.rangedHeal(creep);
                                         }
                                         else {
-                                            creep.moveTo(target, {reusePath: moveReusePath()});
+                                            creep.moveTo(target, {reusePath: moveReusePath(true)});
                                             if (creep.hits < creep.hitsMax) {
-                                                creep.heal(creep);
+                                                if (creep.memory.role == "einarr") {
+                                                    creep.heal(creep);
+                                                }
                                             }
                                         }
                                     }
                                     else {
-                                        creep.moveTo(creep.pos.findClosestByPath(FIND_STRUCTURES), {reusePath: moveReusePath()});
+                                        creep.moveTo(creep.pos.findClosestByPath(FIND_STRUCTURES), {reusePath: moveReusePath(true)});
                                     }
                                 }
-                                else if (creep.hits < creep.hitsMax){
+                                else if (creep.hits < creep.hitsMax && creep.memory.role == "einarr"){
                                     creep.heal(creep);
                                 }
                                 else if (flag.memory.drainTarget != undefined) {
                                     //drainTarget auf Flagge gesetzt
                                     let target = Game.getObjectById(flag.memory.drainTarget);
+
                                     if (target == null) {
                                         delete flag.memory.drainTarget;
                                     }
@@ -114,10 +220,11 @@ module.exports = {
                                             }
                                         }
 
-                                        let activeTowers = _.filter(towers, function (t) {return (t.energy > 0)});
+                                        let activeTowers = _.filter(towers, function (t) {return (t.energy >= 10)});
+
                                         if (activeTowers.length == 0) {
                                             if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                                                creep.moveTo(target, {reusePath: moveReusePath()});
+                                                creep.moveTo(target, {reusePath: moveReusePath(true)});
                                             }
                                         }
                                     }
@@ -132,7 +239,7 @@ module.exports = {
                             creep.heal(creep);
                         }
                         if (flag.pos.roomName != creep.room.name) {
-                            creep.moveTo(flag, {reusePath: moveReusePath()});
+                            creep.moveTo(flag, {reusePath: moveReusePath(true)});
                         }
                         else {
                             // Healer is in flag room
@@ -147,12 +254,12 @@ module.exports = {
                                     else if (creep.pos.inRangeTo(patient,3)){
                                         creep.rangedHeal(patient);
                                         if (creep.pos.getRangeTo(flag) < 1) {
-                                            creep.moveTo(patient, {reusePath: moveReusePath()});
+                                            creep.moveTo(patient, {reusePath: moveReusePath(true)});
                                         }
                                     }
                                     else {
-                                        if (creep.pos.getRangeTo(flag) < 1) {
-                                            creep.moveTo(patient, {reusePath: moveReusePath()});
+                                        if (creep.pos.getRangeTo(flag) > 1) {
+                                            creep.moveTo(patient, {reusePath: moveReusePath(true)});
                                         }
 
                                         if (creep.hits < creep.hitsMax) {
@@ -163,7 +270,7 @@ module.exports = {
                                 else {
                                     // Go to flag and wait
                                     if (creep.pos.getRangeTo(flag) > 1) {
-                                        creep.moveTo(flag, {reusePath: moveReusePath()});
+                                        creep.moveTo(flag, {reusePath: moveReusePath(true)});
                                     }
                                     if (creep.hits < creep.hitsMax) {
                                         creep.heal(creep);
@@ -197,13 +304,13 @@ module.exports = {
                                 if (creep.memory.role == "archer") {
                                     //Creep with ranged attack
                                     if (creep.rangedAttack(target) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(target, {reusePath: moveReusePath()});
+                                        creep.moveTo(target, {reusePath: moveReusePath(true)});
                                     }
                                 }
                                 else {
                                     // Creep without ranged attack
                                     if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(target, {reusePath: moveReusePath()});
+                                        creep.moveTo(target, {reusePath: moveReusePath(true)});
                                     }
                                 }
                             }
@@ -226,18 +333,18 @@ module.exports = {
                                 //Move to target room
                                 creep.memory.directionToTargetRoom = directionToTargetRoom;
                                 let exitToTarget = flag.pos.findClosestByRange(directionToTargetRoom);
-                                creep.moveTo(exitToTarget, {reusePath: moveReusePath()});
+                                creep.moveTo(exitToTarget, {reusePath: moveReusePath(true)});
                             }
                             else if (creep.pos.getRangeTo(flag) > 1) {
                                 // Attacker outside room and wounded -> Go to flag and wait
-                                creep.moveTo(flag, {reusePath: moveReusePath()});
+                                creep.moveTo(flag, {reusePath: moveReusePath(true)});
                             }
                         }
                         else {
                             // Attacker in target room
                             if (creep.hits < creep.hitsMax * 0.6) {
                                 //Attacker damaged enough to withdraw
-                                creep.moveTo(flag, {reusePath: moveReusePath()});
+                                creep.moveTo(flag, {reusePath: moveReusePath(true)});
                             }
                             else {
                                 // Go for wall or rampart
@@ -265,13 +372,13 @@ module.exports = {
                                     if (creep.memory.role == "archer") {
                                         //Creeps with remote attack
                                         if (creep.rangedAttack(target) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: moveReusePath()});
+                                            creep.moveTo(target, {reusePath: moveReusePath(true)});
                                         }
                                     }
                                     else {
                                         //Creeps without remote attack
                                         if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                                            creep.moveTo(target, {reusePath: moveReusePath()});
+                                            creep.moveTo(target, {reusePath: moveReusePath(true)});
                                         }
                                     }
                                 }
@@ -285,7 +392,7 @@ module.exports = {
                             creep.heal(creep);
                         }
                         if (flag.pos.roomName != creep.room.name) {
-                            creep.moveTo(flag, {reusePath: moveReusePath()});
+                            creep.moveTo(flag, {reusePath: moveReusePath(true)});
                         }
                         else {
                             // Healer is in flag room
@@ -294,13 +401,13 @@ module.exports = {
                                 var patient = flag.pos.findClosestByPath(FIND_CREEPS, {filter: function (creep) {return creep.hits < creep.hitsMax}});
                                 if (patient != null) {
                                     if (creep.heal(patient) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(patient, {reusePath: moveReusePath()});
+                                        creep.moveTo(patient, {reusePath: moveReusePath(true)});
                                     }
                                 }
                             }
                             else if (creep.pos.getRangeTo(flag) > 2) {
                                 // Go to flag and wait
-                                creep.moveTo(flag, {reusePath: moveReusePath()});
+                                creep.moveTo(flag, {reusePath: moveReusePath(true)});
                             }
                         }
                         break;
@@ -318,7 +425,7 @@ module.exports = {
 
                         var target;
 
-                        var targets = flag.pos.findInRange(hostileCreeps, 3);
+                        var targets = flag.pos.findInRange(hostileCreeps, 4);
                         if (targets.length > 0) {
                             //Hostile creeps within flag range -> attack
                             if (creep.memory.role == "archer") {
@@ -328,10 +435,28 @@ module.exports = {
                                 target = flag.pos.findClosestByPath(targets);
                             }
                             if (target != null && creep.attack(target) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(target, {reusePath: moveReusePath()});
+                                creep.moveTo(target, {reusePath: moveReusePath(true)});
                             }
-                            else {
+                            else if (target == null){
                                 target = undefined;
+                            }
+                        }
+                        else {
+                            targets = creep.pos.findInRange(hostileCreeps, 2);
+                            if (targets.length > 0) {
+                                //Hostile creeps within flag range -> attack
+                                if (creep.memory.role == "archer") {
+                                    target = flag.pos.findClosestByRange(targets);
+                                }
+                                else {
+                                    target = flag.pos.findClosestByPath(targets);
+                                }
+                                if (target != null && creep.attack(target) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(target, {reusePath: moveReusePath(true)});
+                                }
+                                else if (target == null) {
+                                    target = undefined;
+                                }
                             }
                         }
 
@@ -350,7 +475,7 @@ module.exports = {
 
                                 if (target != undefined) {
                                     if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(target, {reusePath: moveReusePath()});
+                                        creep.moveTo(target, {reusePath: moveReusePath(true)});
                                     }
                                 }
                             }
@@ -367,37 +492,31 @@ module.exports = {
                             creep.heal(creep);
                         }
 
-                        var danger = creep.pos.findInRange(hostileCreeps, 1);
-                        if (danger.length > 0) {
-                            creep.flee(danger, 3)
-                        }
-                        else {
-                            // No hostile creeps around
-                            var patients = flag.pos.findInRange(friendlyCreeps, 5);
-                            if (patients.length > 0) {
-                                //Damaged creeps near flag found
-                                let patient = creep.pos.findClosestByPath(patients, {filter: (s) => s.hits < s.hitsMax});
-                                if (patient != null && creep.heal(patient) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(patient, {reusePath: moveReusePath()});
-                                }
-                                else {
-                                    //No path to patient found
-                                    if (creep.pos.getRangeTo(flag) > 3) {
-                                        creep.moveTo(flag, {reusePath: moveReusePath()});
-                                    }
-                                }
+                        // No hostile creeps around
+                        var patients = flag.pos.findInRange(friendlyCreeps, 5, {filter: (s) => s.hits < s.hitsMax});
+                        if (patients.length > 0) {
+                            //Damaged creeps near flag found
+                            let patient = creep.pos.findClosestByPath(patients);
+                            if (patient != null && creep.heal(patient) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(patient, {reusePath: moveReusePath(true)});
+                                creep.rangedHeal(patient);
                             }
                             else {
-                                //No damaged creeps around
-                                if (creep.pos.getRangeTo(flag) > 3) {
-                                    creep.moveTo(flag, {reusePath: moveReusePath()});
+                                //No path to patient found
+                                if (creep.pos.getRangeTo(flag) > 2) {
+                                    creep.moveTo(flag, {reusePath: moveReusePath(true)});
                                 }
+                            }
+                        }
+                        else {
+                            //No damaged creeps around
+                            if (creep.pos.getRangeTo(flag) > 2) {
+                                creep.moveTo(flag, {reusePath: moveReusePath(true)});
                             }
                         }
                         break;
                 }
                 break;
-
             case "skr": //Source keeper room patrol -> not working yet
                 //Find target
                 var keepers = [];
@@ -452,7 +571,7 @@ module.exports = {
                             //Invaders spawned
                             let myInvader = creep.pos.findClosestByPath(invaders);
                             if (creep.attack(myInvader) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(myInvader, {reusePath: moveReusePath()});
+                                creep.moveTo(myInvader, {reusePath: moveReusePath(true)});
                             }
                         }
                         else if (keepers.length == 0) {
@@ -463,18 +582,18 @@ module.exports = {
                             }
                             lairs = _.sortBy(lairs, "ticksToSpawn");
                             if (creep.pos.getRangeTo(lairs[0]) > 1) {
-                                creep.moveTo(lairs[0], {reusePath: moveReusePath()});
+                                creep.moveTo(lairs[0], {reusePath: moveReusePath(true)});
                             }
                         }
                         else {
                             let myKeeper = creep.pos.findClosestByPath(keepers);
                             if (creep.pos.getRangeTo(myKeeper) > 6) {
-                                creep.moveTo(myKeeper, {reusePath: moveReusePath()});
+                                creep.moveTo(myKeeper, {reusePath: moveReusePath(true)});
                             }
                             else if (creep.pos.findInRange(FIND_MY_CREEPS, 2, {filter: (c) => c.memory.role == "healer"}).length > 0) {
                                 //Healthy healer in range
                                 if (creep.attack(myKeeper) == ERR_NOT_IN_RANGE) {
-                                    creep.moveTo(myKeeper, {reusePath: moveReusePath()});
+                                    creep.moveTo(myKeeper, {reusePath: moveReusePath(true)});
                                 }
                             }
                             else if (creep.pos.getRangeTo(myKeeper) < 7) {
@@ -503,7 +622,7 @@ module.exports = {
                         }
                         if (patient != null && patient.hits < patient.hitsMax && patient.hits < creep.hits) {
                             if (creep.heal(patient) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(patient, {reusePath: moveReusePath()});
+                                creep.moveTo(patient, {reusePath: moveReusePath(true)});
                             }
                         }
                         else {
@@ -511,7 +630,7 @@ module.exports = {
                             delete creep.memory.myPatient;
                             let myAttacker = creep.pos.findClosestByPath(FIND_MY_CREEPS, {filter: (c) => c.memory.role == "attacker" && c.memory.spawn == creep.memory.spawn});
                             if (creep.pos.getRangeTo(myAttacker) > 1) {
-                                creep.moveTo(myAttacker, {reusePath: moveReusePath()});
+                                creep.moveTo(myAttacker, {reusePath: moveReusePath(true)});
                             }
                         }
                         break;

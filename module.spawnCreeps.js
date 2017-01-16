@@ -253,14 +253,6 @@ module.exports = {
         }
 
         // Measuring number of active creeps
-        /*
-        var allMyCreeps =_.filter(Game.creeps, function (c) {
-            let ticks = buildingPlans[c.memory.role][spawnRoom.controller.level-1].body.length * 3;
-            if (c.memory.homeroom == spawnRoom.name && c.ticksToLive > ticks - 5) {
-                return true;
-            }
-        });*/
-        //let allMyCreeps = _.filter(Game.creeps,{memory: { homeroom: spawnRoom.name}});
         let allMyCreeps = _.filter(Game.creeps, (c) => c.memory.homeroom == spawnRoom.name && (c.ticksToLive > (c.body.length*3) - 3 || c.spawning == true));
         let counter = _.countBy(allMyCreeps, "memory.role");
 
@@ -280,17 +272,18 @@ module.exports = {
         let name = undefined;
         let hostiles = spawnRoom.memory.hostiles.length;
         let rcl = spawnRoom.controller.level;
+
+        /*
         let spawnList = this.getSpawnList(spawnRoom,minimumSpawnOf,numberOf);
 
         if (spawnList != null && spawnList.length > 1) {
             for (let entry in spawnList) {
-                console.log("Spawn list " + spawnRoom, " "+ spawnList[entry].name + ": " + (spawnList[entry].max - spawnList[entry].min) );
+                console.log("Spawn list " + spawnRoom + ": " + spawnList[entry]);
             }
         }
+        */
 
-        //console.log(this.getSpawnList(minimumSpawnOf, numberOf));
-        
-        //calc ticks needed to fill the ranks
+        //Check whether spawn trying to spawn too many creeps
         let missingBodyParts = 0;
         for(let rn in minimumSpawnOf){
             if(minimumSpawnOf[rn] != undefined && buildingPlans[rn] != undefined) {
@@ -403,7 +396,6 @@ module.exports = {
                 rolename = "---";
             }
         }
-
         if (rolename != "---" && rolename != undefined) {
             // Look for unoccupied, active spawn
             let actingSpawn;
@@ -629,7 +621,16 @@ module.exports = {
             return (!(x.min == 0 || x.min == x.max || x.max > x.min))
         });
         if (tableImportance.length > 0) {
-            return _.sortBy(tableImportance, "priority");
+            tableImportance = _.sortBy(tableImportance, "priority");
+            tableImportance.reverse();
+            let spawnList = [];
+            for ( let c in tableImportance) {
+                //console.log("Spawn list " + spawnRoom, " "+ spawnList[entry].name + ": " + (spawnList[entry].min - spawnList[entry].max) );
+                for (let i = 0 ; i < (tableImportance[c].min - tableImportance[c].max) ; i++) {
+                    spawnList.push(tableImportance[c].name);
+                }
+            }
+            return spawnList;
         }
         else {
             return null;

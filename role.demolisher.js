@@ -21,7 +21,7 @@ Creep.prototype.roleDemolisher = function() {
         // switch state to demolishing
         this.memory.working = false;
     }
-    else if (this.carry.energy == this.carryCapacity) {
+    else if (_.sum(this.carry) == this.carryCapacity) {
         // if creep is demolishing but is full
         demolishFlag = _.filter(Game.flags,{ memory: { function: 'demolish', spawn: this.memory.spawn}});
         if (demolishFlag.length > 0) {
@@ -50,7 +50,7 @@ Creep.prototype.roleDemolisher = function() {
                 this.memory.path = this.pos.findPathTo(spawn);
                 this.moveByPath(this.memory.path);
             }
-        } //TODO: Check demolishFlag.pos
+        }
         else if (demolishFlag.pos != undefined) {
             // back in spawn room
             let structure;
@@ -141,10 +141,25 @@ Creep.prototype.roleDemolisher = function() {
                                 target = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType != STRUCTURE_ROAD && s.structureType != STRUCTURE_CONTAINER && s.structureType != STRUCTURE_CONTROLLER});
                             }
                             if (target != null) {
-                                if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || target.energy != undefined && target.energy > 20) {
+                                if ((target.store != undefined && target.store[RESOURCE_ENERGY] > 0) || (target.energy != undefined && target.energy > 20)) {
                                     //empty structure of energy first
-                                    if (this.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                    let returnCode = this.withdraw(target, RESOURCE_ENERGY);
+                                    if (returnCode == ERR_NOT_IN_RANGE) {
                                         this.moveTo(target, {reusePath: moveReusePath()});
+                                    }
+                                    else if (returnCode == ERR_NOT_OWNER) {
+                                        //Something blocks access to energy
+                                        let ramps = target.pos.lookFor(LOOK_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_RAMPART});
+                                        if (ramps.length > 0) {
+                                            target = ramps[0];
+                                            returnCode = this.dismantle(target);
+                                            if (returnCode == ERR_NOT_IN_RANGE) {
+                                                this.moveTo(target, {reusePath: moveReusePath()});
+                                            }
+                                            else if (returnCode == OK) {
+                                                this.memory.statusDemolishing = target.id;
+                                            }
+                                        }
                                     }
                                 }
                                 else {

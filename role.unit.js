@@ -28,6 +28,9 @@ Creep.prototype.roleUnit = function() {
                         this.moveTo(target);
                     }
                 }
+                else {
+                    this.gotoFlag(groupFlag);
+                }
             }
             else {
                 this.gotoFlag(groupFlag);

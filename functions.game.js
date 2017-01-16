@@ -567,6 +567,47 @@ global.sellBulk = function (amount, resource) {
     return (amountBuffer - amount) + " units queued for sale.";
 };
 
+global.sellHigh = function (amount, resource) {
+    // Sell as much as possible as expensive as possible, no matter the energy costs
+    if (arguments.length == 0) {
+        return "sellHigh (amount, resource)";
+    }
+    let amountBuffer = amount;
+    let orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
+    if (orders.length > 0) {
+
+        orders = _.sortBy(orders, "amount");
+        orders = _.sortBy(orders, "price");
+        orders.reverse();
+
+        let orderIndex = 0;
+        for (let r in myRooms) {
+            if (myRooms[r].terminal != undefined && myRooms[r].memory.terminalTransfer == undefined) {
+                let sellAmount;
+                if (orders[orderIndex].amount > amount) {
+                    sellAmount = amount;
+                }
+                else {
+                    sellAmount = orders[orderIndex].amount;
+                }
+
+                if (sellAmount <= 0) {
+                    break;
+                }
+                else {
+                    sell(orders[orderIndex].id, sellAmount, r);
+                }
+                amount-= sellAmount;
+                orderIndex++;
+            }
+        }
+    }
+    if (amount < 0) {
+        amount = 0;
+    }
+    return (amountBuffer - amount) + " units queued for sale.";
+};
+
 global.sellOrder = function (amount, resource, roomName, price) {
     if (arguments.length == 0) {
         return "sellOrder (amount, resource, roomName, price)";
@@ -762,7 +803,11 @@ global.activeLabs = function () {
     return returnString;
 };
 
-moveReusePath = function() {
+moveReusePath = function(express) {
+    if (express == true && Game.cpu.bucket > 99) {
+        return 5;
+    }
+
     let minSteps = 10, maxSteps = 60;
     let range = maxSteps - minSteps;
 
