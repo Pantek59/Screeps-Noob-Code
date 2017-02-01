@@ -19,8 +19,7 @@ module.exports.loop = function() {
         console.log("<font color=#ff0000 type='highlight'>CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket +"</font>");
         //return;
     }
-    
-    
+
     //Fill myRooms
     for (let m in myroomlist) {
         myRooms[myroomlist[m].name] = myroomlist[m];
@@ -383,7 +382,7 @@ module.exports.loop = function() {
                 var defenseObjects = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                 defenseObjects = _.sortBy(defenseObjects,"hits");
 
-                if (defenseObjects != undefined && defenseObjects[0] != undefined && ((Game.rooms[r].controller != undefined && Game.rooms[r].controller.level == 8 && defenseObjects[0].hits > WALLMAX * 2) || (Game.rooms[r].controller != undefined && Game.rooms[r].controller.level < 8 && defenseObjects[0].hits > WALLMAX))) {
+                if (defenseObjects != undefined && defenseObjects[0] != undefined && ((Game.rooms[r].controller != undefined && Game.rooms[r].controller.level == 8 && defenseObjects[0].hits > WALLMAX * 3) || (Game.rooms[r].controller != undefined && Game.rooms[r].controller.level < 8 && defenseObjects[0].hits > WALLMAX))) {
                     Game.rooms[r].memory.roomSecure = true;
                 }
                 else if (Game.rooms[r].memory.roomSecure != undefined) {
@@ -593,8 +592,10 @@ module.exports.loop = function() {
                         else if (flag.room.memory.hostiles.length == 0 && flag.room.memory.panicFlag != undefined) {
                             // No hostiles present in room with remote harvesters
                             var tempFlag = _.filter(Game.flags, {name: flag.room.memory.panicFlag})[0];
-                            tempFlag.remove();
-                            delete flag.room.memory.panicFlag;
+                            if (tempFlag != null) {
+                                tempFlag.remove();
+                                delete flag.room.memory.panicFlag;
+                            }
                         }
 
                         if (Memory.flowPath[flag.pos.roomName] != undefined && (Memory.flowPath[flag.pos.roomName].roomHash == undefined || Game.time % DELAYFLOWROOMCHECK == 0)) {

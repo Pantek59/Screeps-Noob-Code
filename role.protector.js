@@ -27,6 +27,9 @@ Creep.prototype.roleProtector = function() {
             if (range > 1) {
                 this.moveTo(this.room.controller, {reusePath: moveReusePath(), ignoreCreeps: true});
             }
+            else {
+                this.memory.sleep = 10;
+            }
         }
     }
 };

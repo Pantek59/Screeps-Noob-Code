@@ -28,13 +28,13 @@ CPU_THRESHOLD = 500;
 WALLMAX = 5500000;
 LOG_TERMINAL = false;
 LOG_MARKET = false;
-LOG_SPAWN = false;
-LOG_EXPIRE = false;
-LOG_PANICFLAG = false;
-LOG_INFO = false;
+LOG_SPAWN = true;
+LOG_EXPIRE = true;
+LOG_PANICFLAG = true;
+LOG_INFO = true;
 
 playerUsername = "Pantek59";
-allies = ["king_lispi", "Tanjera", "Atavus", "BlackLotus", "Atlan", "Moria", "Ashburnie", "seancl", "Finndibaen", "klapaucius", "Hachima", "ChaosDMG", "Kenshi", "Maxion", "Trepidimous", "Calame"];
+allies = ["Atavus","BlackLotus","Ashburnie","Tanjera","king_lispi","Moria","seancl","Atlan","Finndibaen","Klapaucius","ChaosDMG","Kenshi","Maxion","Trepidimous","Plasticbag","Lomewilwarin","joshua00214","vestad","andrwmorph","Baezon","Hachima","Calame","DoofenShmirtz"];
 //myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
 myroomlist = _.values(Game.rooms).filter (r => _.get(r, ['controller','owner','username'],undefined) === playerUsername);
 myRooms = {};

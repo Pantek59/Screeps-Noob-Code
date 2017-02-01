@@ -120,13 +120,13 @@ module.exports = function() {
                 switch (flagFunction) {
                     case "haulEnergy":
                         if (this.memory.role == "remoteStationaryHarvester") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester', currentFlag: this.memory.currentFlag}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'remoteStationaryHarvester'}});
                             if (peers.length <= 1) {
                                 return this.memory.currentFlag;
                             }
                         }
                         else if (this.memory.role == "energyHauler") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler', currentFlag: this.memory.currentFlag}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'energyHauler'}});
                             if (peers.length <= (flagList[fl].memory.volume - 1)) {
                                 return this.memory.currentFlag;
                             }
@@ -135,13 +135,13 @@ module.exports = function() {
 
                     case "SKHarvest":
                         if (this.memory.role == "SKHarvester") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHarvester', currentFlag: this.memory.currentFlag}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHarvester'}});
                             if (peers.length <= 1) {
                                 return this.memory.currentFlag;
                             }
                         }
                         else if (this.memory.role == "SKHauler") {
-                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHauler', currentFlag: this.memory.currentFlag}});
+                            var peers = _.filter(flagCreeps,{ memory: { role: 'SKHauler'}});
                             if (peers.length <= (flagList[fl].memory.volume - 1)) {
                                 return this.memory.currentFlag;
                             }
@@ -149,14 +149,14 @@ module.exports = function() {
                         break;
 
                     case "unitGroup":
-                        var peers = _.filter(flagCreeps, {memory: {role: this.memory.role, currentFlag: this.memory.currentFlag}});
+                        var peers = _.filter(flagCreeps, {memory: {role: this.memory.role}});
                         if (peers.length <= flagList[fl].memory[this.memory.role]) {
                             return this.memory.currentFlag;
                         }
                         break;
 
                     case "remoteController":
-                        var peers = _.filter(flagCreeps, {memory: {role: "claimer", currentFlag: this.memory.currentFlag}});
+                        var peers = _.filter(flagCreeps, {memory: {role: "claimer"}});
                         if (peers.length < 2) {
                             return this.memory.currentFlag;
                         }

@@ -67,8 +67,8 @@ Creep.prototype.roleScientist = function() {
                         }
                     }
                     if (labsReady == 2) {
-                        this.say(
-                            "Waiting ...");
+                        this.say("Waiting ...");
+                        this.memory.sleep = 5;
                     }
                     break;
                 case "done":

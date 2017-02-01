@@ -77,7 +77,7 @@ Creep.prototype.roleDistributor = function() {
     }
     else if (this.checkTerminalLimits(RESOURCE_GHODIUM).amount == 0 && this.room.memory.terminalTransfer == undefined && nuker != undefined
         && nuker.ghodium < nuker.ghodiumCapacity && (this.room.storage.store[RESOURCE_GHODIUM] != undefined || this.carry[RESOURCE_GHODIUM] != undefined)) {
-        //Nuker in need of Ghodium and storage has enough of it
+        //No terminal transfer pending, nuker in need of Ghodium and storage has enough of it
         if (this.storeAllBut(RESOURCE_GHODIUM) == true) {
             if (_.sum(this.carry) < this.carryCapacity && this.room.storage.store[RESOURCE_GHODIUM] > 0) {
                 if (this.withdraw(this.room.storage, RESOURCE_GHODIUM) == ERR_NOT_IN_RANGE) {

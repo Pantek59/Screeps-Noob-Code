@@ -28,23 +28,30 @@ Creep.prototype.roleTransporter = function () {
         else {
             if (this.room.name == destinationFlag.pos.roomName) {
                 //Creep in destination room
-                var targetContainer;
-                if (this.memory.targetContainer == undefined || Game.time % 8 == 0) {
+                let targetContainer;
+                if (this.memory.targetContainer == undefined || this.memory.targetContainer == null || Game.time % 8 == 0) {
                     if (this.room.controller.owner != undefined && this.room.controller.owner.username == playerUsername) {
-                        targetContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
+                        targetContainer = this.findResource(RESOURCE_SPACE, STRUCTURE_CONTAINER);
                     }
                     else {
                         targetContainer = this.pos.findClosestByPath(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER && _.sum(s.store) < s.storeCapacity});
                     }
-
-                    this.memory.targetContainer = targetContainer.id;
+                    if (targetContainer != undefined && targetContainer != null) {
+                        this.memory.targetContainer = targetContainer.id;
+                    }
                 }
                 else {
                     targetContainer = Game.getObjectById(this.memory.targetContainer);
                 }
 
-                if (targetContainer != null && this.transfer(targetContainer, resource) == ERR_NOT_IN_RANGE) {
-                    this.moveTo(targetContainer, {reusePath: moveReusePath()});
+                if (targetContainer != null) {
+                    let result = this.transfer(targetContainer, resource);
+                    if (result == ERR_NOT_IN_RANGE) {
+                        this.moveTo(targetContainer, {reusePath: moveReusePath()});
+                    }
+                    else if (result != OK) {
+                        delete this.memory.targetContainer;
+                    }
                 }
             }
             else {
