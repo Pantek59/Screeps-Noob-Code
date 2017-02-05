@@ -1,36 +1,38 @@
 module.exports = {
     // manages spawning in indicated room
     run: function (spawnRoom) {
-        var globalSpawningStatus = false;
+        let globalSpawningStatus = 0;
+        let cpuStart = Game.cpu.getUsed();
 
         for (var s in spawnRoom.memory.roomArray.spawns) {
             var testSpawn = Game.getObjectById(spawnRoom.memory.roomArray.spawns[s]);
             if (testSpawn != null && testSpawn.spawning == null && testSpawn.memory.spawnRole != "x") {
-                globalSpawningStatus = true;
+                globalSpawningStatus++;
             }
         }
 
-        if (globalSpawningStatus == false) {
+        if (globalSpawningStatus == 0) {
             //All spawns busy, inactive or player lost control of the room
             return -1;
         }
+        let allMyCreeps = _.filter(Game.creeps, (c) => c.memory.homeroom == spawnRoom.name && (c.ticksToLive > (c.body.length*3) - 3 || c.spawning == true));
 
         //Check for sources & minerals
-        var numberOfSources = spawnRoom.memory.roomArray.sources.length;
-        var numberOfExploitableMineralSources = spawnRoom.memory.roomArray.extractors.length;
-        var roomMineralType;
+        let numberOfSources = spawnRoom.memory.roomArray.sources.length;
+        let numberOfExploitableMineralSources = spawnRoom.memory.roomArray.extractors.length;
+        let roomMineralType;
 
         //Check mineral type of the room
         if (numberOfExploitableMineralSources > 0) {
             // Assumption: There is only one mineral source per room
-            var mineral = Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]);
+            let mineral = Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]);
             if (mineral != undefined) {
                 roomMineralType = mineral.mineralType;
             }
         }
 
         // Define spawn minima
-        var minimumSpawnOf = [];
+        let minimumSpawnOf = [];
         //Volume defined by flags
         minimumSpawnOf["remoteHarvester"] = 0;
         minimumSpawnOf["claimer"] = 0;
@@ -109,7 +111,7 @@ module.exports = {
 
         // Check for active flag "remoteController"
         let vacantFlags = _.filter(myFlags, function (f) {
-            if (f.memory.function == "remoteController" && _.filter(Game.creeps, {memory: {currentFlag: f.name}}).length == 0) {
+            if (f.memory.function == "remoteController" && _.filter(allMyCreeps, {memory: {currentFlag: f.name}}).length == 0) {
                 if (Game.rooms[f.pos.roomName] != undefined) {
                     // Sight on room
                     let controller = Game.rooms[f.pos.roomName].controller;
@@ -129,13 +131,13 @@ module.exports = {
         minimumSpawnOf.claimer = vacantFlags.length;
 
         // Check for active flag "attackController"
-        var attackController = _.filter(Game.flags,{ memory: { function: 'attackController', spawn: spawnRoom.memory.masterSpawn}});
+        var attackController = _.filter(myFlags,{ memory: { function: 'attackController', spawn: spawnRoom.memory.masterSpawn}});
         for (var t in attackController) {
             minimumSpawnOf.bigClaimer += attackController[t].memory.volume;
         }
 
         // Check for unit groups
-        var groupFlags = _.filter(Game.flags,{ memory: { function: 'unitGroup', spawn: spawnRoom.memory.masterSpawn}});
+        var groupFlags = _.filter(myFlags,{ memory: { function: 'unitGroup', spawn: spawnRoom.memory.masterSpawn}});
         for (var g in groupFlags) {
 
             if (groupFlags[g].memory.attacker != undefined) {
@@ -253,11 +255,10 @@ module.exports = {
         }
 
         // Measuring number of active creeps
-        let allMyCreeps = _.filter(Game.creeps, (c) => c.memory.homeroom == spawnRoom.name && (c.ticksToLive > (c.body.length*3) - 3 || c.spawning == true));
         let counter = _.countBy(allMyCreeps, "memory.role");
 
         let roleList = (Object.getOwnPropertyNames(minimumSpawnOf));
-        for (z in roleList) {
+        for (let z in roleList) {
             if (roleList[z] != "length" && counter[roleList[z]] == undefined) {
                 counter[roleList[z]] = 0;
             }
@@ -265,12 +266,11 @@ module.exports = {
         let numberOf = counter;
         numberOf.claimer = 0; //minimumSpawnOf only contains claimer delta. Hence numberOf.claimer is always 0
 
-        //console.log(spawnRoom + ": " + minimumSpawnOf.claimer);
+        //console.log(spawnRoom + ": " + minimumSpawnOf.upgrader + " / " + numberOf.upgrader);
 
         // Role selection
         let energy = spawnRoom.energyCapacityAvailable;
         let name = undefined;
-        let hostiles = spawnRoom.memory.hostiles.length;
         let rcl = spawnRoom.controller.level;
 
         //Check whether spawn trying to spawn too many creeps
@@ -302,7 +302,7 @@ module.exports = {
                     if (!(name < 0) && name != undefined) {
                         testSpawn.memory.lastSpawn = spawnList[s];
                         if (LOG_SPAWN == true) {
-                            console.log("<font color=#00ff22 type='highlight'>" + testSpawn.name + " is spawning creep: " + name + " (" + spawnList[s] + ") in room " + spawnRoom.name + ". (CPU used: " + Game.cpu.getUsed() + ")</font>");
+                            console.log("<font color=#00ff22 type='highlight'>" + testSpawn.name + " is spawning creep: " + name + " (" + spawnList[s] + ") in room " + spawnRoom.name + ". (CPU used: " + (Game.cpu.getUsed() - cpuStart) + ")</font>");
                         }
                     }
                 }
@@ -312,7 +312,7 @@ module.exports = {
             }
         }
     },
-
+    
     getSpawnList: function (spawnRoom, minimumSpawnOf, numberOf) {
         let rcl = spawnRoom.controller.level;
         let tableImportance = {
@@ -323,6 +323,14 @@ module.exports = {
                 min: minimumSpawnOf.harvester,
                 max: numberOf.harvester,
                 minEnergy: buildingPlans.harvester[rcl - 1].minEnergy
+            },
+            miniharvester: {
+                name: "miniharvester",
+                prio: 5,
+                energyRole: true,
+                min: 0,
+                max: 0,
+                minEnergy: buildingPlans.miniharvester[rcl - 1].minEnergy
             },
             stationaryHarvester: {
                 name: "stationaryHarvester",
@@ -493,18 +501,20 @@ module.exports = {
                 minEnergy: buildingPlans.transporter[rcl - 1].minEnergy
             }
         };
+
+        if (numberOf.harvester + numberOf.energyTransporter == 0 && spawnRoom.energyAvailable < buildingPlans.harvester.minEnergy) {
+            // Set up miniHarvester to spawn
+            tableImportance.miniharvester.min = 1;
+        }
+
         tableImportance = _.filter(tableImportance, function (x) {
             return (!(x.min == 0 || x.min == x.max || x.max > x.min))
         });
-        if (tableImportance.length > 0 || numberOf.harvester + numberOf.energyTransporter == 0) {
-            tableImportance = _.sortBy(tableImportance, "priority");
-            tableImportance.reverse();
-            if (numberOf.harvester + numberOf.energyTransporter == 0) {
-                // emergency spawn with what is available
-                tableImportance.splice(0, 0, "miniharvester");
-            }
-            else {
-                // Check for surplus spawning
+        if (tableImportance.length > 0) {
+            tableImportance = _.sortBy(tableImportance, "prio");
+
+            if (3 ==5 && numberOf.harvester + numberOf.energyTransporter != 0) {
+                // TODO: Add surplus upgrader to spawnlist
                 let container = spawnRoom.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
                 let containerEnergy = 0;
                 for (let e in container) {

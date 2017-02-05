@@ -33,7 +33,7 @@ Creep.prototype.roleDemolisher = function() {
     }
 
     // if creep is supposed to transfer energy to a structure
-    if (this.memory.working == true) {
+    if (this.memory.working == true || demolishFlag == null) {
         // Find exit to spawn room
         let spawn = Game.getObjectById(this.memory.spawn);
         if (this.room.name != this.memory.homeroom) {

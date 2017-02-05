@@ -13,7 +13,6 @@ console.log('CPU@Initialization: ' + (global.reqCPU - cpu) + " / Tick: " + Game.
 module.exports.loop = function() {
     //profiler.wrap(function() {
     let cpu = Game.cpu.getUsed();
-    //console.log(cpu);
     if (Game.time == global.start) { cpu -= global.reqCPU; }
     if (cpu >= 35) {
         console.log("<font color=#ff0000 type='highlight'>CPU@LoopStart: " + cpu + " / Tick: " + Game.time + " / Bucket: " + Game.cpu.bucket +"</font>");
@@ -375,7 +374,7 @@ module.exports.loop = function() {
                 }
             }
 
-            //  Refresher (will be executed every few ticks)
+            //  Refresher
             var searchResult;
             if (Game.time % DELAYROOMSCANNING == 0 || Game.rooms[r].memory.roomArray == undefined) {
                 // Determining whether room secure
@@ -539,7 +538,6 @@ module.exports.loop = function() {
             if (Game.rooms[r].memory.masterSpawn != undefined && Game.getObjectById(Game.rooms[r].memory.masterSpawn) == null) {
                 delete Game.rooms[r].memory.masterSpawn;
             }
-
             if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArray.spawns != undefined) {
                 if (Game.rooms[r].memory.roomArray.spawns.length == 1) {
                     Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArray.spawns[0];
@@ -1024,7 +1022,7 @@ module.exports.loop = function() {
             }
 
             // Lab code
-            if (Game.time % DELAYPRODUCTION == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) { //FORMAT: 500:ZH
+            if (Game.time % DELAYPRODUCTION == 0 && Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.labTarget != undefined && Game.rooms[r].memory.labOrder == undefined) {
                 // Lab Queueing Code
                 var labString = Game.rooms[r].memory.labTarget.split(":");
                 var origAmount = labString[0];
