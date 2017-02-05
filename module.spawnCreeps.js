@@ -32,7 +32,7 @@ module.exports = {
         }
 
         // Define spawn minima
-        let minimumSpawnOf = [];
+        let minimumSpawnOf = {};
         //Volume defined by flags
         minimumSpawnOf["remoteHarvester"] = 0;
         minimumSpawnOf["claimer"] = 0;
@@ -53,111 +53,77 @@ module.exports = {
         minimumSpawnOf["SKHauler"] = 0;
 
         let myFlags = _.filter(Game.flags,{ memory: { spawn: spawnRoom.memory.masterSpawn}});
-
-        // Check for transporter flags
-        var transporterFlags = _.filter(myFlags,{ memory: { function: 'transporter'}});
-        for (var p in transporterFlags) {
-            //Iterate through transporter flags of this spawn
-            minimumSpawnOf.transporter += transporterFlags[p].memory.volume;
-        }
-
-        // Check for SK Harvester flags
-        var SKHarvesterFlags = _.filter(myFlags,{ memory: { function: 'SKHarvest'}});
-        for (var t in SKHarvesterFlags) {
-            //Iterate through SK harvester flags of this spawn
-            if (SKHarvesterFlags[t].memory.volume > 1) {
-                minimumSpawnOf.SKHarvester++;
-                minimumSpawnOf.SKHauler += (SKHarvesterFlags[t].memory.volume - 1);
-            }
-        }
-
-        // Check for demolisher flags
-        var demolisherFlags = _.filter(myFlags,{ memory: { function: 'demolish'}});
-        for (var p in demolisherFlags) {
-            //Iterate through demolisher flags of this spawn
-            minimumSpawnOf.demolisher += demolisherFlags[p].memory.volume;
-        }
-
-        // Check for protector flags
-        var protectorFlags = _.filter(myFlags,{ memory: { function: 'protector'}});
-        for (var p in protectorFlags) {
-            //Iterate through remote source flags of this spawn
-            minimumSpawnOf.protector += protectorFlags[p].memory.volume;
-        }
-
-        // Check for remote source flags
-        var remoteSources = _.filter(myFlags,{ memory: { function: 'remoteSource'}});
-        for (var t in remoteSources) {
-            //Iterate through remote source flags of this spawn
-            minimumSpawnOf.remoteHarvester += remoteSources[t].memory.volume;
-        }
-
-        // Check for energy hauling flags
-        var energyHaulingFlags = _.filter(myFlags,{ memory: { function: 'haulEnergy'}});
-        for (var t in energyHaulingFlags) {
-            //Iterate through remote source flags of this spawn
-            if (energyHaulingFlags[t].memory.volume > 0) {
-                minimumSpawnOf.energyHauler += (energyHaulingFlags[t].memory.volume - 1);
-                minimumSpawnOf.remoteStationaryHarvester++;
-            }
-        }
-
-        // Check for narrow source flags
-        var narrowSources = _.filter(myFlags,{ memory: { function: 'narrowSource'}});
-        for (var t in narrowSources) {
-            //Iterate through remote source flags of this spawn
-            minimumSpawnOf.stationaryHarvester ++;
-        }
-
-        // Check for active flag "remoteController"
-        let vacantFlags = _.filter(myFlags, function (f) {
-            if (f.memory.function == "remoteController" && _.filter(allMyCreeps, {memory: {currentFlag: f.name}}).length == 0) {
-                if (Game.rooms[f.pos.roomName] != undefined) {
-                    // Sight on room
-                    let controller = Game.rooms[f.pos.roomName].controller;
-                    if (controller.owner == undefined && (controller.reservation == undefined || controller.reservation.ticksToEnd < 3000 || f.memory.claim == 1)) {
-                        return true;
+        let vacantFlags = [];
+        for (let flag in myFlags) {
+            var mem = myFlags[flag].memory;
+            var vol = mem.volume;
+            switch (mem.function) {
+                case "transporter":
+                    minimumSpawnOf.transporter += vol;
+                    break;
+                case 'demolish':
+                    minimumSpawnOf.demolisher += vol;
+                    break;
+                case 'protector':
+                    minimumSpawnOf.protector += vol;
+                    break;
+                case 'remoteSource':
+                    minimumSpawnOf.remoteHarvester += vol;
+                    break;
+                case 'haulEnergy':
+                    if (vol > 0) {
+                        minimumSpawnOf.remoteStationaryHarvester++;
+                        minimumSpawnOf.energyHauler += vol - 1;
                     }
-                    else {
-                        return false;
+                    break;
+                case 'narrowSource':
+                    minimumSpawnOf.stationaryHarvester++;
+                    minimumSpawnOf.energyTransporter++;
+                    break;
+                case "remoteController":
+                    vacantFlags = _.filter(myFlags, function (f) {
+                        if (f.memory.function == "remoteController" && _.filter(allMyCreeps, {memory: {currentFlag: f.name}}).length == 0) {
+                            if (Game.rooms[f.pos.roomName] != undefined) {
+                                // Sight on room
+                                let controller = Game.rooms[f.pos.roomName].controller;
+                                if (controller.owner == undefined && (controller.reservation == undefined || controller.reservation.ticksToEnd < 3000 || f.memory.claim == 1)) {
+                                    return true;
+                                }
+                                else {
+                                    return false;
+                                }
+                            }
+                            else {
+                                // No sight on room
+                                return true;
+                            }
+                        }
+                    });
+                    minimumSpawnOf.claimer = vacantFlags.length;
+                    break;
+                case 'attackController':
+                    minimumSpawnOf.bigClaimer += vol;
+                    break;
+                case "unitGroup":
+                    if (mem.attacker != undefined) {
+                        minimumSpawnOf.attacker += mem.attacker;
                     }
-                }
-                else {
-                    // No sight on room
-                    return true;
-                }
-            }
-        });
-        minimumSpawnOf.claimer = vacantFlags.length;
-
-        // Check for active flag "attackController"
-        var attackController = _.filter(myFlags,{ memory: { function: 'attackController', spawn: spawnRoom.memory.masterSpawn}});
-        for (var t in attackController) {
-            minimumSpawnOf.bigClaimer += attackController[t].memory.volume;
-        }
-
-        // Check for unit groups
-        var groupFlags = _.filter(myFlags,{ memory: { function: 'unitGroup', spawn: spawnRoom.memory.masterSpawn}});
-        for (var g in groupFlags) {
-
-            if (groupFlags[g].memory.attacker != undefined) {
-                minimumSpawnOf.attacker += groupFlags[g].memory.attacker;
-            }
-            if (groupFlags[g].memory.healer != undefined) {
-                minimumSpawnOf.healer += groupFlags[g].memory.healer;
-            }
-            if (groupFlags[g].memory.einarr != undefined) {
-                minimumSpawnOf.einarr += groupFlags[g].memory.einarr;
-            }
-            if (groupFlags[g].memory.apaHatchi != undefined) {
-                minimumSpawnOf.apaHatchi += groupFlags[g].memory.apaHatchi;
+                    if (mem.healer != undefined) {
+                        minimumSpawnOf.healer += mem.healer;
+                    }
+                    if (mem.einarr != undefined) {
+                        minimumSpawnOf.einarr += mem.einarr;
+                    }
+                    if (mem.archer != undefined) {
+                        minimumSpawnOf.archer += mem.archer;
+                    }
+                    break;
             }
         }
 
         /**Spawning volumes scaling with # of sources in room**/
         var constructionSites = spawnRoom.find(FIND_CONSTRUCTION_SITES);
         var constructionOfRampartsAndWalls = 0;
-
         // Builder
         if (constructionSites.length == 0) {
             minimumSpawnOf.builder = 0;
@@ -166,7 +132,6 @@ module.exports = {
             //There are construction sites
             var progress = 0;
             var totalProgress = 0;
-
             for (var w in constructionSites) {
                 progress += constructionSites[w].progress;
                 totalProgress += constructionSites[w].progressTotal;
@@ -176,11 +141,9 @@ module.exports = {
             }
             minimumSpawnOf.builder = Math.ceil((totalProgress - progress) / 5000);
         }
-
-        if (minimumSpawnOf.builder > Math.ceil(numberOfSources * 1.5)){
+        if (minimumSpawnOf.builder > Math.ceil(numberOfSources * 1.5)) {
             minimumSpawnOf.builder = Math.ceil(numberOfSources * 1.5);
         }
-
         // Upgrader
         if (spawnRoom.controller.level == 8) {
             minimumSpawnOf.upgrader = 0;
@@ -191,7 +154,6 @@ module.exports = {
         else {
             minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
         }
-
         //Wall Repairer
         if (spawnRoom.memory.roomSecure == true && constructionOfRampartsAndWalls == 0) {
             minimumSpawnOf["wallRepairer"] = 0;
@@ -199,7 +161,6 @@ module.exports = {
         else {
             minimumSpawnOf["wallRepairer"] = Math.ceil(numberOfSources * 0.5);
         }
-
         // Distributor
         if (spawnRoom.memory.terminalTransfer != undefined) {
             //ongoing terminal transfer
@@ -208,25 +169,22 @@ module.exports = {
         else if (spawnRoom.terminal != undefined && spawnRoom.storage != undefined) {
             for (var rs in RESOURCES_ALL) {
                 if ((checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount < 0 && spawnRoom.storage.store[RESOURCES_ALL[rs]] > 0)
-                  || checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount > 0) {
+                    || checkTerminalLimits(spawnRoom, RESOURCES_ALL[rs]).amount > 0) {
                     minimumSpawnOf["distributor"] = 1;
                     break;
                 }
             }
         }
-
         // EnergyTransporter, Harvester & Repairer
         minimumSpawnOf["energyTransporter"] = minimumSpawnOf.stationaryHarvester;
         minimumSpawnOf["harvester"] = Math.ceil(numberOfSources * 1.5) - minimumSpawnOf.energyTransporter;
         minimumSpawnOf["repairer"] = Math.ceil(numberOfSources * 0.5);
-
         /** Rest **/
         // Miner
         minimumSpawnOf["miner"] = numberOfExploitableMineralSources;
         if (spawnRoom.storage == undefined || Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]) == null || Game.getObjectById(spawnRoom.memory.roomArray.minerals[0]).mineralAmount == 0 || spawnRoom.memory.resourceLimits[roomMineralType] == undefined || (spawnRoom.storage != undefined && spawnRoom.storage.store[roomMineralType] > spawnRoom.memory.resourceLimits[roomMineralType].minProduction)) {
             minimumSpawnOf.miner = 0;
         }
-
         // Scientist
         if (spawnRoom.memory.labOrder != undefined) {
             var info = spawnRoom.memory.labOrder.split(":");
@@ -234,7 +192,6 @@ module.exports = {
                 minimumSpawnOf.scientist = 1;
             }
         }
-
         // Adjustments in case of hostile presence
         if (spawnRoom.memory.hostiles.length > 0) {
             if (spawnRoom.memory.roomArray.towers.length > 0) {
@@ -253,10 +210,8 @@ module.exports = {
             minimumSpawnOf.demolisher = 0;
             minimumSpawnOf.wallRepairer *= 2;
         }
-
         // Measuring number of active creeps
         let counter = _.countBy(allMyCreeps, "memory.role");
-
         let roleList = (Object.getOwnPropertyNames(minimumSpawnOf));
         for (let z in roleList) {
             if (roleList[z] != "length" && counter[roleList[z]] == undefined) {
@@ -265,9 +220,7 @@ module.exports = {
         }
         let numberOf = counter;
         numberOf.claimer = 0; //minimumSpawnOf only contains claimer delta. Hence numberOf.claimer is always 0
-
         //console.log(spawnRoom + ": " + minimumSpawnOf.upgrader + " / " + numberOf.upgrader);
-
         // Role selection
         let energy = spawnRoom.energyCapacityAvailable;
         let name = undefined;
