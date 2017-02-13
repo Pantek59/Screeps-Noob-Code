@@ -53,7 +53,7 @@ module.exports = {
         minimumSpawnOf["SKHauler"] = 0;
 
         let myFlags = _.filter(Game.flags,{ memory: { spawn: spawnRoom.memory.masterSpawn}});
-        let vacantFlags = [];
+        let vacantFlags = {};
         for (let flag in myFlags) {
             var mem = myFlags[flag].memory;
             var vol = mem.volume;
@@ -466,14 +466,14 @@ module.exports = {
         if (tableImportance.length > 0) {
             tableImportance = _.sortBy(tableImportance, "prio");
 
-            if (3 ==5 && numberOf.harvester + numberOf.energyTransporter != 0) {
+            if (3 ==5 && numberOf.harvester + numberOf.energyTransporter != 0 && spawnRoom.memory.hostiles.length == 0 && spawnRoom.controller.level < 8 && numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
                 // TODO: Add surplus upgrader to spawnlist
                 let container = spawnRoom.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
                 let containerEnergy = 0;
                 for (let e in container) {
                     containerEnergy += container[e].store[RESOURCE_ENERGY];
                 }
-                if (spawnRoom.memory.hostiles.length == 0 && containerEnergy > spawnRoom.energyAvailable * 2.5 && spawnRoom.controller.level < 8 && numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
+                if (containerEnergy > spawnRoom.energyAvailable * 2.5) {
                     tableImportance.push("upgrader");
                 }
             }
