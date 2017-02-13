@@ -894,4 +894,49 @@ global.roomCallback = function (roomName) {
     }
     room.costMatrix = room.costMatrix || costs;
     return room.costMatrix;
-}
+};
+
+global.listCreeps = function (displayRole) {
+    var returnstring = "<table><tr><th>Role  </th>";
+    var roleTable = [];
+    var total = [];
+
+    //Prepare header row
+    for (var r in myRooms) {
+        returnstring = returnstring.concat("<th>" + Game.rooms[r].name + "  </th>");
+        let roomCreeps = _.filter(Game.creeps, function (c) { return c.memory.homeroom == myRooms[r].name; });
+        for (let c in roomCreeps) {
+            if (roleTable.indexOf(roomCreeps[c].memory.role) == -1) {
+                roleTable.push(roomCreeps[c].memory.role);
+            }
+        }
+    }
+    returnstring = returnstring.concat("</tr>");
+    roleTable.sort();
+    for (let role in roleTable) {
+        if (arguments.length == 0 || displayRole == roleTable[role]) {
+            returnstring = returnstring.concat("<tr></tr><td>" + roleTable[role] + "  </td>");
+            let c = -1;
+            for (var r in myRooms) {
+                c++;
+                let amount;
+                let roleCreeps = _.filter(Game.creeps, function (c) { return (c.memory.role == roleTable[role] && c.memory.homeroom == myRooms[r].name);});
+                amount = roleCreeps.length;
+                returnstring = returnstring.concat("<td>" + prettyInt(amount) + "  </td>");
+                if (total[c] == undefined) {
+                    total[c] = amount;
+                }
+                else {
+                    total[c] += amount;
+                }
+            }
+            returnstring = returnstring.concat("</tr>");
+        }
+    }
+    returnstring = returnstring.concat("<tr></tr><td>Total  </td>");
+    for (let c in total) {
+        returnstring = returnstring.concat("<td>" + prettyInt(total[c]) + " </td>");
+    }
+    returnstring = returnstring.concat("</tr></table>");
+    return returnstring;
+};

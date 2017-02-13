@@ -310,6 +310,7 @@ module.exports.loop = function() {
         // Cycle through rooms
         for (var r in Game.rooms) {
             //Save hostile creeps in room
+            let roomCreeps = Game.rooms[r].find(FIND_MY_CREEPS);
             var hostiles = Game.rooms[r].find(FIND_HOSTILE_CREEPS);
             let enemies = _.filter(hostiles, function (e) {return (isHostile(e))});
             Game.rooms[r].memory.hostiles = [];
@@ -376,7 +377,7 @@ module.exports.loop = function() {
 
             //  Refresher
             var searchResult;
-            if (Game.time % DELAYROOMSCANNING == 0 || Game.rooms[r].memory.roomArray == undefined) {
+            if (roomCreeps > 0 && (Game.time % DELAYROOMSCANNING == 0 || Game.rooms[r].memory.roomArray == undefined)) {
                 // Determining whether room secure
                 var defenseObjects = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                 defenseObjects = _.sortBy(defenseObjects,"hits");
@@ -564,7 +565,6 @@ module.exports.loop = function() {
                 }
 
                 //Set new flags
-                //var remoteHarvestingFlags = _.filter(Game.flags, {memory: {function: 'remoteSource'}});
                 var remoteFlags = _.filter(Game.flags, function (f) {
                     return (f.memory.function == "remoteSource" || f.memory.function == "haulEnergy");
                 });
@@ -764,7 +764,7 @@ module.exports.loop = function() {
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Start dropped energy search: " + Game.cpu.getUsed())}
             if (Game.time % DELAYDROPPEDENERGY == 0) {
                 var energies = Game.rooms[r].find(FIND_DROPPED_RESOURCES);
-                if (energies.length > 0) {
+                if (energies.length > 0 && roomCreeps.length > 0) {
                     let lastPos;
                     for (var energy in energies) {
                         if (energies[energy] != undefined && energies[energy].pos.isEqualTo(lastPos) == false && energies[energy].pos.findInRange(FIND_HOSTILE_CREEPS, {filter: (h) => isHostile(h) == true}).length == 0) {
