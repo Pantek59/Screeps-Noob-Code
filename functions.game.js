@@ -541,7 +541,7 @@ global.sellBulk = function (amount, resource) {
 
         let orderIndex = 0;
         for (let r in myRooms) {
-            if (myRooms[r].terminal != undefined && myRooms[r].memory.terminalTransfer == undefined) {
+            if (orders[orderIndex] != undefined && myRooms[r].terminal != undefined && myRooms[r].memory.terminalTransfer == undefined) {
                 let sellAmount;
                 if (orders[orderIndex].amount > amount) {
                     sellAmount = amount;

@@ -167,23 +167,20 @@ module.exports.loop = function() {
             var surplusMinerals;
 
             for (var r in myRooms) {
-                if (Game.rooms[r] != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 0 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
+                if (Game.rooms[r] != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 100000 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
                     for (var resource in Game.rooms[r].memory.resourceLimits) {
-                        if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket && Game.rooms[r].memory.resourceLimits[resource] != undefined) {
+                        if (Game.rooms[r].memory.resourceLimits[resource] != undefined && Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket) {
 
                             if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket + 100) {
                                 surplusMinerals = Game.rooms[r].storage.store[resource] - Game.rooms[r].memory.resourceLimits[resource].minMarket;
                                 if (surplusMinerals >= 10000) {
                                     surplusMinerals = 10000;
                                     var orders = [];
-                                    if (Memory.marketBuffer == undefined || Game.time % (2 * DELAYMARKETAUTOSELL) == 0) {
-                                        orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
-                                        orders = _.sortBy(orders, "price");
-                                        orders.reverse();
-                                        Memory.marketBuffer = orders;
-                                    }
-                                    else {
-                                        orders = Memory.marketBuffer
+                                    orders = Game.market.getAllOrders({type: ORDER_BUY, resourceType: resource});
+                                    orders = _.sortBy(orders, "price");
+
+                                    if (Memory.marketBuffer != undefined) {
+                                        delete Memory.marketBuffer;
                                     }
 
                                     for (var o = 0; o < orders.length; o++) {
@@ -197,8 +194,7 @@ module.exports.loop = function() {
                                             orderAmount = surplusMinerals;
                                         }
                                         var orderCosts = global.terminalTransfer(orderResource, orderAmount, orderRoomName, "cost");
-                                        var roomDistance = Math.floor(Game.rooms[r].storage.store[RESOURCE_ENERGY] / 7500);
-                                        if (orderAmount >= 500 && Game.map.getRoomLinearDistance(Game.rooms[r].name, orderRoomName) < roomDistance && orderCosts <= Game.rooms[r].storage.store[RESOURCE_ENERGY] - 10000) {
+                                        if (orderAmount >= 500 && orderCosts <= Game.rooms[r].storage.store[RESOURCE_ENERGY] - 10000) {
                                             Game.rooms[r].memory.terminalTransfer = orders[o].id + ":" + orderAmount + ":" + orderResource + ":MarketOrder";
                                         }
                                     }
