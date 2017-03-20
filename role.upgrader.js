@@ -5,9 +5,9 @@ Creep.prototype.roleUpgrader = function() {
             // switch state
             this.memory.working = false;
         }
-        // if creep is harvesting energy but is full
         else if (this.memory.working == false && this.carry.energy == this.carryCapacity) {
             // switch state
+            // if creep is harvesting energy but is full
             this.memory.working = true;
         }
 

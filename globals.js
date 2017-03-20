@@ -10,7 +10,7 @@ DELAYMARKETAUTOSELL = 27;
 DELAYMARKETBUY = 3;
 DELAYFLAGCOLORS = 31;
 DELAYRESOURCEBALANCING = 21;
-DELAYROOMSCANNING = 50;
+DELAYROOMSCANNING = 23;
 DELAYFLAGFINDING = 20;
 DELAYRESOURCEFINDING = 3;
 DELAYPANICFLAG = 5;
@@ -26,6 +26,7 @@ TERMINALMARKETSTORE = 50000;
 RBS_PACKETSIZE = 5000;
 CPU_THRESHOLD = 500;
 WALLMAX = 5500000;
+MINSURPLUSENERGY = 100000;
 LOG_TERMINAL = false;
 LOG_MARKET = true;
 LOG_SPAWN = true;
@@ -34,7 +35,7 @@ LOG_PANICFLAG = true;
 LOG_INFO = true;
 
 playerUsername = "Pantek59";
-allies = ["Atavus","BlackLotus","Ashburnie","Tanjera","king_lispi","Moria","seancl","Atlan","Finndibaen","Klapaucius","ChaosDMG","Kenshi","Maxion","Trepidimous","Plasticbag","Lomewilwarin","joshua00214","vestad","andrwmorph","Baezon","Hachima","Calame","DoofenShmirtz"];
+allies = ["Atavus","BlackLotus","Ashburnie","Tanjera","king_lispi","Moria","seancl","Atlan","Finndibaen","Klapaucius","ChaosDMG","Kenshi","Maxion","Trepidimous","Plasticbag","Lomewilwarin","joshua00214","vestad","andrwmorph","Baezon","Hachima","Calame","DoofenShmirtz","Atanner","Sheeo","Pundemonium","trebbettes","neomatrix"];
 //myroomlist = _.filter(Game.rooms, {controller: { owner: { username: playerUsername}}});
 myroomlist = _.values(Game.rooms).filter (r => _.get(r, ['controller','owner','username'],undefined) === playerUsername);
 myRooms = {};
@@ -564,7 +565,7 @@ buildingPlans = {
         {
             //Level 4 (max 1300)
             minEnergy: 1300,
-            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
+            body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK]
         },
         {
             //Level 5 (max 1800)

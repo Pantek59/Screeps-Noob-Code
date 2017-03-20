@@ -167,9 +167,9 @@ module.exports.loop = function() {
             var surplusMinerals;
 
             for (var r in myRooms) {
-                if (Game.rooms[r] != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 100000 && Game.rooms[r].terminal != undefined &&  Game.rooms[r].memory.terminalTransfer == undefined) {
+                if (Game.rooms[r] != undefined && Game.rooms[r].storage != undefined && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 100000 && Game.rooms[r].terminal != undefined && Game.rooms[r].name != Memory.buyRoom && Game.rooms[r].memory.terminalTransfer == undefined) {
                     for (var resource in Game.rooms[r].memory.resourceLimits) {
-                        if (Game.rooms[r].memory.resourceLimits[resource] != undefined && Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket) {
+                        if (Game.rooms[r].memory.resourceLimits[resource] != undefined && Game.rooms[r].storage.store[resource] > (Game.rooms[r].memory.resourceLimits[resource].minMarket)) {
 
                             if (Game.rooms[r].storage.store[resource] > Game.rooms[r].memory.resourceLimits[resource].minMarket + 100) {
                                 surplusMinerals = Game.rooms[r].storage.store[resource] - Game.rooms[r].memory.resourceLimits[resource].minMarket;
@@ -341,7 +341,7 @@ module.exports.loop = function() {
                 var limit;
                 for (var res in RESOURCES_ALL) {
                     roomLimits[RESOURCES_ALL[res]] = {};
-                    if (Game.rooms[r].memory.roomArray.minerals != undefined && Game.getObjectById(Game.rooms[r].memory.roomArray.minerals[0]).mineralType == RESOURCES_ALL[res]) {
+                    if (Game.rooms[r].memory.roomArray != undefined && Game.rooms[r].memory.roomArray.minerals != undefined && Game.getObjectById(Game.rooms[r].memory.roomArray.minerals[0]).mineralType == RESOURCES_ALL[res]) {
                         //Room mineral
                         limit = {minTerminal:0, maxStorage:6000, minMarket:500000, minProduction: 600000};
                     }
@@ -372,8 +372,15 @@ module.exports.loop = function() {
             }
 
             //  Refresher
+            if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername && Game.rooms[r].memory.roomArray == undefined) {
+                Game.rooms[r].memory.roomArray = {};
+            }
+            else if (Game.rooms[r].memory.roomArray == undefined && Game.rooms[r].controller != undefined && roomCreeps > 0) {
+                Game.rooms[r].memory.roomArray = {};
+            }
+
             var searchResult;
-            if (roomCreeps > 0 && (Game.time % DELAYROOMSCANNING == 0 || Game.rooms[r].memory.roomArray == undefined)) {
+            if ((roomCreeps > 0 || (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername)) && (Game.time % DELAYROOMSCANNING == 0 || Game.rooms[r].memory.roomArray == undefined)) {
                 // Determining whether room secure
                 var defenseObjects = Game.rooms[r].find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_WALL || s.structureType == STRUCTURE_RAMPART});
                 defenseObjects = _.sortBy(defenseObjects,"hits");
@@ -535,7 +542,7 @@ module.exports.loop = function() {
             if (Game.rooms[r].memory.masterSpawn != undefined && Game.getObjectById(Game.rooms[r].memory.masterSpawn) == null) {
                 delete Game.rooms[r].memory.masterSpawn;
             }
-            if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArray.spawns != undefined) {
+            if (Game.rooms[r].memory.masterSpawn == undefined && Game.rooms[r].memory.roomArray != undefined && Game.rooms[r].memory.roomArray.spawns != undefined) {
                 if (Game.rooms[r].memory.roomArray.spawns.length == 1) {
                     Game.rooms[r].memory.masterSpawn = Game.rooms[r].memory.roomArray.spawns[0];
                 }
@@ -627,7 +634,7 @@ module.exports.loop = function() {
 
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting spawn code: " + Game.cpu.getUsed())}
             // Spawn code
-            if (Game.rooms[r].memory.roomArray.spawns == undefined || Game.rooms[r].memory.roomArray.spawns.length == 0) {
+            if (Game.rooms[r].memory.roomArray != undefined && (Game.rooms[r].memory.roomArray.spawns == undefined || Game.rooms[r].memory.roomArray.spawns.length == 0)) {
                 //room has no spawn yet
                 if (Game.rooms[r].controller != undefined && Game.rooms[r].controller.owner != undefined && Game.rooms[r].controller.owner.username == playerUsername) {
                     //room is owned and should be updated
@@ -705,53 +712,55 @@ module.exports.loop = function() {
 
 
             // Tower code
-            var towers = [];
-            for (let t in Game.rooms[r].memory.roomArray.towers) {
-                towers.push(Game.getObjectById(Game.rooms[r].memory.roomArray.towers[t]));
-            }
-
-            if (Game.rooms[r].memory.hostiles.length > 0) {
-                let hostiles = [];
-                for (let h in Game.rooms[r].memory.hostiles) {
-                    hostiles.push(Game.getObjectById(Game.rooms[r].memory.hostiles[h]));
+            if (Game.rooms[r].memory.roomArray != undefined) {
+                var towers = [];
+                for (let t in Game.rooms[r].memory.roomArray.towers) {
+                    towers.push(Game.getObjectById(Game.rooms[r].memory.roomArray.towers[t]));
                 }
 
-                for (var tower in towers) {
-                    // Tower attack code
-                    var maxAttackBodyParts = 0;
-                    var AttackBodyParts = 0;
-                    var attackingInvader = undefined;
+                if (Game.rooms[r].memory.hostiles.length > 0) {
+                    let hostiles = [];
+                    for (let h in Game.rooms[r].memory.hostiles) {
+                        hostiles.push(Game.getObjectById(Game.rooms[r].memory.hostiles[h]));
+                    }
 
-                    for (var h in hostiles) {
-                        AttackBodyParts = 0;
-                        for (var part in hostiles[h].body) {
-                            if (hostiles[h].body[part].type == ATTACK) {
-                                //Healing body part found
-                                AttackBodyParts++;
+                    for (var tower in towers) {
+                        // Tower attack code
+                        var maxAttackBodyParts = 0;
+                        var AttackBodyParts = 0;
+                        var attackingInvader = undefined;
+
+                        for (var h in hostiles) {
+                            AttackBodyParts = 0;
+                            for (var part in hostiles[h].body) {
+                                if (hostiles[h].body[part].type == ATTACK) {
+                                    //Healing body part found
+                                    AttackBodyParts++;
+                                }
+                            }
+
+                            if (AttackBodyParts > maxAttackBodyParts) {
+                                maxAttackBodyParts = AttackBodyParts;
+                                attackingInvader = hostiles[h].id;
                             }
                         }
 
-                        if (AttackBodyParts > maxAttackBodyParts) {
-                            maxAttackBodyParts = AttackBodyParts;
-                            attackingInvader = hostiles[h].id;
-                        }
-                    }
-
-                    if (hostiles.length > 0) {
-                        let towerTarget = towers[tower].pos.findClosestByRange(hostiles);
-                        if (towerTarget != null) {
-                            towers[tower].attack(towerTarget);
+                        if (hostiles.length > 0) {
+                            let towerTarget = towers[tower].pos.findClosestByRange(hostiles);
+                            if (towerTarget != null) {
+                                towers[tower].attack(towerTarget);
+                            }
                         }
                     }
                 }
-            }
-            else {
-                var wounded = Game.rooms[r].find(FIND_CREEPS, {filter: (s) => s.hits < s.hitsMax && isHostile(s) == false});
-                if (wounded.length > 0) {
-                    // Tower healing code
-                    for (var tower in towers) {
-                        let towerTarget = towers[tower].pos.findClosestByRange(wounded);
-                        towers[tower].heal(towerTarget);
+                else {
+                    var wounded = Game.rooms[r].find(FIND_CREEPS, {filter: (s) => s.hits < s.hitsMax && isHostile(s) == false});
+                    if (wounded.length > 0) {
+                        // Tower healing code
+                        for (var tower in towers) {
+                            let towerTarget = towers[tower].pos.findClosestByRange(wounded);
+                            towers[tower].heal(towerTarget);
+                        }
                     }
                 }
             }
@@ -769,7 +778,7 @@ module.exports.loop = function() {
                                 var energyID = energies[energy].id;
                                 var energyAmount = energies[energy].amount;
                                 let busyCollectors = Game.rooms[r].find(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == "pickUpEnergy" && c.memory.jobQueueObject == energyID});
-                                if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || Game.rooms[r].memory.roomArray.lairs.length > 0)) {
+                                if (busyCollectors.length == 0 && energyAmount > 15 && (Game.rooms[r].memory.hostiles.length == 0 || (Game.rooms[r].memory.roomArray != undefined && Game.rooms[r].memory.roomArray.lairs.length > 0))) {
                                     var collector = energies[energy].pos.findClosestByPath(FIND_MY_CREEPS, {
                                         filter: (s) => (s.carryCapacity - _.sum(s.carry) - energyAmount) >= 0 && s.memory.role != "protector" && s.memory.role != "einarr" && s.memory.role != "distributor" && s.memory.role != "stationaryHarvester" && s.memory.role != "remoteStationaryHarvester" && s.memory.dropEnergy != true
                                     });
@@ -793,7 +802,7 @@ module.exports.loop = function() {
             }
 
             // Link code
-            if (Game.time % DELAYLINK == 0 && Game.rooms[r].memory.roomArray.links != undefined && Game.rooms[r].memory.roomArray.links.length > 1) {
+            if (Game.time % DELAYLINK == 0 && Game.rooms[r].memory.roomArray != undefined && Game.rooms[r].memory.roomArray.links != undefined && Game.rooms[r].memory.roomArray.links.length > 1) {
                 var fillLinks = [];
                 var emptyLinks = [];
                 var targetLevel = 0;

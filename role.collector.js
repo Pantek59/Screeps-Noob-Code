@@ -106,14 +106,14 @@ Creep.prototype.roleCollector = function() {
         else {
             //no room harvester role
             // find closest source
-            if (this.room.memory.terminalTransfer == undefined && this.checkTerminalLimits(RESOURCE_ENERGY).amount > 0) {
+            if (this.room.terminal != undefined && this.room.memory.terminalTransfer == undefined && this.checkTerminalLimits(RESOURCE_ENERGY).amount > 0) {
                 container = this.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE, STRUCTURE_TERMINAL);
             }
             else {
                 container = this.findResource(RESOURCE_ENERGY, FIND_SOURCES, STRUCTURE_LINK, STRUCTURE_CONTAINER, STRUCTURE_STORAGE);
             }
             if (container != undefined) {
-                var res = this.withdraw(container, RESOURCE_ENERGY);
+                let res = this.withdraw(container, RESOURCE_ENERGY);
                 if (res != OK && res != ERR_NOT_IN_RANGE) {
                     res = this.harvest(container)
                 }

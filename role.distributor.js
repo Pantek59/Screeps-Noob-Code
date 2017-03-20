@@ -91,7 +91,7 @@ Creep.prototype.roleDistributor = function() {
             }
         }
     }
-    else {
+    else if (this.room.storage != undefined && this.room.terminal != undefined) {
         //Nothing special going on check for terminal levels
         var terminalDelta;
         if (this.room.memory.terminalDelta == undefined || Game.time % 10 == 0 || this.room.memory.terminalDelta != 0) {

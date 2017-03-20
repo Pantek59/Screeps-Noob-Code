@@ -4,10 +4,12 @@ module.exports = {
         let globalSpawningStatus = 0;
         let cpuStart = Game.cpu.getUsed();
 
-        for (var s in spawnRoom.memory.roomArray.spawns) {
-            var testSpawn = Game.getObjectById(spawnRoom.memory.roomArray.spawns[s]);
-            if (testSpawn != null && testSpawn.spawning == null && testSpawn.memory.spawnRole != "x") {
-                globalSpawningStatus++;
+        if (spawnRoom.memory.roomArray != undefined) {
+            for (var s in spawnRoom.memory.roomArray.spawns) {
+                var testSpawn = Game.getObjectById(spawnRoom.memory.roomArray.spawns[s]);
+                if (testSpawn != null && testSpawn.spawning == null && testSpawn.memory.spawnRole != "x") {
+                    globalSpawningStatus++;
+                }
             }
         }
 
@@ -152,7 +154,7 @@ module.exports = {
             }
         }
         else {
-            minimumSpawnOf["upgrader"] = Math.ceil(numberOfSources * 1);
+            minimumSpawnOf["upgrader"] = numberOfSources;
         }
         //Wall Repairer
         if (spawnRoom.memory.roomSecure == true && constructionOfRampartsAndWalls == 0) {
@@ -220,7 +222,7 @@ module.exports = {
         }
         let numberOf = counter;
         numberOf.claimer = 0; //minimumSpawnOf only contains claimer delta. Hence numberOf.claimer is always 0
-        //console.log(spawnRoom + ": " + minimumSpawnOf.upgrader + " / " + numberOf.upgrader);
+
         // Role selection
         let energy = spawnRoom.energyCapacityAvailable;
         let name = undefined;
@@ -466,23 +468,25 @@ module.exports = {
         if (tableImportance.length > 0) {
             tableImportance = _.sortBy(tableImportance, "prio");
 
-            if (3 ==5 && numberOf.harvester + numberOf.energyTransporter != 0 && spawnRoom.memory.hostiles.length == 0 && spawnRoom.controller.level < 8 && numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
-                // TODO: Add surplus upgrader to spawnlist
-                let container = spawnRoom.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
-                let containerEnergy = 0;
-                for (let e in container) {
-                    containerEnergy += container[e].store[RESOURCE_ENERGY];
-                }
-                if (containerEnergy > spawnRoom.energyAvailable * 2.5) {
-                    tableImportance.push("upgrader");
-                }
-            }
             let spawnList = [];
             for (let c in tableImportance) {
                 for (let i = 0; i < (tableImportance[c].min - tableImportance[c].max); i++) {
                     spawnList.push(tableImportance[c].name);
                 }
             }
+
+            //Surplus Upgrader Spawning
+            if (numberOf.harvester + numberOf.energyTransporter > 0 && spawnRoom.memory.hostiles.length == 0 && spawnRoom.controller.level < 8 && numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
+                let container = spawnRoom.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
+                let containerEnergy = 0;
+                for (let e in container) {
+                    containerEnergy += container[e].store[RESOURCE_ENERGY];
+                }
+                if (containerEnergy > spawnRoom.energyAvailable * 2.5) {
+                    spawnList.push("upgrader");
+                }
+            }
+
             return spawnList;
         }
         else {

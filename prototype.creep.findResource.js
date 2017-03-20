@@ -1,11 +1,10 @@
 module.exports = function() {
     // find nearest requested resource and return object, otherwise return null
 
-
 	Creep.prototype.findResource =
 	function(resource, sourceTypes) {
 	    if (this.memory.targetBuffer != undefined) {
-            var tempTarget = Game.getObjectById(this.memory.targetBuffer);
+            let tempTarget = Game.getObjectById(this.memory.targetBuffer);
             if (tempTarget == undefined || this.memory.roomBuffer != this.room.name) {
                 delete this.memory.targetBuffer;
             }
@@ -30,11 +29,11 @@ module.exports = function() {
             //return buffered resource
             return Game.getObjectById(this.memory.targetBuffer);
         }
-        else {
-            var IDBasket = [];
-            var tempArray = [];
+        else if (this.room.memory.roomArray != undefined) {
+            let IDBasket = [];
+            let tempArray = [];
 
-            for (var argcounter = 1; argcounter < arguments.length; argcounter++) {
+            for (let argcounter = 1; argcounter < arguments.length; argcounter++) {
                 // Go through requested sourceTypes
                 switch (arguments[argcounter]) {
                     case FIND_SOURCES:
