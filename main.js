@@ -1150,300 +1150,343 @@ module.exports.loop = function() {
             }
         }
 
-        //Cycle through creeps
-        if (CPUdebug == true) { CPUdebugString = CPUdebugString.concat("<br>Starting creeps: " + Game.cpu.getUsed()) }
-        for (let name in Game.creeps) {
-            // get the creep object
-            var creep = Game.creeps[name];
-
-            //Check for miniharvester
-            if (creep.memory.role == "miniharvester") {
-                creep.memory.role = "harvester";
-            }
-
-            //Check for fleeing creeps
-            if (creep.room.memory.hostiles.length == 0 && creep.memory.fleeing == true) {
-                //Get away from the exit
-                if ((creep.pos.x < 10 || creep.pos.x > 40) || (creep.pos.y < 10 || creep.pos.y > 40)) {
-
-                    var area = creep.room.lookAtArea(20, 20, 40, 40, true);
-                    area = _.filter(area, function (a) { return (a.terrain != "wall")});
-                    if (area.length > 0) {
-                        let destPos = creep.room.getPositionAt(area[0].x, area[0].y);
-                        creep.moveTo(destPos, {reusePath: moveReusePath()});
-                    }
-                    else {
-                        console.log("No safe area found in room " + Game.rooms[r].name + ".");
-                    }
+    //Cycle through creeps
+    if (CPUdebug == true) {
+        CPUdebugString = CPUdebugString.concat("<br>Starting creeps: " + Game.cpu.getUsed())
+    }
+    for (let name in Game.creeps) {
+        // get the creep object
+        var creep = Game.creeps[name];
+        //Check for miniharvester
+        if (creep.memory.role == "miniharvester") {
+            creep.memory.role = "harvester";
+        }
+        //Check for fleeing creeps
+        if (creep.room.memory.hostiles.length == 0 && creep.memory.fleeing == true) {
+            //Get away from the exit
+            if ((creep.pos.x < 10 || creep.pos.x > 40) || (creep.pos.y < 10 || creep.pos.y > 40)) {
+                var area = creep.room.lookAtArea(20, 20, 40, 40, true);
+                area = _.filter(area, function (a) {
+                    return (a.terrain != "wall")
+                });
+                if (area.length > 0) {
+                    let destPos = creep.room.getPositionAt(area[0].x, area[0].y);
+                    creep.moveTo(destPos, {reusePath: moveReusePath()});
                 }
                 else {
-                    //Creep has distance to any room exit
-                    creep.memory.sleep = 50;
-                    delete creep.memory.fleeing;
+                    console.log("No safe area found in room " + Game.rooms[r].name + ".");
                 }
             }
-            else
-            { // Check for sleeping creeps
-                if (creep.memory.sleep != undefined && creep.memory.jobQueueTask == undefined) {
-                    creep.memory.sleep--;
-                    //creep.say("Zzz: " + creep.memory.sleep);
-                    if (creep.memory.sleep < 1) {
-                        delete creep.memory.sleep;
-                    }
+            else {
+                //Creep has distance to any room exit
+                creep.memory.sleep = 50;
+                delete creep.memory.fleeing;
+            }
+        }
+        else { // Check for sleeping creeps
+            if (creep.memory.sleep != undefined && creep.memory.jobQueueTask == undefined) {
+                creep.memory.sleep--;
+                //creep.say("Zzz: " + creep.memory.sleep);
+                if (creep.memory.sleep < 1) {
+                    delete creep.memory.sleep;
                 }
-                else {
-                    if (creep.spawning == false && creep.ticksToLive > 1000 && creep.memory.boostList != undefined) {
-                        //Creep needs boosting
-                        if (creep.memory.boostList.length > 0) {
-                            let boostLabs = creep.room.memory.boostLabs;
-                            if (boostLabs != undefined && boostLabs.length > 0) {
-                                if (creep.memory.myBoostLab == undefined) {
-                                    //Find vacant boost lab
-                                    let tempList = [];
-                                    for (let b in boostLabs) {
-                                        if (creep.room.find(FIND_MY_CREEPS, {filter: (c) => c.memory.myBoostLab == boostLabs[b]}).length == 0) {
-                                            tempList.push(Game.getObjectById(boostLabs[b]));
-                                        }
-                                    }
-                                    let myBoostLab = creep.pos.findClosestByPath(tempList);
-                                    if (myBoostLab != null) {
-                                        creep.memory.myBoostLab = myBoostLab.id;
-                                    }
-                                    else {
-                                        creep.memory.sleep = 5;
+            }
+            else {
+                if (creep.spawning == false && creep.ticksToLive > 1000 && creep.memory.boostList != undefined) {
+                    //Creep needs boosting
+                    if (creep.memory.boostList.length > 0) {
+                        let boostLabs = creep.room.memory.boostLabs;
+                        if (boostLabs != undefined && boostLabs.length > 0) {
+                            if (creep.memory.myBoostLab == undefined) {
+                                //Find vacant boost lab
+                                let tempList = [];
+                                for (let b in boostLabs) {
+                                    if (creep.room.find(FIND_MY_CREEPS, {filter: (c) => c.memory.myBoostLab == boostLabs[b]}).length == 0) {
+                                        tempList.push(Game.getObjectById(boostLabs[b]));
                                     }
                                 }
-
-                                if (creep.memory.myBoostLab != undefined) {
-                                    // Vacant boost lab found
-                                    if (creep.memory.myButler == undefined || Game.getObjectById(creep.memory.myButler) == null) {
-                                        //Find butler
-                                        let butler = creep.pos.findClosestByPath(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == undefined && (c.memory.role == "energyTransporter" || c.memory.role == "harvester")});
-                                        if (butler != null) {
-                                            butler.memory.jobQueueTask = "prepareBoost";
-                                            butler.memory.jobQueueObject = creep.id;
-                                            creep.memory.myButler = butler.id;
-                                            if (LOG_INFO == true) {
-                                                console.log(creep.room.name + ": " + creep.name + " has taken " + butler.name + " as a butler.");
-                                            }
+                                let myBoostLab = creep.pos.findClosestByPath(tempList);
+                                if (myBoostLab != null) {
+                                    creep.memory.myBoostLab = myBoostLab.id;
+                                }
+                                else {
+                                    creep.memory.sleep = 5;
+                                }
+                            }
+                            if (creep.memory.myBoostLab != undefined) {
+                                // Vacant boost lab found
+                                if (creep.memory.myButler == undefined || Game.getObjectById(creep.memory.myButler) == null) {
+                                    //Find butler
+                                    let butler = creep.pos.findClosestByPath(FIND_MY_CREEPS, {filter: (c) => c.memory.jobQueueTask == undefined && (c.memory.role == "energyTransporter" || c.memory.role == "harvester")});
+                                    if (butler != null) {
+                                        butler.memory.jobQueueTask = "prepareBoost";
+                                        butler.memory.jobQueueObject = creep.id;
+                                        creep.memory.myButler = butler.id;
+                                        if (LOG_INFO == true) {
+                                            console.log(creep.room.name + ": " + creep.name + " has taken " + butler.name + " as a butler.");
                                         }
                                     }
+                                }
+                                else {
+                                    //Wait for boostLab to fill up
+                                    let boostLab = Game.getObjectById(creep.memory.myBoostLab);
+                                    if (creep.pos.getRangeTo(boostLab) > 1) {
+                                        creep.moveTo(boostLab, {reusePath: moveReusePath()});
+                                    }
                                     else {
-                                        //Wait for boostLab to fill up
-                                        let boostLab = Game.getObjectById(creep.memory.myBoostLab);
-                                        if (creep.pos.getRangeTo(boostLab) > 1) {
-                                            creep.moveTo(boostLab, {reusePath: moveReusePath()});
-                                        }
-                                        else {
-                                            let bodyPart = mineralDescriptions[creep.memory.boostList[0]].bodyPart;
-                                            let numberofParts = creep.getActiveBodyparts(bodyPart);
-                                            let mineralNeed = 30 * numberofParts;
-                                            let energyNeed = 20 * numberofParts;
-
-                                            if (boostLab.mineralType == creep.memory.boostList[0] && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
-                                                // Lab ready for boost
-                                                let returnCode = boostLab.boostCreep(creep);
-                                                if (returnCode == OK) {
-                                                    if (creep.memory.boostList.length == 1) {
-                                                        delete creep.memory.boostList;
-                                                        if (creep.memory.myButler != undefined) {
-                                                            let butler = Game.getObjectById(creep.memory.myButler);
-                                                            delete butler.memory.jobQueueObject;
-                                                            delete butler.memory.jobQueueTask;
-                                                            delete butler.memory.myBoostLab;
-                                                        }
-                                                        delete creep.memory.myButler;
-                                                        delete creep.memory.myBoostLab;
+                                        let bodyPart = mineralDescriptions[creep.memory.boostList[0]].bodyPart;
+                                        let numberofParts = creep.getActiveBodyparts(bodyPart);
+                                        let mineralNeed = 30 * numberofParts;
+                                        let energyNeed = 20 * numberofParts;
+                                        if (boostLab.mineralType == creep.memory.boostList[0] && boostLab.mineralAmount >= mineralNeed && boostLab.energy >= energyNeed) {
+                                            // Lab ready for boost
+                                            let returnCode = boostLab.boostCreep(creep);
+                                            if (returnCode == OK) {
+                                                if (creep.memory.boostList.length == 1) {
+                                                    delete creep.memory.boostList;
+                                                    if (creep.memory.myButler != undefined) {
+                                                        let butler = Game.getObjectById(creep.memory.myButler);
+                                                        delete butler.memory.jobQueueObject;
+                                                        delete butler.memory.jobQueueTask;
+                                                        delete butler.memory.myBoostLab;
                                                     }
-                                                    else {
-                                                        delete creep.memory.boostList[creep.memory.boostList.length - 1];
-                                                    }
+                                                    delete creep.memory.myButler;
+                                                    delete creep.memory.myBoostLab;
                                                 }
-                                                break;
+                                                else {
+                                                    delete creep.memory.boostList[creep.memory.boostList.length - 1];
+                                                }
                                             }
+                                            break;
                                         }
                                     }
                                 }
                             }
                         }
-                        else {
-                            delete creep.memory.boostList;
-                        }
                     }
-                    else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
-                        //Job queue pending
-                        switch (creep.memory.jobQueueTask) {
-                            case "pickUpEnergy": //Dropped energy to be picked up
-                                if (_.sum(creep.carry) == creep.carryCapacity) {
-                                    //creep full
+                    else {
+                        delete creep.memory.boostList;
+                    }
+                }
+                else if (creep.memory.jobQueueTask != undefined && creep.spawning == false) {
+                    //Job queue pending
+                    switch (creep.memory.jobQueueTask) {
+                        case "pickUpEnergy": //Dropped energy to be picked up
+                            if (_.sum(creep.carry) == creep.carryCapacity) {
+                                //creep full
+                                delete creep.memory.myDroppedEnergy;
+                                delete creep.memory.jobQueueObject;
+                                delete creep.memory.jobQueueTask;
+                            }
+                            else {
+                                if (creep.memory.myDroppedEnergy == undefined) {
+                                    let source = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
+                                    if (source != null) {
+                                        creep.memory.myDroppedEnergy = source.id;
+                                    }
+                                }
+                                let source = Game.getObjectById(creep.memory.myDroppedEnergy);
+                                if (source == null) {
                                     delete creep.memory.myDroppedEnergy;
                                     delete creep.memory.jobQueueObject;
                                     delete creep.memory.jobQueueTask;
                                 }
-                                else {
-                                    if (creep.memory.myDroppedEnergy == undefined) {
-                                        let source = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
-                                        if (source != null) {
-                                            creep.memory.myDroppedEnergy = source.id;
-                                        }
-                                    }
-
-                                    let source = Game.getObjectById(creep.memory.myDroppedEnergy);
-
-                                    if (source == null) {
-                                        delete creep.memory.myDroppedEnergy;
-                                        delete creep.memory.jobQueueObject;
-                                        delete creep.memory.jobQueueTask;
-                                    }
-                                    else if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
-                                        creep.moveTo(source, {reusePath: moveReusePath()});
-                                    }
+                                else if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
+                                    creep.moveTo(source, {reusePath: moveReusePath()});
                                 }
-                                break;
-
-                            case "prepareBoost": //Creep boost to be prepared
-                                let boostLabs = creep.room.memory.boostLabs;
-                                if (creep.memory.myBoostLab == undefined) {
-                                    let tempList = [];
-                                    for (let b in boostLabs) {
-                                        tempList.push(Game.getObjectById(boostLabs[b]));
-                                    }
-                                    let myBoostLab = creep.pos.findClosestByPath(tempList);
-                                    if (myBoostLab != null) {
-                                        creep.memory.myBoostLab = myBoostLab.id;
-                                    }
+                            }
+                            break;
+                        case "prepareBoost": //Creep boost to be prepared
+                            let boostLabs = creep.room.memory.boostLabs;
+                            if (creep.memory.myBoostLab == undefined) {
+                                let tempList = [];
+                                for (let b in boostLabs) {
+                                    tempList.push(Game.getObjectById(boostLabs[b]));
                                 }
-
-                                if (creep.carry[RESOURCE_ENERGY] > 0) {
-                                    creep.storeAllBut();
+                                let myBoostLab = creep.pos.findClosestByPath(tempList);
+                                if (myBoostLab != null) {
+                                    creep.memory.myBoostLab = myBoostLab.id;
                                 }
-                                else {
-                                    let clientCreep = Game.getObjectById(creep.memory.jobQueueObject);
-
-                                    if (clientCreep.memory.boostList != undefined) {
-                                        let boostLab = Game.getObjectById(creep.memory.myBoostLab);
-                                        let bodyPart = mineralDescriptions[clientCreep.memory.boostList[0]].bodyPart;
-                                        let mineralNeed = 30 * clientCreep.getActiveBodyparts(bodyPart);
-
-                                        if (boostLab.mineralAmount < mineralNeed || boostLab.mineralType != clientCreep.memory.boostList[0]) {
-                                            //Lab needs minerals
-                                            if (creep.storeAllBut(clientCreep.memory.boostList[0]) == true) {
-                                                if (_.sum(creep.carry) == 0) {
-                                                    //Get minerals from storage
-                                                    let amount = mineralNeed - boostLab.mineralAmount;
-                                                    if (amount > creep.carryCapacity) {
-                                                        amount = creep.carryCapacity;
-                                                    }
-                                                    if (creep.withdraw(creep.room.storage, clientCreep.memory.boostList[0], amount) == ERR_NOT_IN_RANGE) {
-                                                        creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
-                                                        break;
-                                                    }
+                            }
+                            if (creep.carry[RESOURCE_ENERGY] > 0) {
+                                creep.storeAllBut();
+                            }
+                            else {
+                                let clientCreep = Game.getObjectById(creep.memory.jobQueueObject);
+                                if (clientCreep.memory.boostList != undefined) {
+                                    let boostLab = Game.getObjectById(creep.memory.myBoostLab);
+                                    let bodyPart = mineralDescriptions[clientCreep.memory.boostList[0]].bodyPart;
+                                    let mineralNeed = 30 * clientCreep.getActiveBodyparts(bodyPart);
+                                    if (boostLab.mineralAmount < mineralNeed || boostLab.mineralType != clientCreep.memory.boostList[0]) {
+                                        //Lab needs minerals
+                                        if (creep.storeAllBut(clientCreep.memory.boostList[0]) == true) {
+                                            if (_.sum(creep.carry) == 0) {
+                                                //Get minerals from storage
+                                                let amount = mineralNeed - boostLab.mineralAmount;
+                                                if (amount > creep.carryCapacity) {
+                                                    amount = creep.carryCapacity;
                                                 }
-                                                else {
-                                                    //Bring minerals to lab
-                                                    if (creep.transfer(boostLab, clientCreep.memory.boostList[0]) == ERR_NOT_IN_RANGE) {
-                                                        creep.moveTo(boostLab, {reusePath: moveReusePath()});
-                                                        break;
-                                                    }
+                                                if (creep.withdraw(creep.room.storage, clientCreep.memory.boostList[0], amount) == ERR_NOT_IN_RANGE) {
+                                                    creep.moveTo(creep.room.storage, {reusePath: moveReusePath()});
+                                                    break;
+                                                }
+                                            }
+                                            else {
+                                                //Bring minerals to lab
+                                                if (creep.transfer(boostLab, clientCreep.memory.boostList[0]) == ERR_NOT_IN_RANGE) {
+                                                    creep.moveTo(boostLab, {reusePath: moveReusePath()});
+                                                    break;
                                                 }
                                             }
                                         }
                                     }
-                                    else {
-                                        delete creep.memory.jobQueueTask;
-                                        delete creep.memory.jobQueueObject;
-                                    }
                                 }
-                                break;
-                            default:
-                                creep.memory.jobQueueTask = undefined;
-                                break;
-                        }
-
+                                else {
+                                    delete creep.memory.jobQueueTask;
+                                    delete creep.memory.jobQueueObject;
+                                }
+                            }
+                            break;
+                        default:
+                            creep.memory.jobQueueTask = undefined;
+                            break;
                     }
-                    else if (creep.spawning == false) {
-                        if (CPUdebug == true) {
-                            CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name + "( " + creep.memory.role + "): " + Game.cpu.getUsed())
+                }
+                else if (creep.spawning == false) {
+                    if (CPUdebug == true) {
+                        CPUdebugString = CPUdebugString.concat("<br>Start creep " + creep.name + "( " + creep.memory.role + "): " + Game.cpu.getUsed())
+                    }
+                    if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
+                        // Minerals found in creep
+                        creep.storeAllBut(RESOURCE_ENERGY);
+                    }
+                    else {
+                        if (creep.memory.role == 'harvester') {
+                            creep.roleHarvester();
                         }
-                        if (creep.memory.role != "miner" && creep.memory.role != "distributor" && creep.memory.role != "transporter" && creep.memory.role != "scientist" && _.sum(creep.carry) != creep.carry.energy) {
-                            // Minerals found in creep
-                            creep.storeAllBut(RESOURCE_ENERGY);
+                        else if (creep.memory.role == 'upgrader') {
+                            creep.roleUpgrader();
                         }
-                        else {
-                            if (creep.memory.role == 'harvester') {
-                                creep.roleHarvester();
-                            }
-                            else if (creep.memory.role == 'upgrader') {
-                                creep.roleUpgrader();
-                            }
-                            else if (creep.memory.role == 'repairer') {
-                                creep.roleRepairer();
-                            }
-                            else if (creep.memory.role == 'builder') {
-                                creep.roleBuilder();
-                            }
-                            else if (creep.memory.role == 'wallRepairer') {
-                                creep.roleWallRepairer();
-                            }
-                            else if (creep.memory.role == 'remoteHarvester') {
-                                creep.roleRemoteHarvester();
-                            }
-                            else if (creep.memory.role == 'protector') {
-                                creep.roleProtector();
-                            }
-                            else if (creep.memory.role == 'claimer') {
-                                creep.roleClaimer();
-                            }
-                            else if (creep.memory.role == 'bigClaimer') {
-                                creep.roleBigClaimer();
-                            }
-                            else if (creep.memory.role == 'stationaryHarvester') {
-                                creep.roleStationaryHarvester();
-                            }
-                            else if (creep.memory.role == 'miner') {
-                                creep.roleMiner();
-                            }
-                            else if (creep.memory.role == 'distributor') {
-                                creep.roleDistributor();
-                            }
-                            else if (creep.memory.role == 'demolisher') {
-                                creep.roleDemolisher();
-                            }
-                            else if (creep.memory.role == 'energyTransporter') {
-                                creep.roleEnergyTransporter();
-                            }
-                            else if (creep.memory.role == 'energyHauler') {
-                                creep.roleEnergyHauler();
-                            }
-                            else if (creep.memory.role == 'remoteStationaryHarvester') {
-                                creep.roleRemoteStationaryHarvester();
-                            }
-                            else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer') {
-                                creep.roleUnit();
-                            }
-                            else if (creep.memory.role == 'scientist') {
-                                creep.roleScientist();
-                            }
-                            else if (creep.memory.role == 'transporter') {
-                                creep.roleTransporter();
-                            }
-                            else if (creep.memory.role == 'bigUpgrader') {
-                                creep.roleUpgrader();
-                            }
-                            else if (creep.memory.role == 'SKHarvester') {
-                                creep.roleSKHarvester()
-                            }
-                            else if (creep.memory.role == 'SKHauler') {
-                                creep.roleSKHauler();
-                            }
+                        else if (creep.memory.role == 'repairer') {
+                            creep.roleRepairer();
+                        }
+                        else if (creep.memory.role == 'builder') {
+                            creep.roleBuilder();
+                        }
+                        else if (creep.memory.role == 'wallRepairer') {
+                            creep.roleWallRepairer();
+                        }
+                        else if (creep.memory.role == 'remoteHarvester') {
+                            creep.roleRemoteHarvester();
+                        }
+                        else if (creep.memory.role == 'protector') {
+                            creep.roleProtector();
+                        }
+                        else if (creep.memory.role == 'claimer') {
+                            creep.roleClaimer();
+                        }
+                        else if (creep.memory.role == 'bigClaimer') {
+                            creep.roleBigClaimer();
+                        }
+                        else if (creep.memory.role == 'stationaryHarvester') {
+                            creep.roleStationaryHarvester();
+                        }
+                        else if (creep.memory.role == 'miner') {
+                            creep.roleMiner();
+                        }
+                        else if (creep.memory.role == 'distributor') {
+                            creep.roleDistributor();
+                        }
+                        else if (creep.memory.role == 'demolisher') {
+                            creep.roleDemolisher();
+                        }
+                        else if (creep.memory.role == 'energyTransporter') {
+                            creep.roleEnergyTransporter();
+                        }
+                        else if (creep.memory.role == 'energyHauler') {
+                            creep.roleEnergyHauler();
+                        }
+                        else if (creep.memory.role == 'remoteStationaryHarvester') {
+                            creep.roleRemoteStationaryHarvester();
+                        }
+                        else if (creep.memory.role == 'attacker' || creep.memory.role == 'einarr' || creep.memory.role == 'healer' || creep.memory.role == 'archer') {
+                            creep.roleUnit();
+                        }
+                        else if (creep.memory.role == 'scientist') {
+                            creep.roleScientist();
+                        }
+                        else if (creep.memory.role == 'transporter') {
+                            creep.roleTransporter();
+                        }
+                        else if (creep.memory.role == 'bigUpgrader') {
+                            creep.roleUpgrader();
+                        }
+                        else if (creep.memory.role == 'SKHarvester') {
+                            creep.roleSKHarvester()
+                        }
+                        else if (creep.memory.role == 'SKHauler') {
+                            creep.roleSKHauler();
                         }
                     }
                 }
-                if (CPUdebug == true) {
-                    CPUdebugString = CPUdebugString.concat("<br>Creep " + creep.name + "( " + creep.memory.role + ") finished: " + Game.cpu.getUsed())
+            }
+            if (CPUdebug == true) {
+                CPUdebugString = CPUdebugString.concat("<br>Creep " + creep.name + "( " + creep.memory.role + ") finished: " + Game.cpu.getUsed())
+            }
+        }
+    }
+
+    // Cycle through unitGroup flags
+    if (Game.cpu.bucket > 0) {
+        let groupFlags = _.filter(Game.flags, {memory: {function: "unitGroup"}});
+        for (let f in groupFlags) {
+            let flag = groupFlags[f];
+            if (flag.memory.strategy != undefined) {
+                let strategyModule = require("strategies");
+                if (flag.memory.attacker == undefined) {
+                    flag.memory.attacker = 0;
+                }
+                if (flag.memory.healer == undefined) {
+                    flag.memory.healer = 0;
+                }
+                if (flag.memory.archer == undefined) {
+                    flag.memory.archer = 0;
+                }
+                if (flag.memory.einarr == undefined) {
+                    flag.memory.einarr = 0;
+                }
+                let flagRoom = Game.rooms[flag.pos.roomName];
+
+                if (flagRoom != undefined) {
+                    strategyModule.init(flagRoom.find(FIND_CREEPS, {
+                        filter: function (creep) {
+                            return !isHostile(creep)
+                        }
+                    }), flagRoom.find(FIND_CREEPS, {
+                        filter: function (creep) {
+                            return isHostile(creep)
+                        }
+                    }))
+                    switch (flag.memory.strategy) {
+                        case "remoteDrain":
+                            strategyModule.remoteDrain(flag);
+                            break;
+
+                        case "remoteDestroy":
+                            if (strategyModule.remoteDrain(flag) == false) {
+                                // TODO: Target room towers drained --> attack target
+                            }
+                            break;
+
+                        case "test":
+                            strategyModule.test(flag);
+                            break;
+                    }
                 }
             }
         }
+    }
+
     if (CPUdebug == true) {
         CPUdebugString = CPUdebugString.concat("<br>Finish: " + Game.cpu.getUsed());
         console.log(CPUdebugString);

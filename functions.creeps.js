@@ -7,26 +7,6 @@ Creep.prototype.towerEmergencyFill = function () {
     }
 };
 
-
-Creep.prototype.findNearestAttackerInRange = function(pos, range) {
-    // returns object of A) nearest hostile if no argument is given or B) nearest hostile within range when a range is indicated
-    if (this.room.memory.hostiles.length < 1) {
-        return null
-    }
-    else {
-        var attackerCreeps = [];
-        for (let h in this.room.memory.hostiles) {
-            attackerCreeps.push(Game.getObjectById(this.room.memory.hostiles[h]))
-        }
-        attackerCreeps = this.pos.findInRange(attackerCreeps, range);
-        let target = pos.findClosestByPath(attackerCreeps);
-        if (target != null) {
-            return target;
-        }
-        return null;
-    }
-};
-
 Creep.prototype.goToHomeRoom = function() {
     // send creep back to room indicated in creep.memory.homeroom. Returns true if creep is in homeroom, false otherwise
     if (this.room.name != this.memory.homeroom) {

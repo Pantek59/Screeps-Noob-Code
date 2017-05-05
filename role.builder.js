@@ -28,7 +28,7 @@ Creep.prototype.roleBuilder = function () {
             }
             else {
                 // find closest constructionSite
-                var constructionSite;
+                let constructionSite;
                 if (this.memory.myConstructionSite == undefined) {
                     constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
                     if (constructionSite == null) {

@@ -241,27 +241,29 @@ module.exports = {
             console.log("<font color=#ff0000 type='highlight'>Warning: Possible bottleneck to spawn creeps needed for room " + spawnRoom.name + "  detected: " + neededTicksToSpawn + " ticks > " + neededTicksThreshold + " ticks</font>");
         }
         let spawnList = this.getSpawnList(spawnRoom, minimumSpawnOf, numberOf);
+        let spawnEntry = 0;
         if (spawnList != null && spawnList.length > 0) {
             for (var s in spawnRoom.memory.roomArray.spawns) {
                 // Iterate through spawns
                 let testSpawn = Game.getObjectById(spawnRoom.memory.roomArray.spawns[s]);
                 if (testSpawn != null && testSpawn.spawning == null && testSpawn.memory.spawnRole != "x") {
                     // Spawn!
-                    if (spawnList[s] == "claimer") {
-                        name = testSpawn.createCustomCreep(energy, spawnList[s], spawnRoom.memory.masterSpawn, vacantFlags);
+                    if (spawnList[spawnEntry] == "claimer") {
+                        name = testSpawn.createCustomCreep(energy, spawnList[spawnEntry], spawnRoom.memory.masterSpawn, vacantFlags);
                     }
                     else {
-                        name = testSpawn.createCustomCreep(energy, spawnList[s], spawnRoom.memory.masterSpawn);
+                        name = testSpawn.createCustomCreep(energy, spawnList[spawnEntry], spawnRoom.memory.masterSpawn);
                     }
-                    testSpawn.memory.lastSpawnAttempt = spawnList[s];
+                    testSpawn.memory.lastSpawnAttempt = spawnList[spawnEntry];
                     if (!(name < 0) && name != undefined) {
-                        testSpawn.memory.lastSpawn = spawnList[s];
+                        testSpawn.memory.lastSpawn = spawnList[spawnEntry];
                         if (LOG_SPAWN == true) {
-                            console.log("<font color=#00ff22 type='highlight'>" + testSpawn.name + " is spawning creep: " + name + " (" + spawnList[s] + ") in room " + spawnRoom.name + ". (CPU used: " + (Game.cpu.getUsed() - cpuStart) + ")</font>");
+                            console.log("<font color=#00ff22 type='highlight'>" + testSpawn.name + " is spawning creep: " + name + " (" + spawnList[spawnEntry] + ") in room " + spawnRoom.name + ". (CPU used: " + (Game.cpu.getUsed() - cpuStart) + ")</font>");
                         }
+                        spawnEntry++;
                     }
                 }
-                if (s + 1 >= spawnList.length) {
+                if (spawnEntry >= spawnList.length) {
                     break;
                 }
             }
@@ -474,15 +476,14 @@ module.exports = {
                     spawnList.push(tableImportance[c].name);
                 }
             }
-
             //Surplus Upgrader Spawning
-            if (numberOf.harvester + numberOf.energyTransporter > 0 && spawnRoom.memory.hostiles.length == 0 && spawnRoom.controller.level < 8 && numberOf.upgrader < Math.ceil(minimumSpawnOf.upgrader * 2)) {
+            if (numberOf.harvester + numberOf.energyTransporter > 0 && spawnRoom.memory.hostiles.length == 0 && spawnRoom.controller.level < 8 && numberOf.upgrader < (minimumSpawnOf.upgrader * 2)) {
                 let container = spawnRoom.find(FIND_STRUCTURES, {filter: (s) => s.structureType == STRUCTURE_CONTAINER || s.structureType == STRUCTURE_STORAGE});
                 let containerEnergy = 0;
                 for (let e in container) {
                     containerEnergy += container[e].store[RESOURCE_ENERGY];
                 }
-                if (containerEnergy > spawnRoom.energyAvailable * 2.5) {
+                if (containerEnergy > spawnRoom.energyAvailable * 2 || containerEnergy > spawnRoom.memory.resourceLimits[RESOURCE_ENERGY].minMarket * 0.9) {
                     spawnList.push("upgrader");
                 }
             }

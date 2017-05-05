@@ -25,18 +25,18 @@ module.exports = function() {
     StructureSpawn.prototype.createCustomCreep = function (energyCapacity, roleName, spawnID, vacantClaimerFlags) {
         //Check for boost
         var boost = [];
-        for (let l in this.room.memory.boostList) {
-            if (this.room.memory.boostList[l].role == roleName) {
+        for (let entry in this.room.memory.boostList) {
+            if (this.room.memory.boostList[entry].role == roleName) {
                 //Creep should get boost entry
-                let boostEntry = this.room.memory.boostList[l];
+                let boostEntry = this.room.memory.boostList[entry];
                 boost.push(boostEntry.mineralType);
                 if (parseInt(boostEntry.volume) >= 0) {
                     boostEntry.volume--;
                     if (boostEntry.volume == 0) {
-                        delBoost(this.room.name, l);
+                        delBoost(this.room.name, entry);
                     }
                     else {
-                        this.room.memory.boostList[l] = boostEntry;
+                        this.room.memory.boostList[entry] = boostEntry;
                     }
                 }
             }

@@ -60,7 +60,6 @@ Creep.prototype.roleRemoteHarvester = function() {
                 }
             }
         }
-        // if creep is supposed to harvest energy from source
         else if (this.memory.statusHarvesting == false || this.memory.statusHarvesting == undefined) {
             //Find remote source
             var remoteSource = Game.flags[this.findMyFlag("remoteSource")];
@@ -100,7 +99,7 @@ Creep.prototype.roleRemoteHarvester = function() {
         }
         else {
             // Creep is harvesting, try to keep harvesting
-            if (this.harvest(Game.getObjectById(this.memory.statusHarvesting)) != OK) {
+            if (this.harvest(Game.getObjectById(this.memory.statusHarvesting)) != OK || this.room.memory.hostiles.length > 0) {
                 //console.log(this.harvest(Game.getObjectById(this.memory.statusHarvesting)));
                 delete this.memory.statusHarvesting;
             }

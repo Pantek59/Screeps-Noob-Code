@@ -57,11 +57,8 @@ Creep.prototype.roleClaimer = function() {
         }
         else {
             //Hostiles creeps in new room
-            let homespawn = Game.getObjectById(this.memory.spawn);
-            if (this.room.name != this.memory.homeroom) {
-                this.moveTo(homespawn), {reusePath: moveReusePath()};
-            }
             this.memory.fleeing = true;
+            this.goToHomeRoom()
         }
     }
 };
