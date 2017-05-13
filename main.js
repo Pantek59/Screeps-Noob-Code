@@ -113,7 +113,7 @@ module.exports.loop = function() {
                     var bestCost = 999999;
                     for (var r in myRooms) {
                         var cost = Game.market.calcTransactionCost(left, order.roomName, myRooms[r].name);
-                        if (myRooms[r].terminal != undefined && myRooms[r].terminal.owner.username == playerUsername) {
+                        if (myRooms[r].terminal != undefined && myRooms[r].terminal.cooldown == 0 && myRooms[r].terminal.owner.username == playerUsername) {
                             if (bestCost > cost) {
                                 bestRoom = myRooms[r];
                                 bestCost = cost;
@@ -874,7 +874,7 @@ module.exports.loop = function() {
             if (CPUdebug == true) {CPUdebugString = CPUdebugString.concat("<br>Starting terminal code: " + Game.cpu.getUsed())}
             if (Game.cpu.bucket > CPU_THRESHOLD && Game.rooms[r].memory.terminalTransfer != undefined && Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.owner.username == playerUsername) {
                 var terminal = Game.rooms[r].terminal;
-                if (terminal != undefined && terminal.owner.username == playerUsername && Game.rooms[r].memory.terminalTransfer != undefined) {
+                if (terminal != undefined && terminal.cooldown == 0 && terminal.owner.username == playerUsername && Game.rooms[r].memory.terminalTransfer != undefined) {
                     //Terminal exists
                     var targetRoom;
                     var amount;
@@ -893,14 +893,14 @@ module.exports.loop = function() {
                         Game.rooms[r].memory.terminalEnergyCost = energyCost;
                         if (comment != "MarketOrder") {
                             var energyTransferAmount = parseInt(energyCost) + parseInt(amount);
-                            var stdEnergyCost = Game.market.calcTransactionCost(500, terminal.room.name, targetRoom);
-                            if ((resource != RESOURCE_ENERGY && amount > 499 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) >= stdEnergyCost)
-                                || (resource == RESOURCE_ENERGY && amount > 499 && terminal.store[resource] >= 500 && (terminal.store[RESOURCE_ENERGY]) - 500 >= stdEnergyCost)) {
-                                if (terminal.send(resource, 500, targetRoom, comment) == OK) {
-                                    info[1] -= 500;
+                            var stdEnergyCost = Game.market.calcTransactionCost(TERMINAL_PACKETSIZE, terminal.room.name, targetRoom);
+                            if ((resource != RESOURCE_ENERGY && amount >= TERMINAL_PACKETSIZE && terminal.store[resource] >= TERMINAL_PACKETSIZE && (terminal.store[RESOURCE_ENERGY]) >= stdEnergyCost)
+                                || (resource == RESOURCE_ENERGY && amount >= TERMINAL_PACKETSIZE && terminal.store[resource] >= TERMINAL_PACKETSIZE && (terminal.store[RESOURCE_ENERGY]) - TERMINAL_PACKETSIZE >= stdEnergyCost)) {
+                                if (terminal.send(resource, TERMINAL_PACKETSIZE, targetRoom, comment) == OK) {
+                                    info[1] -= TERMINAL_PACKETSIZE;
                                     Game.rooms[r].memory.terminalTransfer = info.join(":");
                                     if (LOG_TERMINAL == true) {
-                                        console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": 500/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + stdEnergyCost + " energy: " + comment + "</font>");
+                                        console.log("<font color=#009bff type='highlight'>" + Game.rooms[r].name + ": " + TERMINAL_PACKETSIZE + "/" + amount + " " + resource + " has been transferred to room " + targetRoom + " using " + stdEnergyCost + " energy: " + comment + "</font>");
                                     }
                                 }
                                 else {
@@ -930,10 +930,10 @@ module.exports.loop = function() {
                         else {
                             // Market Order
                             var orderID = targetRoom;
-                            var order = Game.market.getOrderById(orderID);
+                            let order = Game.market.getOrderById(orderID);
                             if (order != null) {
-                                if (amount > 500) {
-                                    amount = 500;
+                                if (amount > AUTOSELL_PACKETSIZE) {
+                                    amount = AUTOSELL_PACKETSIZE;
                                 }
                                 energyCost = Game.market.calcTransactionCost(amount, terminal.room.name, order.roomName);
                                 Game.rooms[r].memory.terminalEnergyCost = energyCost;
@@ -941,7 +941,7 @@ module.exports.loop = function() {
                                     if (resource == RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= amount + energyCost ||
                                         resource != RESOURCE_ENERGY && Game.rooms[r].terminal.store[RESOURCE_ENERGY] >= energyCost) {
                                         //Do the deal!
-                                        if (parseInt(info[1]) <= 500 && Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
+                                        if (parseInt(info[1]) <= AUTOSELL_PACKETSIZE && Game.market.deal(orderID, amount, Game.rooms[r].name) == OK) {
                                             if (LOG_MARKET == true) {
                                                 console.log("<font color=#33ffff type='highlight'>" + Game.rooms[r].name + ": " + amount + " " + resource + " has been sold to room " + order.roomName + " for " + (order.price * amount) + " credits, using " + energyCost + " energy.</font>");
                                             }
