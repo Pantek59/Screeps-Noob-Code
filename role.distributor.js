@@ -10,8 +10,8 @@ Creep.prototype.roleDistributor = function() {
             }
             else {
                 // Dump everything into terminal
-                for (var res in this.carry) {
-                    this.transfer(this.room.terminal, res);
+                for (var res2 in this.carry) {
+                    this.transfer(this.room.terminal, res2);
                 }
             }
         }
@@ -51,7 +51,7 @@ Creep.prototype.roleDistributor = function() {
             if (this.room.terminal.store[transferResource] >= packageVolume) {
                 //Check for energy level
                 if ((transferResource != RESOURCE_ENERGY && this.room.terminal.store[RESOURCE_ENERGY] < energyCost + packageVolume)
-                    || transferResource == RESOURCE_ENERGY && this.room.terminal.store[RESOURCE_ENERGY] - transferAmount < energyCost) {
+                    || transferResource == RESOURCE_ENERGY && this.room.terminal.store[RESOURCE_ENERGY] + transferAmount > energyCost) {
                     //Get energy
                     if (energyCost > this.carryCapacity) {
                         energyCost = this.carryCapacity;
@@ -60,7 +60,7 @@ Creep.prototype.roleDistributor = function() {
                         this.moveTo(this.room.storage, {reusePath: moveReusePath()});
                     }
                 }
-                else if (this.room.terminal.store[transferResource] < packageVolume) {
+                else if (this.room.terminal.store[transferResource] < AUTOSELL_PACKETSIZE) {
                     // Get transfer resource
                     if(this.withdraw(this.room.storage, transferResource, packageVolume) == ERR_NOT_IN_RANGE) {
                         this.moveTo(this.room.storage, {reusePath: moveReusePath()});

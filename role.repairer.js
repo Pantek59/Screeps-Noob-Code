@@ -60,9 +60,9 @@ Creep.prototype.roleRepairer = function() {
                 }
                 else {
                     //room without spawn
-                    var constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_ROAD});
+                    var constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
                     if (constructionSite == null) {
-                        constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_SPAWN});
+                        constructionSite = this.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {filter: (s) => s.structureType == STRUCTURE_ROAD});
                     }
                     if (this.build(constructionSite) == ERR_NOT_IN_RANGE) {
                         // move towards it
