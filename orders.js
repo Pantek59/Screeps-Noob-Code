@@ -348,6 +348,7 @@ module.exports = {
     moveToFormation (ArrayofCreeps, formationPositions) {
         // creeps = Array of creeps to be moved
         // formationPositions = output of this.getFormationPositions
+
         let creeps = _.sortBy(ArrayofCreeps, ['id']);
         let anchorRoom = Game.rooms[formationPositions[0].roomName];
         let positionCounter = 0;
@@ -359,6 +360,20 @@ module.exports = {
                     if (creeps[c].pos.isEqualTo(formationPositions[positionCounter]) == false) {
                         // Creep not where it should be
                         this.goTo(creeps[c], formationPositions[positionCounter]);
+
+                        // Mark formation with RoomVisual
+                        switch (creeps[c].memory.role)
+                        {
+                            case "attacker":
+                            case "archer":
+                            case "einarr":
+                                Game.rooms[formationPositions[positionCounter].roomName].visual.circle(formationPositions[positionCounter], {fill: 'transparent', radius: 0.35, stroke: 'red'});
+                                break;
+
+                            case "healer":
+                                Game.rooms[formationPositions[positionCounter].roomName].visual.circle(formationPositions[positionCounter], {fill: 'transparent', radius: 0.35, stroke: 'green'});
+                                break;
+                        }
                     }
                     positionCounter++;
                     break;

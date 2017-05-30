@@ -203,7 +203,7 @@ module.exports.loop = function() {
     if (Game.time % DELAYRESOURCEBALANCING == 0 && Game.cpu.bucket > CPU_THRESHOLD) {
         // Inter-room resource balancing
         for (let r in myRooms) {
-            if (Game.rooms[r].terminal != undefined && Game.rooms[r].terminal == 0 && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername
+            if (Game.rooms[r].terminal != undefined && Game.rooms[r].terminal.cooldown == 0 && Game.rooms[r].storage != undefined && Game.rooms[r].storage.owner.username == playerUsername
                 && Game.rooms[r].storage.store[RESOURCE_ENERGY] > 5000 && Game.rooms[r].memory.terminalTransfer == undefined) {
                 var combinedResources = [];
                 if (_.sum(Game.rooms[r].terminal.store) < Game.rooms[r].terminal.storeCapacity * 0.75) {
